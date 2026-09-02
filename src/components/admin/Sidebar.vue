@@ -11,6 +11,10 @@ import {
   LogOut,
   Plus,
 } from "lucide-vue-next";
+import { logout } from "../../api/auth.js";
+
+// Logout calls POST /api/logout to invalidate the JWT on the server,
+// clears the local auth state, then sends the user back to /login.
 
 const route = useRoute();
 const router = useRouter();
@@ -25,9 +29,9 @@ const navItems = [
 
 const active = computed(() => route.meta?.navKey || "");
 
-function logout() {
-  // Can be connected to auth/logout API
-  router.push("/admin/overview");
+async function handleLogout() {
+  await logout();
+  router.push("/login");
 }
 </script>
 
@@ -84,7 +88,7 @@ function logout() {
         </RouterLink>
         <button
           type="button"
-          @click="logout"
+          @click="handleLogout"
           class="flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-left text-sm font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-white"
         >
           <LogOut :size="18" :stroke-width="2" />

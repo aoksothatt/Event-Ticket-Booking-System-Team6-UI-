@@ -5,6 +5,12 @@ import { Mail, Eye, EyeOff, Loader2 } from "lucide-vue-next";
 import BrandLogo from "../auth/BrandLogo.vue";
 import AuthField from "../auth/AuthField.vue";
 import SocialLoginButton from "../auth/SocialLoginButton.vue";
+import { login } from "../../api/auth.js";
+
+// Login calls POST /api/login with email and password.
+// On success it stores the JWT token and user in localStorage,
+// then redirects to /admin/overview. On failure it shows the
+// backend error message (e.g. "Invalid email or password").
 
 import heroVideo from "../../assets/video/From Klickpin.com- 9 Refined small bedroom decor ideas that help you create a polished look with very simple and affordable details for beginners.mp4";
 import heroPoster from "../../assets/hero.png";
@@ -34,10 +40,22 @@ function validate() {
   return !errors.email && !errors.password;
 }
 
-function handleSubmit() {
+// handleSubmit validates the form, then calls the auth module's login(),
+// which sends the credentials to the backend. While waiting, the button
+// shows a spinner; any error from the backend is displayed on screen.
+async function handleSubmit() {
   serverError.value = "";
   if (!validate()) return;
-  router.push("/admin/overview");
+
+  loading.value = true;
+  try {
+    await login(form.email.trim(), form.password);
+    router.push("/admin/overview");
+  } catch (error) {
+    serverError.value = error.message || "Unable to sign in. Please try again.";
+  } finally {
+    loading.value = false;
+  }
 }
 </script>
 
@@ -114,13 +132,12 @@ function handleSubmit() {
               />
               Remember Me
             </label>
-            <a
-              href="#"
+            <RouterLink
+              to="/forgot-password"
               class="text-[#E0E0E0] transition hover:text-white"
-              @click.prevent
             >
               Forgot Password?
-            </a>
+            </RouterLink>
           </div>
 
           <p

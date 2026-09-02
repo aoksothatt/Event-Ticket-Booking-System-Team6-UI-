@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
+// isAuthenticated checks if a JWT token exists in localStorage
+import { isAuthenticated } from "../api/auth.js";
 
 const routes = [
   {
@@ -15,6 +17,12 @@ const routes = [
     path: "/register",
     name: "register",
     component: () => import("../components/register/register.vue"),
+    meta: { layout: "auth" },
+  },
+  {
+    path: "/forgot-password",
+    name: "forgot-password",
+    component: () => import("../components/auth/ForgotPassword.vue"),
     meta: { layout: "auth" },
   },
   {
@@ -80,6 +88,25 @@ const router = createRouter({
   scrollBehavior() {
     return { top: 0 };
   },
+});
+
+/**
+ * Route guard — runs before every navigation.
+ * - Unauthenticated users trying to access /admin/* are sent to /login
+ * - Authenticated users trying to access /login or /register are sent to /admin/overview
+ */
+router.beforeEach((to) => {
+  // Admin routes require authentication
+  if (to.path.startsWith("/admin") && !isAuthenticated()) {
+    return { name: "login" };
+  }
+
+  // Authenticated users should not visit login/register
+  if (to.meta.layout === "auth" && isAuthenticated()) {
+    return { path: "/admin/overview" };
+  }
+
+  return true;
 });
 
 export default router;

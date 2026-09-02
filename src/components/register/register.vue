@@ -5,6 +5,12 @@ import { User, Mail, Eye, EyeOff, Loader2 } from "lucide-vue-next";
 import BrandLogo from "../auth/BrandLogo.vue";
 import AuthField from "../auth/AuthField.vue";
 import SocialLoginButton from "../auth/SocialLoginButton.vue";
+import { register } from "../../api/auth.js";
+
+// Register calls POST /api/register with name, email, password, and
+// password_confirmation (required because the backend uses a "confirmed"
+// validation rule). On success it stores the returned JWT + user and
+// redirects to /admin/overview. On failure it shows the backend error.
 
 import heroVideo from "../../assets/video/From Klickpin.com- 9 Refined small bedroom decor ideas that help you create a polished look with very simple and affordable details for beginners.mp4";
 import heroPoster from "../../assets/hero.png";
@@ -53,10 +59,28 @@ function validate() {
   return !errors.name && !errors.email && !errors.password && !errors.confirm;
 }
 
-function handleSubmit() {
+// handleSubmit validates the form, then calls the auth module's register(),
+// which sends the payload to the backend. While waiting, the button shows a
+// spinner; any backend error (e.g. duplicate email) is displayed on screen.
+async function handleSubmit() {
   serverError.value = "";
   if (!validate()) return;
-  router.push("/admin/overview");
+
+  loading.value = true;
+  try {
+    await register({
+      name: form.name.trim(),
+      email: form.email.trim(),
+      password: form.password,
+      password_confirmation: form.confirm,
+    });
+    router.push("/admin/overview");
+  } catch (error) {
+    serverError.value =
+      error.message || "Unable to create your account. Please try again.";
+  } finally {
+    loading.value = false;
+  }
 }
 </script>
 
