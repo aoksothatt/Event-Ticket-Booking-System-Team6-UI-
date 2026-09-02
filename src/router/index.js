@@ -3,7 +3,19 @@ import { createRouter, createWebHistory } from "vue-router";
 const routes = [
   {
     path: "/",
-    redirect: "/admin/overview",
+    redirect: "/login",
+  },
+  {
+    path: "/login",
+    name: "login",
+    component: () => import("../components/login/login.vue"),
+    meta: { layout: "auth" },
+  },
+  {
+    path: "/register",
+    name: "register",
+    component: () => import("../components/register/register.vue"),
+    meta: { layout: "auth" },
   },
   {
     path: "/admin",
@@ -57,6 +69,9 @@ const routes = [
     path: "/:pathMatch(.*)*",
     redirect: "/admin/overview",
   },
+
+
+  
 ];
 
 const router = createRouter({
