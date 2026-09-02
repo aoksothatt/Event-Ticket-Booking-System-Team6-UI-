@@ -9,5 +9,6 @@ import Sidebar from "./components/admin/Sidebar.vue";
       <component :is="Component" :key="route.fullPath" />
     </router-view>
   </div>
+  <h1>hello</h1>
 </template>
  
