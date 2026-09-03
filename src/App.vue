@@ -11,4 +11,10 @@ import Sidebar from "./components/admin/Sidebar.vue";
       </router-view>
     </div>
   </div>
+<<<<<<< HEAD
 </template>
+=======
+  <h1>hello</h1>
+</template>
+ 
+>>>>>>> 0e78e5336e2e809bfae4fad4bf8f2e889ff4914f
