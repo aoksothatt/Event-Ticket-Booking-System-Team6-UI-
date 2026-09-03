@@ -10,8 +10,8 @@ import {
   Eye,
   EyeOff,
 } from "lucide-vue-next";
-import BrandLogo from "./BrandLogo.vue";
-import AuthField from "./AuthField.vue";
+import BrandLogo from "../../components/auth/BrandLogo.vue";
+import AuthField from "../../components/auth/AuthField.vue";
 import { sendOtp, verifyOtp, resetPassword } from "../../api/auth.js";
 
 /**

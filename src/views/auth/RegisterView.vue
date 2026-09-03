@@ -1,34 +1,45 @@
 <script setup>
 import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
-import { Mail, Eye, EyeOff, Loader2 } from "lucide-vue-next";
-import BrandLogo from "../auth/BrandLogo.vue";
-import AuthField from "../auth/AuthField.vue";
-import SocialLoginButton from "../auth/SocialLoginButton.vue";
-import { login } from "../../api/auth.js";
+import { User, Mail, Eye, EyeOff, Loader2 } from "lucide-vue-next";
+import BrandLogo from "../../components/auth/BrandLogo.vue";
+import AuthField from "../../components/auth/AuthField.vue";
+import SocialLoginButton from "../../components/auth/SocialLoginButton.vue";
+import { register, isAdmin } from "../../api/auth.js";
 
-// Login calls POST /api/login with email and password.
-// On success it stores the JWT token and user in localStorage,
-// then redirects to /admin/overview. On failure it shows the
-// backend error message (e.g. "Invalid email or password").
+// Register calls POST /api/register with name, email, password, and
+// password_confirmation (required because the backend uses a "confirmed"
+// validation rule). On success it stores the returned JWT + user and
+// redirects to /admin/overview. On failure it shows the backend error.
 
 import heroVideo from "../../assets/video/From Klickpin.com- 9 Refined small bedroom decor ideas that help you create a polished look with very simple and affordable details for beginners.mp4";
 import heroPoster from "../../assets/hero.png";
 
 const router = useRouter();
 
-const form = reactive({ email: "", password: "" });
-const errors = reactive({ email: "", password: "" });
-const remember = ref(true);
+const form = reactive({
+  name: "",
+  email: "",
+  password: "",
+  confirm: "",
+});
+const errors = reactive({ name: "", email: "", password: "", confirm: "" });
 const showPassword = ref(false);
+const showConfirm = ref(false);
 const loading = ref(false);
 const serverError = ref("");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function validate() {
+  errors.name = "";
   errors.email = "";
   errors.password = "";
+  errors.confirm = "";
+
+  if (!form.name.trim()) {
+    errors.name = "Name is required.";
+  }
   if (!form.email.trim()) {
     errors.email = "Email is required.";
   } else if (!EMAIL_RE.test(form.email.trim())) {
@@ -36,23 +47,37 @@ function validate() {
   }
   if (!form.password) {
     errors.password = "Password is required.";
+  } else if (form.password.length < 6) {
+    errors.password = "Password must be at least 6 characters.";
   }
-  return !errors.email && !errors.password;
+  if (!form.confirm) {
+    errors.confirm = "Please confirm your password.";
+  } else if (form.password !== form.confirm) {
+    errors.confirm = "Passwords do not match.";
+  }
+
+  return !errors.name && !errors.email && !errors.password && !errors.confirm;
 }
 
-// handleSubmit validates the form, then calls the auth module's login(),
-// which sends the credentials to the backend. While waiting, the button
-// shows a spinner; any error from the backend is displayed on screen.
+// handleSubmit validates the form, then calls the auth module's register(),
+// which sends the payload to the backend. While waiting, the button shows a
+// spinner; any backend error (e.g. duplicate email) is displayed on screen.
 async function handleSubmit() {
   serverError.value = "";
   if (!validate()) return;
 
   loading.value = true;
   try {
-    await login(form.email.trim(), form.password);
-    router.push("/admin/overview");
+    await register({
+      name: form.name.trim(),
+      email: form.email.trim(),
+      password: form.password,
+      password_confirmation: form.confirm,
+    });
+    router.push(isAdmin() ? "/admin/overview" : "/home");
   } catch (error) {
-    serverError.value = error.message || "Unable to sign in. Please try again.";
+    serverError.value =
+      error.message || "Unable to create your account. Please try again.";
   } finally {
     loading.value = false;
   }
@@ -74,22 +99,34 @@ async function handleSubmit() {
 
         <div class="flex items-center gap-3 text-[13px] text-[#BDBDBD]">
           <span class="h-px flex-1 bg-[#3A3A3A]"></span>
+          <span class="whitespace-nowrap">Already have an account?</span>
           <RouterLink
-            to="/register"
+            to="/login"
             class="whitespace-nowrap font-semibold text-[#FFA500] transition hover:text-[#FFB52E]"
           >
-            Create Account
+            Sign in
           </RouterLink>
           <span class="h-px flex-1 bg-[#3A3A3A]"></span>
         </div>
 
         <h1 class="mb-7 mt-5 text-[28px] font-bold tracking-tight text-white">
-          Sign in
+          Create Account
         </h1>
 
         <form class="space-y-4" novalidate @submit.prevent="handleSubmit">
           <AuthField
-            id="login-email"
+            id="reg-name"
+            v-model="form.name"
+            label="Full Name"
+            type="text"
+            placeholder="Please enter your full name"
+            autocomplete="name"
+            :icon="User"
+            :error="errors.name"
+          />
+
+          <AuthField
+            id="reg-email"
             v-model="form.email"
             label="Email"
             type="email"
@@ -100,12 +137,12 @@ async function handleSubmit() {
           />
 
           <AuthField
-            id="login-password"
+            id="reg-password"
             v-model="form.password"
             label="Password"
             :type="showPassword ? 'text' : 'password'"
             placeholder="Please enter your password"
-            autocomplete="current-password"
+            autocomplete="new-password"
             :error="errors.password"
           >
             <template #trailing>
@@ -121,24 +158,27 @@ async function handleSubmit() {
             </template>
           </AuthField>
 
-          <div class="flex items-center justify-between pt-1 text-[13px]">
-            <label
-              class="flex cursor-pointer select-none items-center gap-2 text-[#BDBDBD]"
-            >
-              <input
-                v-model="remember"
-                type="checkbox"
-                class="h-4 w-4 cursor-pointer rounded accent-[#FFA500]"
-              />
-              Remember Me
-            </label>
-            <RouterLink
-              to="/forgot-password"
-              class="text-[#E0E0E0] transition hover:text-white"
-            >
-              Forgot Password?
-            </RouterLink>
-          </div>
+          <AuthField
+            id="reg-confirm"
+            v-model="form.confirm"
+            label="Confirm Password"
+            :type="showConfirm ? 'text' : 'password'"
+            placeholder="Confirm your password"
+            autocomplete="new-password"
+            :error="errors.confirm"
+          >
+            <template #trailing>
+              <button
+                type="button"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-[#8A8A8A] transition hover:text-white"
+                :aria-label="showConfirm ? 'Hide password' : 'Show password'"
+                @click="showConfirm = !showConfirm"
+              >
+                <EyeOff v-if="showConfirm" class="h-[18px] w-[18px]" />
+                <Eye v-else class="h-[18px] w-[18px]" />
+              </button>
+            </template>
+          </AuthField>
 
           <p
             v-if="serverError"
@@ -153,7 +193,9 @@ async function handleSubmit() {
             class="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-[#FFA500] text-sm font-bold text-black transition hover:bg-[#FFB52E] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Loader2 v-if="loading" class="h-5 w-5 animate-spin" />
-            <span>{{ loading ? "Signing in..." : "Login" }}</span>
+            <span>{{
+              loading ? "Creating account..." : "Create Account"
+            }}</span>
           </button>
 
           <div class="flex items-center gap-3 pt-1 text-sm text-[#8A8A8A]">
@@ -163,7 +205,8 @@ async function handleSubmit() {
           </div>
 
           <SocialLoginButton
-            @click="alert('Google sign-in is not available yet.')"
+            label="Sign up with Google"
+            @click="alert('Google sign-up is not available yet.')"
           />
         </form>
       </section>

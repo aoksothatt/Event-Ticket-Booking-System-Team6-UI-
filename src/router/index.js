@@ -1,28 +1,79 @@
 import { createRouter, createWebHistory } from "vue-router";
-// isAuthenticated checks if a JWT token exists in localStorage
-import { isAuthenticated } from "../api/auth.js";
+// Auth helpers: check JWT presence and the user's role
+import { isAuthenticated, isAdmin } from "../api/auth.js";
+
+/**
+ * Routes visitors to their default landing page based on role.
+ * Admins/organizers → admin dashboard; everyone else → customer home.
+ */
+function defaultHome() {
+  return isAdmin() ? "/admin/overview" : "/home";
+}
 
 const routes = [
   {
     path: "/",
-    redirect: "/login",
+    redirect: () => defaultHome(),
+  },
+  {
+    path: "/home",
+    name: "home",
+    component: () => import("../views/HomeView.vue"),
+    meta: { customer: true, requiresAuth: true },
+  },
+  {
+    path: "/events",
+    name: "events",
+    component: () => import("../views/EventsView.vue"),
+    meta: { customer: true, requiresAuth: true },
+  },
+  {
+    path: "/events/:id",
+    name: "event-detail",
+    component: () => import("../views/EventDetailView.vue"),
+    meta: { customer: true, requiresAuth: true },
+    props: true,
+  },
+  {
+    path: "/events/:id/booking",
+    name: "event-booking",
+    component: () => import("../views/BookingView.vue"),
+    meta: { customer: true, requiresAuth: true },
+  },
+  {
+    path: "/my-tickets",
+    name: "my-tickets",
+    component: () => import("../views/MyTicketsView.vue"),
+    meta: { customer: true, requiresAuth: true },
+  },
+  {
+    path: "/profile",
+    name: "profile",
+    component: () => import("../views/ProfileView.vue"),
+    meta: { customer: true, requiresAuth: true },
+  },
+  {
+    path: "/settings",
+    name: "customer-settings",
+    component: () => import("../views/SettingsView.vue"),
+    meta: { customer: true, requiresAuth: true },
   },
   {
     path: "/login",
     name: "login",
-    component: () => import("../components/login/login.vue"),
+    component: () => import("../views/auth/LoginView.vue"),
     meta: { layout: "auth" },
   },
   {
     path: "/register",
     name: "register",
-    component: () => import("../components/register/register.vue"),
+    component: () => import("../views/auth/RegisterView.vue"),
     meta: { layout: "auth" },
   },
   {
     path: "/forgot-password",
     name: "forgot-password",
-    component: () => import("../components/auth/ForgotPassword.vue"),
+    component: () => import("../views/auth/ForgotPasswordView.vue"),
     meta: { layout: "auth" },
   },
   {
@@ -32,54 +83,51 @@ const routes = [
   {
     path: "/admin/overview",
     name: "overview",
-    component: () => import("../components/admin/Dashboard.vue"),
-    meta: { navKey: "overview" },
+    component: () => import("../views/admin/AdminDashboard.vue"),
+    meta: { navKey: "overview", requiresAuth: true },
   },
   {
     path: "/admin/events",
-    name: "events",
-    component: () => import("../components/admin/Events.vue"),
-    meta: { navKey: "events" },
+    name: "admin-events",
+    component: () => import("../views/admin/AdminEvents.vue"),
+    meta: { navKey: "events", requiresAuth: true },
   },
   {
     path: "/admin/events/:id",
-    name: "event-detail",
-    component: () => import("../components/admin/EventDetail.vue"),
-    meta: { navKey: "events" },
+    name: "admin-event-detail",
+    component: () => import("../views/admin/AdminEventDetail.vue"),
+    meta: { navKey: "events", requiresAuth: true },
     props: true,
   },
   {
     path: "/admin/organizers",
     name: "organizers",
-    component: () => import("../components/admin/Organizers.vue"),
-    meta: { navKey: "organizers" },
+    component: () => import("../views/admin/AdminOrganizers.vue"),
+    meta: { navKey: "organizers", requiresAuth: true },
   },
   {
     path: "/admin/tickets",
-    name: "tickets",
-    component: () => import("../components/admin/Tickets.vue"),
-    meta: { navKey: "tickets" },
+    name: "admin-tickets",
+    component: () => import("../views/admin/AdminTickets.vue"),
+    meta: { navKey: "tickets", requiresAuth: true },
   },
   {
     path: "/admin/users",
-    name: "users",
-    component: () => import("../components/admin/Users.vue"),
-    meta: { navKey: "users" },
+    name: "admin-users",
+    component: () => import("../views/admin/AdminUsers.vue"),
+    meta: { navKey: "users", requiresAuth: true },
   },
   {
     path: "/admin/settings",
-    name: "settings",
-    component: () => import("../components/admin/Settings.vue"),
-    meta: { navKey: "settings" },
+    name: "admin-settings",
+    component: () => import("../views/admin/AdminSettings.vue"),
+    meta: { navKey: "settings", requiresAuth: true },
   },
   {
-    // catch-all inside the admin section or any unknown route
+    // catch-all for any unknown route
     path: "/:pathMatch(.*)*",
-    redirect: "/admin/overview",
+    redirect: "/home",
   },
-
-
-  
 ];
 
 const router = createRouter({
@@ -92,18 +140,26 @@ const router = createRouter({
 
 /**
  * Route guard — runs before every navigation.
- * - Unauthenticated users trying to access /admin/* are sent to /login
- * - Authenticated users trying to access /login or /register are sent to /admin/overview
+ * - Unauthenticated users are sent to /login for protected routes.
+ * - Non-admin roles are kept out of /admin/* routes.
+ * - Authenticated users cannot visit auth pages (login/register/forgot).
  */
 router.beforeEach((to) => {
-  // Admin routes require authentication
-  if (to.path.startsWith("/admin") && !isAuthenticated()) {
-    return { name: "login" };
+  const needsAuth = to.meta.requiresAuth === true;
+
+  if (needsAuth && !isAuthenticated()) {
+    return { name: "login", query: { redirect: to.fullPath } };
   }
 
-  // Authenticated users should not visit login/register
-  if (to.meta.layout === "auth" && isAuthenticated()) {
-    return { path: "/admin/overview" };
+  // Admin area is restricted to admin/organizer roles only.
+  if (to.path.startsWith("/admin") && !isAdmin()) {
+    return { path: "/home" };
+  }
+
+  if (to.meta.layout === "auth") {
+    if (isAuthenticated()) {
+      return { path: to.path.startsWith("/admin") ? "/admin/overview" : defaultHome() };
+    }
   }
 
   return true;

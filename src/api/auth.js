@@ -47,6 +47,24 @@ export function isAuthenticated() {
   return Boolean(getToken());
 }
 
+/**
+ * Returns the current user's role (lowercased), or null when not logged in.
+ * Admins are the super role; organizers manage their events.
+ */
+export function userRole() {
+  const user = getUser();
+  return (user?.role || "").toLowerCase() || null;
+}
+
+/** Roles that are allowed to access the admin area. */
+export const ADMIN_ROLES = ["admin", "organizer"];
+
+/** Returns true when the current user may access the admin area. */
+export function isAdmin() {
+  const role = userRole();
+  return ADMIN_ROLES.includes(role);
+}
+
 /** Removes token and user from storage — called on logout or auth failure */
 export function clearAuth() {
   localStorage.removeItem(TOKEN_KEY);
