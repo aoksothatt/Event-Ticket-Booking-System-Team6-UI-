@@ -17,6 +17,7 @@ import {
   LogOut,
   Plus,
 } from "lucide-vue-next";
+import { logout } from "../../api/auth.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -57,10 +58,11 @@ const navSections = [
 
 const active = computed(() => route.meta?.navKey || "");
 
-function logout() {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  router.push("/admin/overview");
+// Logout calls POST /api/logout to invalidate the JWT on the server,
+// clears the local auth state, then sends the user back to /login.
+async function handleLogout() {
+  await logout();
+  router.push("/login");
 }
 </script>
 
@@ -125,7 +127,7 @@ function logout() {
       </RouterLink>
       <button
         type="button"
-        @click="logout"
+        @click="handleLogout"
         class="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700"
       >
         <LogOut :size="16" :stroke-width="2" />

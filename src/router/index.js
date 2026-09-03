@@ -1,109 +1,180 @@
 import { createRouter, createWebHistory } from "vue-router";
+// Auth helpers: check JWT presence and the user's role
+import { isAuthenticated, isAdmin } from "../api/auth.js";
+
+/**
+ * Routes visitors to their default landing page based on role.
+ * Admins/organizers → admin dashboard; everyone else → customer home.
+ */
+function defaultHome() {
+  return isAdmin() ? "/admin/overview" : "/home";
+}
 
 const routes = [
   {
     path: "/",
-    redirect: "/admin/overview",
+    redirect: () => defaultHome(),
+  },
+  {
+    path: "/home",
+    name: "home",
+    component: () => import("../views/HomeView.vue"),
+    meta: { customer: true, requiresAuth: true },
+  },
+  {
+    path: "/events",
+    name: "events",
+    component: () => import("../views/EventsView.vue"),
+    meta: { customer: true, requiresAuth: true },
+  },
+  {
+    path: "/events/:id",
+    name: "event-detail",
+    component: () => import("../views/EventDetailView.vue"),
+    meta: { customer: true, requiresAuth: true },
+    props: true,
+  },
+  {
+    path: "/events/:id/booking",
+    name: "event-booking",
+    component: () => import("../views/BookingView.vue"),
+    meta: { customer: true, requiresAuth: true },
+  },
+  {
+    path: "/my-tickets",
+    name: "my-tickets",
+    component: () => import("../views/MyTicketsView.vue"),
+    meta: { customer: true, requiresAuth: true },
+  },
+  {
+    path: "/profile",
+    name: "profile",
+    component: () => import("../views/ProfileView.vue"),
+    meta: { customer: true, requiresAuth: true },
+  },
+  {
+    path: "/settings",
+    name: "customer-settings",
+    component: () => import("../views/SettingsView.vue"),
+    meta: { customer: true, requiresAuth: true },
+  },
+  {
+    path: "/login",
+    name: "login",
+    component: () => import("../views/auth/LoginView.vue"),
+    meta: { layout: "auth" },
+  },
+  {
+    path: "/register",
+    name: "register",
+    component: () => import("../views/auth/RegisterView.vue"),
+    meta: { layout: "auth" },
+  },
+  {
+    path: "/forgot-password",
+    name: "forgot-password",
+    component: () => import("../views/auth/ForgotPasswordView.vue"),
+    meta: { layout: "auth" },
   },
   {
     path: "/admin",
     redirect: "/admin/overview",
   },
-  // 1. view_dashboard
+  // Admin: overview / dashboard
   {
     path: "/admin/overview",
     name: "overview",
-    component: () => import("../components/admin/Dashboard.vue"),
-    meta: { navKey: "overview", permission: "view_dashboard" },
+    component: () => import("../views/admin/AdminDashboard.vue"),
+    meta: { navKey: "overview", requiresAuth: true, permission: "view_dashboard" },
   },
-  // 2. manage_events
+  // Admin: events
   {
     path: "/admin/events",
-    name: "events",
-    component: () => import("../components/admin/Events.vue"),
-    meta: { navKey: "events", permission: "manage_events" },
+    name: "admin-events",
+    component: () => import("../views/admin/AdminEvents.vue"),
+    meta: { navKey: "events", requiresAuth: true, permission: "manage_events" },
   },
   {
     path: "/admin/events/:id",
-    name: "event-detail",
-    component: () => import("../components/admin/EventDetail.vue"),
-    meta: { navKey: "events", permission: "manage_events" },
+    name: "admin-event-detail",
+    component: () => import("../views/admin/AdminEventDetail.vue"),
+    meta: { navKey: "events", requiresAuth: true, permission: "manage_events" },
     props: true,
   },
-  // 3. manage_categories
+  // Admin: categories
   {
     path: "/admin/categories",
     name: "categories",
-    component: () => import("../components/admin/Categories.vue"),
-    meta: { navKey: "categories", permission: "manage_categories" },
+    component: () => import("../views/admin/Categories.vue"),
+    meta: { navKey: "categories", requiresAuth: true, permission: "manage_categories" },
   },
-  // 4. manage_venues
+  // Admin: venues
   {
     path: "/admin/venues",
     name: "venues",
-    component: () => import("../components/admin/Venues.vue"),
-    meta: { navKey: "venues", permission: "manage_venues" },
+    component: () => import("../views/admin/Venues.vue"),
+    meta: { navKey: "venues", requiresAuth: true, permission: "manage_venues" },
   },
-  // 5. manage_ticket_types
+  // Admin: ticket types
   {
     path: "/admin/tickets",
-    name: "tickets",
-    component: () => import("../components/admin/Tickets.vue"),
-    meta: { navKey: "tickets", permission: "manage_ticket_types" },
+    name: "admin-tickets",
+    component: () => import("../views/admin/AdminTickets.vue"),
+    meta: { navKey: "tickets", requiresAuth: true, permission: "manage_ticket_types" },
   },
-  // 6. manage_bookings
+  // Admin: bookings
   {
     path: "/admin/bookings",
     name: "bookings",
-    component: () => import("../components/admin/Bookings.vue"),
-    meta: { navKey: "bookings", permission: "manage_bookings" },
+    component: () => import("../views/admin/Bookings.vue"),
+    meta: { navKey: "bookings", requiresAuth: true, permission: "manage_bookings" },
   },
-  // 7. manage_payments
+  // Admin: payments
   {
     path: "/admin/payments",
     name: "payments",
-    component: () => import("../components/admin/Payments.vue"),
-    meta: { navKey: "payments", permission: "manage_payments" },
+    component: () => import("../views/admin/Payments.vue"),
+    meta: { navKey: "payments", requiresAuth: true, permission: "manage_payments" },
   },
-  // 8. manage_checkins
+  // Admin: check-ins
   {
     path: "/admin/check-ins",
     name: "checkins",
-    component: () => import("../components/admin/CheckIns.vue"),
-    meta: { navKey: "checkins", permission: "manage_checkins" },
+    component: () => import("../views/admin/CheckIns.vue"),
+    meta: { navKey: "checkins", requiresAuth: true, permission: "manage_checkins" },
   },
-  // 9. manage_reviews
+  // Admin: reviews
   {
     path: "/admin/reviews",
     name: "reviews",
-    component: () => import("../components/admin/Reviews.vue"),
-    meta: { navKey: "reviews", permission: "manage_reviews" },
+    component: () => import("../views/admin/Reviews.vue"),
+    meta: { navKey: "reviews", requiresAuth: true, permission: "manage_reviews" },
   },
-  // 10. manage_organizers
+  // Admin: organizers
   {
     path: "/admin/organizers",
     name: "organizers",
-    component: () => import("../components/admin/Organizers.vue"),
-    meta: { navKey: "organizers", permission: "manage_organizers" },
+    component: () => import("../views/admin/AdminOrganizers.vue"),
+    meta: { navKey: "organizers", requiresAuth: true, permission: "manage_organizers" },
   },
-  // 11. manage_users
+  // Admin: users
   {
     path: "/admin/users",
-    name: "users",
-    component: () => import("../components/admin/Users.vue"),
-    meta: { navKey: "users", permission: "manage_users" },
+    name: "admin-users",
+    component: () => import("../views/admin/AdminUsers.vue"),
+    meta: { navKey: "users", requiresAuth: true, permission: "manage_users" },
   },
-  // Settings
+  // Admin: settings
   {
     path: "/admin/settings",
-    name: "settings",
-    component: () => import("../components/admin/Settings.vue"),
-    meta: { navKey: "settings" },
+    name: "admin-settings",
+    component: () => import("../views/admin/AdminSettings.vue"),
+    meta: { navKey: "settings", requiresAuth: true },
   },
   {
-    // catch-all inside the admin section or any unknown route
+    // catch-all for any unknown route
     path: "/:pathMatch(.*)*",
-    redirect: "/admin/overview",
+    redirect: "/home",
   },
 ];
 
@@ -113,6 +184,33 @@ const router = createRouter({
   scrollBehavior() {
     return { top: 0 };
   },
+});
+
+/**
+ * Route guard — runs before every navigation.
+ * - Unauthenticated users are sent to /login for protected routes.
+ * - Non-admin roles are kept out of /admin/* routes.
+ * - Authenticated users cannot visit auth pages (login/register/forgot).
+ */
+router.beforeEach((to) => {
+  const needsAuth = to.meta.requiresAuth === true;
+
+  if (needsAuth && !isAuthenticated()) {
+    return { name: "login", query: { redirect: to.fullPath } };
+  }
+
+  // Admin area is restricted to admin/organizer roles only.
+  if (to.path.startsWith("/admin") && !isAdmin()) {
+    return { path: "/home" };
+  }
+
+  if (to.meta.layout === "auth") {
+    if (isAuthenticated()) {
+      return { path: to.path.startsWith("/admin") ? "/admin/overview" : defaultHome() };
+    }
+  }
+
+  return true;
 });
 
 export default router;
