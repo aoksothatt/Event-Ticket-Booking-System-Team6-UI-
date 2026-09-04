@@ -122,6 +122,13 @@ const routes = [
     component: () => import("../views/admin/AdminTickets.vue"),
     meta: { navKey: "tickets", requiresAuth: true, permission: "manage_ticket_types" },
   },
+  // Admin: actual customer tickets
+  {
+    path: "/admin/customer-tickets",
+    name: "admin-customer-tickets",
+    component: () => import("../views/admin/AdminCustomerTickets.vue"),
+    meta: { navKey: "customer-tickets", requiresAuth: true, permission: "manage_tickets" },
+  },
   // Admin: bookings
   {
     path: "/admin/bookings",

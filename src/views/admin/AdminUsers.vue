@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { adminApi } from "@/api/admin.js";
 import {
   Search,
   Plus,
@@ -13,95 +14,22 @@ import {
   Trash2,
   X,
   Lock,
+  Loader2,
+  AlertCircle,
 } from "lucide-vue-next";
 
-const stats = [
-  {
-    label: "Total Registered Users",
-    value: "18,920",
-    change: "+8.4% this month",
-    trend: "up",
-    icon: Users,
-    color: "bg-teal-50 text-teal-600",
-  },
-  {
-    label: "Active Customers",
-    value: "15,240",
-    change: "80.5% active buyers",
-    trend: "up",
-    icon: UserCheck,
-    color: "bg-emerald-50 text-emerald-600",
-  },
-  {
-    label: "Staff & Administrators",
-    value: "142",
-    change: "+5 this week",
-    trend: "up",
-    icon: Shield,
-    color: "bg-purple-50 text-purple-600",
-  },
-];
+const loading = ref(true);
+const error = ref(null);
+const users = ref([]);
+const totalUsers = ref(0);
+const totalActive = ref(0);
+const totalStaff = ref(0);
+const currentPage = ref(1);
+const lastPage = ref(1);
 
 const searchQuery = ref("");
 const selectedRole = ref("All");
 const selectedStatus = ref("All");
-
-const users = ref([
-  {
-    id: 101,
-    name: "Sarah Jenkins",
-    email: "sarah.j@example.com",
-    phone: "+1 (555) 234-5678",
-    role: "customer",
-    joinedDate: "Mar 12, 2024",
-    status: "active",
-  },
-  {
-    id: 102,
-    name: "Marcus Reed",
-    email: "m.reed@urbanbeats.org",
-    phone: "+1 (555) 890-1234",
-    role: "organizer",
-    joinedDate: "Jan 18, 2024",
-    status: "active",
-  },
-  {
-    id: 103,
-    name: "Elena Rodriguez",
-    email: "elena.r@techventures.io",
-    phone: "+1 (555) 432-8765",
-    role: "customer",
-    joinedDate: "Feb 05, 2024",
-    status: "active",
-  },
-  {
-    id: 104,
-    name: "Thomas Chen",
-    email: "thomas.c@cloudmail.com",
-    phone: "+1 (555) 345-9876",
-    role: "customer",
-    joinedDate: "May 22, 2024",
-    status: "inactive",
-  },
-  {
-    id: 105,
-    name: "Aria Montgomery",
-    email: "aria.admin@eventhub.com",
-    phone: "+1 (555) 123-4567",
-    role: "admin",
-    joinedDate: "Jan 01, 2024",
-    status: "active",
-  },
-  {
-    id: 106,
-    name: "David Kim",
-    email: "david.kim99@spamexample.com",
-    phone: "+1 (555) 999-0000",
-    role: "customer",
-    joinedDate: "Jun 14, 2024",
-    status: "suspended",
-  },
-]);
 
 const roles = ["All", "admin", "organizer", "customer"];
 const statuses = ["All", "active", "inactive", "suspended"];
@@ -118,7 +46,18 @@ const statusStyle = {
   suspended: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
+function formatDate(dateStr) {
+  if (!dateStr) return "N/A";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+}
+
 function initials(name) {
+  if (!name) return "??";
   return name
     .split(" ")
     .map((w) => w[0])
@@ -127,12 +66,46 @@ function initials(name) {
     .toUpperCase();
 }
 
+function getPhone(u) {
+  return u.phone || u.profile?.phone || "N/A";
+}
+
+const stats = computed(() => [
+  {
+    label: "Total Registered Users",
+    value: totalUsers.value.toLocaleString(),
+    change: `${lastPage.value} page(s)`,
+    trend: "up",
+    icon: Users,
+    color: "bg-teal-50 text-teal-600",
+  },
+  {
+    label: "Active Customers",
+    value: totalActive.value.toLocaleString(),
+    change: totalUsers.value
+      ? `${((totalActive.value / totalUsers.value) * 100).toFixed(1)}% of total`
+      : "—",
+    trend: "up",
+    icon: UserCheck,
+    color: "bg-emerald-50 text-emerald-600",
+  },
+  {
+    label: "Staff & Administrators",
+    value: totalStaff.value.toLocaleString(),
+    change: "Admins & organizers",
+    trend: "up",
+    icon: Shield,
+    color: "bg-purple-50 text-purple-600",
+  },
+]);
+
 const filteredUsers = computed(() => {
   return users.value.filter((u) => {
+    const query = searchQuery.value.toLowerCase();
     const matchesSearch =
-      u.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      u.id.toString().includes(searchQuery.value.toLowerCase());
+      (u.name || "").toLowerCase().includes(query) ||
+      (u.email || "").toLowerCase().includes(query) ||
+      String(u.id).includes(query);
 
     const matchesRole =
       selectedRole.value === "All" || u.role === selectedRole.value;
@@ -171,37 +144,79 @@ function openCreateModal() {
 
 function openEditModal(u) {
   editingUser.value = u;
-  form.value = { ...u, password: "" };
+  form.value = {
+    name: u.name || "",
+    email: u.email || "",
+    password: "",
+    phone: getPhone(u),
+    role: u.role || "customer",
+    status: u.status || "active",
+  };
   isModalOpen.value = true;
 }
 
-function saveUser() {
+async function saveUser() {
   if (!form.value.name.trim() || !form.value.email.trim()) return;
 
-  if (editingUser.value) {
-    const idx = users.value.findIndex((u) => u.id === editingUser.value.id);
-    if (idx !== -1) {
-      users.value[idx] = {
-        ...users.value[idx],
-        ...form.value,
-      };
+  try {
+    if (editingUser.value) {
+      const payload = { ...form.value };
+      if (!payload.password) delete payload.password;
+      const response = await adminApi.updateUser(editingUser.value.id, payload);
+      const updated = response?.data?.data || response?.data;
+      const idx = users.value.findIndex((u) => u.id === editingUser.value.id);
+      if (idx !== -1) {
+        users.value[idx] = { ...users.value[idx], ...updated };
+      }
+    } else {
+      const response = await adminApi.createUser(form.value);
+      const created = response?.data?.data || response?.data;
+      users.value.unshift(created);
+      totalUsers.value++;
     }
-  } else {
-    const newId = Math.max(...users.value.map((u) => u.id), 0) + 1;
-    users.value.unshift({
-      id: newId,
-      ...form.value,
-      joinedDate: "Today",
-    });
+    isModalOpen.value = false;
+  } catch (e) {
+    error.value = e?.response?.data?.message || e.message || "Failed to save user.";
   }
-  isModalOpen.value = false;
 }
 
-function deleteUser(id) {
-  if (confirm("Are you sure you want to delete this user?")) {
+async function deleteUser(id) {
+  if (!confirm("Are you sure you want to delete this user?")) return;
+
+  try {
+    await adminApi.deleteUser(id);
     users.value = users.value.filter((u) => u.id !== id);
+    totalUsers.value = Math.max(0, totalUsers.value - 1);
+  } catch (e) {
+    error.value = e?.response?.data?.message || e.message || "Failed to delete user.";
   }
 }
+
+async function fetchUsers() {
+  loading.value = true;
+  error.value = null;
+  try {
+    const response = await adminApi.getUsers();
+    const paginated = response?.data?.data;
+    users.value = paginated?.data || paginated || [];
+    totalUsers.value = paginated?.total || users.value.length;
+    currentPage.value = paginated?.current_page || 1;
+    lastPage.value = paginated?.last_page || 1;
+    totalActive.value = users.value.filter((u) => u.status === "active").length;
+    totalStaff.value = users.value.filter(
+      (u) => u.role === "admin" || u.role === "organizer"
+    ).length;
+  } catch (e) {
+    error.value = e?.response?.data?.message || e.message || "Failed to load users.";
+    users.value = [];
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(() => {
+  fetchUsers();
+});
 </script>
 
 <template>
@@ -229,156 +244,177 @@ function deleteUser(id) {
       </div>
     </div>
 
-    <!-- Stat cards -->
-    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div
-        v-for="stat in stats"
-        :key="stat.label"
-        class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+    <!-- Loading State -->
+    <div v-if="loading" class="mb-8 flex flex-col items-center justify-center py-16">
+      <Loader2 :size="36" class="animate-spin text-amber-500" />
+      <p class="mt-3 text-sm text-slate-500">Loading users...</p>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="mb-8 rounded-xl border border-rose-200 bg-rose-50 p-6 text-center">
+      <AlertCircle :size="28" class="mx-auto text-rose-500" />
+      <p class="mt-2 text-sm font-semibold text-rose-700">{{ error }}</p>
+      <button
+        @click="fetchUsers"
+        class="mt-3 rounded-lg bg-rose-500 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-600"
       >
-        <div class="mb-4 flex items-start justify-between">
-          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ stat.label }}</p>
-          <span class="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm" :class="stat.color">
-            <component :is="stat.icon" :size="16" />
-          </span>
-        </div>
-        <p class="text-2xl font-bold text-slate-900">{{ stat.value }}</p>
-        <p class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
-          <ArrowUpRight :size="14" />
-          {{ stat.change }}
-        </p>
-      </div>
+        Retry
+      </button>
     </div>
 
-    <!-- Filter & Search Bar -->
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div class="relative min-w-[260px] flex-1">
-        <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search by name, email, user ID..."
-          class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
-        />
-      </div>
-
-      <div class="flex flex-wrap items-center gap-3">
-        <!-- Role Filter -->
-        <div class="flex items-center gap-2">
-          <label class="text-xs font-semibold text-slate-500">Role:</label>
-          <select
-            v-model="selectedRole"
-            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize"
-          >
-            <option v-for="r in roles" :key="r" :value="r">{{ r }}</option>
-          </select>
-        </div>
-
-        <!-- Status Filter -->
-        <div class="flex items-center gap-2">
-          <label class="text-xs font-semibold text-slate-500">Status:</label>
-          <select
-            v-model="selectedStatus"
-            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize"
-          >
-            <option v-for="st in statuses" :key="st" :value="st">{{ st }}</option>
-          </select>
+    <!-- Content (shown when loaded) -->
+    <template v-else>
+      <!-- Stat cards -->
+      <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div
+          v-for="stat in stats"
+          :key="stat.label"
+          class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+        >
+          <div class="mb-4 flex items-start justify-between">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ stat.label }}</p>
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm" :class="stat.color">
+              <component :is="stat.icon" :size="16" />
+            </span>
+          </div>
+          <p class="text-2xl font-bold text-slate-900">{{ stat.value }}</p>
+          <p class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
+            <ArrowUpRight :size="14" />
+            {{ stat.change }}
+          </p>
         </div>
       </div>
-    </div>
 
-    <!-- Users Table -->
-    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-        <h2 class="text-base font-bold text-slate-900">User Directory ({{ filteredUsers.length }})</h2>
-      </div>
+      <!-- Filter & Search Bar -->
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="relative min-w-[260px] flex-1">
+          <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search by name, email, user ID..."
+            class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+          />
+        </div>
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-slate-50/70 border-b border-slate-200">
-            <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <th class="px-6 py-3">User Profile</th>
-              <th class="px-6 py-3">Contact</th>
-              <th class="px-6 py-3">Role</th>
-              <th class="px-6 py-3">Joined Date</th>
-              <th class="px-6 py-3">Status</th>
-              <th class="px-6 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr
-              v-for="u in filteredUsers"
-              :key="u.id"
-              class="transition-colors hover:bg-slate-50/80"
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Role Filter -->
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-semibold text-slate-500">Role:</label>
+            <select
+              v-model="selectedRole"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize"
             >
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-3">
-                  <span class="flex h-8 w-8 items-center justify-center rounded-full bg-amber-50 font-bold text-xs text-amber-700 border border-amber-200 shadow-sm">
-                    {{ initials(u.name) }}
-                  </span>
-                  <div>
-                    <p class="font-semibold text-slate-900">{{ u.name }}</p>
-                    <p class="text-xs text-slate-400 font-mono">ID: #USR-{{ u.id }}</p>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 text-slate-600">
-                <div class="flex items-center gap-1.5 text-xs">
-                  <Mail :size="13" class="text-slate-400" />
-                  {{ u.email }}
-                </div>
-                <div v-if="u.phone" class="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400">
-                  <Phone :size="11" />
-                  {{ u.phone }}
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <span
-                  class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize"
-                  :class="roleStyle[u.role]"
-                >
-                  {{ u.role }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-xs text-slate-500">
-                {{ u.joinedDate }}
-              </td>
-              <td class="px-6 py-4">
-                <span
-                  class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize"
-                  :class="statusStyle[u.status]"
-                >
-                  {{ u.status }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-right">
-                <div class="flex items-center justify-end gap-1.5">
-                  <button
-                    type="button"
-                    @click="openEditModal(u)"
-                    class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
-                  >
-                    <Edit :size="14" />
-                  </button>
-                  <button
-                    type="button"
-                    @click="deleteUser(u.id)"
-                    class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100"
-                  >
-                    <Trash2 :size="14" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="filteredUsers.length === 0">
-              <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-400">
-                No users found matching your search.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              <option v-for="r in roles" :key="r" :value="r">{{ r }}</option>
+            </select>
+          </div>
+
+          <!-- Status Filter -->
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-semibold text-slate-500">Status:</label>
+            <select
+              v-model="selectedStatus"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize"
+            >
+              <option v-for="st in statuses" :key="st" :value="st">{{ st }}</option>
+            </select>
+          </div>
+        </div>
       </div>
-    </div>
+
+      <!-- Users Table -->
+      <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <h2 class="text-base font-bold text-slate-900">User Directory ({{ filteredUsers.length }})</h2>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50/70 border-b border-slate-200">
+              <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="px-6 py-3">User Profile</th>
+                <th class="px-6 py-3">Contact</th>
+                <th class="px-6 py-3">Role</th>
+                <th class="px-6 py-3">Joined Date</th>
+                <th class="px-6 py-3">Status</th>
+                <th class="px-6 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr
+                v-for="u in filteredUsers"
+                :key="u.id"
+                class="transition-colors hover:bg-slate-50/80"
+              >
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <span class="flex h-8 w-8 items-center justify-center rounded-full bg-amber-50 font-bold text-xs text-amber-700 border border-amber-200 shadow-sm">
+                      {{ initials(u.name) }}
+                    </span>
+                    <div>
+                      <p class="font-semibold text-slate-900">{{ u.name }}</p>
+                      <p class="text-xs text-slate-400 font-mono">ID: #USR-{{ u.id }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-slate-600">
+                  <div class="flex items-center gap-1.5 text-xs">
+                    <Mail :size="13" class="text-slate-400" />
+                    {{ u.email }}
+                  </div>
+                  <div v-if="getPhone(u) !== 'N/A'" class="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400">
+                    <Phone :size="11" />
+                    {{ getPhone(u) }}
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <span
+                    class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize"
+                    :class="roleStyle[u.role]"
+                  >
+                    {{ u.role }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-xs text-slate-500">
+                  {{ formatDate(u.created_at) }}
+                </td>
+                <td class="px-6 py-4">
+                  <span
+                    class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize"
+                    :class="statusStyle[u.status]"
+                  >
+                    {{ u.status }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <div class="flex items-center justify-end gap-1.5">
+                    <button
+                      type="button"
+                      @click="openEditModal(u)"
+                      class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
+                    >
+                      <Edit :size="14" />
+                    </button>
+                    <button
+                      type="button"
+                      @click="deleteUser(u.id)"
+                      class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100"
+                    >
+                      <Trash2 :size="14" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="filteredUsers.length === 0">
+                <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-400">
+                  No users found matching your search.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </template>
 
     <!-- Create / Edit User Modal -->
     <div

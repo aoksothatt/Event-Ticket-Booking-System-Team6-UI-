@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { adminApi } from "@/api/admin.js";
 import {
   Building2,
   Search,
@@ -17,83 +18,36 @@ import {
   CheckCircle2,
 } from "lucide-vue-next";
 
-const stats = [
-  { label: "Total Organizers", value: "128", change: "+6 this month", icon: Building2, color: "bg-rose-50 text-rose-600" },
-  { label: "Verified Hosts", value: "104", change: "81% verification rate", icon: ShieldCheck, color: "bg-emerald-50 text-emerald-600" },
-  { label: "Payouts Processed", value: "$412,000", change: "+11.2% vs last month", icon: DollarSign, color: "bg-amber-50 text-amber-600" },
-];
+const loading = ref(true);
+const error = ref(null);
+
+const organizers = ref([]);
+
+async function fetchOrganizers() {
+  loading.value = true;
+  error.value = null;
+  try {
+    const res = await adminApi.getOrganizers();
+    organizers.value = res.data.data ?? res.data;
+  } catch (e) {
+    error.value = e.response?.data?.message || "Failed to load organizers.";
+  } finally {
+    loading.value = false;
+  }
+}
+
+const stats = computed(() => {
+  const total = organizers.value.length;
+  const verified = organizers.value.filter((o) => o.is_verified).length;
+  return [
+    { label: "Total Organizers", value: String(total), change: "", icon: Building2, color: "bg-rose-50 text-rose-600" },
+    { label: "Verified Hosts", value: String(verified), change: total ? `${Math.round((verified / total) * 100)}% verification rate` : "", icon: ShieldCheck, color: "bg-emerald-50 text-emerald-600" },
+    { label: "Pending Review", value: String(total - verified), change: "", icon: ShieldAlert, color: "bg-amber-50 text-amber-600" },
+  ];
+});
 
 const searchQuery = ref("");
 const selectedStatus = ref("All");
-
-const organizers = ref([
-  {
-    id: 1,
-    company_name: "Wavelength Live",
-    contact_name: "Marcus Aurelius",
-    email: "bookings@wavelength.live",
-    phone: "+1 (555) 902-1200",
-    website: "https://wavelength.live",
-    description: "Premier electronic dance festival and concert production company.",
-    is_verified: true,
-    status: "Verified",
-  },
-  {
-    id: 2,
-    company_name: "Civic Symphony Society",
-    contact_name: "Eleanor Vance",
-    email: "admin@civicsymphony.org",
-    phone: "+1 (555) 304-8821",
-    website: "https://civicsymphony.org",
-    description: "Non-profit community classical music orchestra and open-air arts foundation.",
-    is_verified: true,
-    status: "Verified",
-  },
-  {
-    id: 3,
-    company_name: "Summit Conferences Co.",
-    contact_name: "Jonathan Clark",
-    email: "hello@summitco.io",
-    phone: "+1 (555) 789-0123",
-    website: "https://summitco.io",
-    description: "International enterprise technology summits and AI developer conventions.",
-    is_verified: true,
-    status: "Verified",
-  },
-  {
-    id: 4,
-    company_name: "Laugh Track Presents",
-    contact_name: "Sammy Jenkins",
-    email: "team@laughtrack.com",
-    phone: "+1 (555) 456-7890",
-    website: "https://laughtrack.com",
-    description: "Stand-up comedy showcase promoter touring top comedy clubs nationwide.",
-    is_verified: false,
-    status: "Pending",
-  },
-  {
-    id: 5,
-    company_name: "Gallery Nine",
-    contact_name: "Claire Dupont",
-    email: "contact@gallerynine.art",
-    phone: "+1 (555) 678-9012",
-    website: "https://gallerynine.art",
-    description: "Contemporary fine art gallery host and charity auction curator.",
-    is_verified: true,
-    status: "Verified",
-  },
-  {
-    id: 6,
-    company_name: "Street Eats Collective",
-    contact_name: "Ramon Gomez",
-    email: "info@streeteats.co",
-    phone: "+1 (555) 234-5678",
-    website: "https://streeteats.co",
-    description: "Outdoor food market organizer bringing together local culinary creators.",
-    is_verified: false,
-    status: "Suspended",
-  },
-]);
 
 const statusStyle = {
   Verified: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -101,8 +55,12 @@ const statusStyle = {
   Suspended: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
+function deriveStatus(org) {
+  return org.is_verified ? "Verified" : "Pending";
+}
+
 function initials(name) {
-  return name
+  return (name || "")
     .split(" ")
     .map((w) => w[0])
     .slice(0, 2)
@@ -112,14 +70,20 @@ function initials(name) {
 
 const filteredOrganizers = computed(() => {
   return organizers.value.filter((org) => {
+    const contactName = org.user?.name || "";
+    const email = org.user?.email || "";
+    const phone = org.phone || org.user?.phone || "";
+    const status = deriveStatus(org);
+
     const matchesSearch =
       org.company_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      org.email.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      org.phone.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      org.website.toLowerCase().includes(searchQuery.value.toLowerCase());
+      contactName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      email.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      phone.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (org.website || "").toLowerCase().includes(searchQuery.value.toLowerCase());
 
     const matchesStatus =
-      selectedStatus.value === "All" || org.status === selectedStatus.value;
+      selectedStatus.value === "All" || status === selectedStatus.value;
 
     return matchesSearch && matchesStatus;
   });
@@ -136,7 +100,6 @@ const form = ref({
   website: "",
   description: "",
   is_verified: true,
-  status: "Verified",
 });
 
 function openCreateModal() {
@@ -149,50 +112,71 @@ function openCreateModal() {
     website: "",
     description: "",
     is_verified: true,
-    status: "Verified",
   };
   isModalOpen.value = true;
 }
 
 function openEditModal(org) {
   editingOrganizer.value = org;
-  form.value = { ...org };
+  form.value = {
+    company_name: org.company_name,
+    contact_name: org.user?.name || "",
+    email: org.user?.email || "",
+    phone: org.phone || org.user?.phone || "",
+    website: org.website || "",
+    description: org.description || "",
+    is_verified: org.is_verified,
+  };
   isModalOpen.value = true;
 }
 
-function toggleVerify(org) {
-  org.is_verified = !org.is_verified;
-  org.status = org.is_verified ? "Verified" : "Pending";
+async function toggleVerify(org) {
+  const newVerified = !org.is_verified;
+  try {
+    await adminApi.updateOrganizer(org.id, { is_verified: newVerified });
+    org.is_verified = newVerified;
+  } catch (e) {
+    alert(e.response?.data?.message || "Failed to update verification status.");
+  }
 }
 
-function saveOrganizer() {
-  if (!form.value.company_name.trim() || !form.value.email.trim()) return;
+async function saveOrganizer() {
+  if (!form.value.company_name.trim()) return;
 
-  if (editingOrganizer.value) {
-    const idx = organizers.value.findIndex((o) => o.id === editingOrganizer.value.id);
-    if (idx !== -1) {
-      organizers.value[idx] = {
-        ...organizers.value[idx],
-        ...form.value,
-        is_verified: form.value.status === "Verified",
-      };
+  const payload = {
+    company_name: form.value.company_name,
+    contact_name: form.value.contact_name,
+    email: form.value.email,
+    phone: form.value.phone,
+    website: form.value.website,
+    description: form.value.description,
+    is_verified: form.value.is_verified,
+  };
+
+  try {
+    if (editingOrganizer.value) {
+      await adminApi.updateOrganizer(editingOrganizer.value.id, payload);
+    } else {
+      await adminApi.createOrganizer(payload);
     }
-  } else {
-    const newId = Math.max(...organizers.value.map((o) => o.id), 0) + 1;
-    organizers.value.unshift({
-      id: newId,
-      ...form.value,
-      is_verified: form.value.status === "Verified",
-    });
+    isModalOpen.value = false;
+    await fetchOrganizers();
+  } catch (e) {
+    alert(e.response?.data?.message || "Failed to save organizer.");
   }
-  isModalOpen.value = false;
 }
 
-function deleteOrganizer(id) {
-  if (confirm("Are you sure you want to delete this organizer?")) {
-    organizers.value = organizers.value.filter((o) => o.id !== id);
+async function deleteOrganizer(id) {
+  if (!confirm("Are you sure you want to delete this organizer?")) return;
+  try {
+    await adminApi.deleteOrganizer(id);
+    await fetchOrganizers();
+  } catch (e) {
+    alert(e.response?.data?.message || "Failed to delete organizer.");
   }
 }
+
+onMounted(fetchOrganizers);
 </script>
 
 <template>
@@ -220,130 +204,149 @@ function deleteOrganizer(id) {
       </div>
     </div>
 
-    <!-- Stat cards -->
-    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div v-for="stat in stats" :key="stat.label" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="mb-4 flex items-start justify-between">
-          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ stat.label }}</p>
-          <span class="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm" :class="stat.color">
-            <component :is="stat.icon" :size="16" />
-          </span>
+    <!-- Loading state -->
+    <div v-if="loading" class="mb-8 flex items-center justify-center py-16">
+      <div class="flex items-center gap-3 text-sm text-slate-500">
+        <svg class="h-5 w-5 animate-spin text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+        Loading organizers...
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <div v-else-if="error" class="mb-8 rounded-xl border border-rose-200 bg-rose-50 p-6 text-center">
+      <p class="text-sm font-semibold text-rose-700">{{ error }}</p>
+      <button @click="fetchOrganizers" class="mt-3 rounded-lg bg-rose-500 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-600">Retry</button>
+    </div>
+
+    <template v-else>
+      <!-- Stat cards -->
+      <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div v-for="stat in stats" :key="stat.label" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="mb-4 flex items-start justify-between">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ stat.label }}</p>
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm" :class="stat.color">
+              <component :is="stat.icon" :size="16" />
+            </span>
+          </div>
+          <p class="text-2xl font-bold text-slate-900">{{ stat.value }}</p>
+          <p v-if="stat.change" class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
+            <ArrowUpRight :size="14" />
+            {{ stat.change }}
+          </p>
         </div>
-        <p class="text-2xl font-bold text-slate-900">{{ stat.value }}</p>
-        <p class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
-          <ArrowUpRight :size="14" />
-          {{ stat.change }}
-        </p>
-      </div>
-    </div>
-
-    <!-- Filter & Search Bar -->
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div class="relative min-w-[260px] flex-1">
-        <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search organizers by company, email, phone, website..."
-          class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
-        />
       </div>
 
-      <div class="flex items-center gap-2">
-        <label class="text-xs font-semibold text-slate-500">Status:</label>
-        <select
-          v-model="selectedStatus"
-          class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize"
-        >
-          <option value="All">All Organizers</option>
-          <option value="Verified">Verified</option>
-          <option value="Pending">Pending Review</option>
-          <option value="Suspended">Suspended</option>
-        </select>
-      </div>
-    </div>
+      <!-- Filter & Search Bar -->
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="relative min-w-[260px] flex-1">
+          <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search organizers by company, email, phone, website..."
+            class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+          />
+        </div>
 
-    <!-- Organizers table -->
-    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-        <h2 class="text-base font-bold text-slate-900">Registered Event Organizers ({{ filteredOrganizers.length }})</h2>
+        <div class="flex items-center gap-2">
+          <label class="text-xs font-semibold text-slate-500">Status:</label>
+          <select
+            v-model="selectedStatus"
+            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize"
+          >
+            <option value="All">All Organizers</option>
+            <option value="Verified">Verified</option>
+            <option value="Pending">Pending Review</option>
+            <option value="Suspended">Suspended</option>
+          </select>
+        </div>
       </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-slate-50/70 border-b border-slate-200">
-            <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <th class="px-6 py-3">Company Name</th>
-              <th class="px-6 py-3">Contact & Website</th>
-              <th class="px-6 py-3">Phone</th>
-              <th class="px-6 py-3">Verification</th>
-              <th class="px-6 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr v-for="org in filteredOrganizers" :key="org.id" class="transition-colors hover:bg-slate-50/80">
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-3">
-                  <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 font-bold text-xs text-amber-700 border border-amber-200 shadow-sm">
-                    {{ initials(org.company_name) }}
-                  </span>
-                  <div>
-                    <p class="font-semibold text-slate-900">{{ org.company_name }}</p>
-                    <p class="text-xs text-slate-400">{{ org.contact_name }}</p>
+
+      <!-- Organizers table -->
+      <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <h2 class="text-base font-bold text-slate-900">Registered Event Organizers ({{ filteredOrganizers.length }})</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50/70 border-b border-slate-200">
+              <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="px-6 py-3">Company Name</th>
+                <th class="px-6 py-3">Contact & Website</th>
+                <th class="px-6 py-3">Phone</th>
+                <th class="px-6 py-3">Verification</th>
+                <th class="px-6 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr v-for="org in filteredOrganizers" :key="org.id" class="transition-colors hover:bg-slate-50/80">
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 font-bold text-xs text-amber-700 border border-amber-200 shadow-sm">
+                      {{ initials(org.user?.name || org.company_name) }}
+                    </span>
+                    <div>
+                      <p class="font-semibold text-slate-900">{{ org.company_name }}</p>
+                      <p class="text-xs text-slate-400">{{ org.user?.name || "N/A" }}</p>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-1.5 text-xs text-slate-700">
-                  <Mail :size="13" class="text-slate-400" />
-                  {{ org.email }}
-                </div>
-                <div v-if="org.website" class="mt-0.5 flex items-center gap-1.5 text-[11px] text-amber-600 font-medium">
-                  <Globe :size="12" class="text-slate-400" />
-                  {{ org.website }}
-                </div>
-              </td>
-              <td class="px-6 py-4 text-xs text-slate-600">
-                {{ org.phone }}
-              </td>
-              <td class="px-6 py-4">
-                <button
-                  type="button"
-                  @click="toggleVerify(org)"
-                  class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold cursor-pointer transition-all hover:opacity-80"
-                  :class="statusStyle[org.status]"
-                  title="Click to toggle verification status"
-                >
-                  {{ org.status }}
-                </button>
-              </td>
-              <td class="px-6 py-4 text-right">
-                <div class="flex items-center justify-end gap-1.5">
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-1.5 text-xs text-slate-700">
+                    <Mail :size="13" class="text-slate-400" />
+                    {{ org.user?.email || "N/A" }}
+                  </div>
+                  <div v-if="org.website" class="mt-0.5 flex items-center gap-1.5 text-[11px] text-amber-600 font-medium">
+                    <Globe :size="12" class="text-slate-400" />
+                    {{ org.website }}
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-xs text-slate-600">
+                  {{ org.phone || org.user?.phone || "N/A" }}
+                </td>
+                <td class="px-6 py-4">
                   <button
                     type="button"
-                    @click="openEditModal(org)"
-                    class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
+                    @click="toggleVerify(org)"
+                    class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold cursor-pointer transition-all hover:opacity-80"
+                    :class="statusStyle[deriveStatus(org)]"
+                    title="Click to toggle verification status"
                   >
-                    <Edit :size="14" />
+                    {{ deriveStatus(org) }}
                   </button>
-                  <button
-                    type="button"
-                    @click="deleteOrganizer(org.id)"
-                    class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100"
-                  >
-                    <Trash2 :size="14" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="filteredOrganizers.length === 0">
-              <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-400">
-                No organizers found matching your search.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <div class="flex items-center justify-end gap-1.5">
+                    <button
+                      type="button"
+                      @click="openEditModal(org)"
+                      class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
+                    >
+                      <Edit :size="14" />
+                    </button>
+                    <button
+                      type="button"
+                      @click="deleteOrganizer(org.id)"
+                      class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100"
+                    >
+                      <Trash2 :size="14" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="filteredOrganizers.length === 0">
+                <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-400">
+                  No organizers found matching your search.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </template>
 
     <!-- Create / Edit Modal -->
     <div
@@ -416,14 +419,23 @@ function deleteOrganizer(id) {
           </div>
 
           <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-700">Description</label>
+            <textarea
+              v-model="form.description"
+              rows="3"
+              placeholder="Brief description of the organizer..."
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
+            />
+          </div>
+
+          <div>
             <label class="mb-1 block text-xs font-semibold text-slate-700">Verification Status</label>
             <select
-              v-model="form.status"
+              v-model="form.is_verified"
               class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 capitalize"
             >
-              <option value="Verified">Verified (Enabled for ticket sales & payouts)</option>
-              <option value="Pending">Pending Review</option>
-              <option value="Suspended">Suspended</option>
+              <option :value="true">Verified (Enabled for ticket sales & payouts)</option>
+              <option :value="false">Pending Review</option>
             </select>
           </div>
 

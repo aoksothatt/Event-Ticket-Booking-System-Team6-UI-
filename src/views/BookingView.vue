@@ -4,7 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { Loader2, Ticket, ChevronLeft, Minus, Plus, Check } from "lucide-vue-next";
 import { getUser } from "../api/auth.js";
 import { getEvent } from "../api/eventApi.js";
-import { request } from "../api/http.js";
+import { post } from "../api/http.js";
 import { coverImage, formatDate, formatTime, formatPrice } from "../utils/event.js";
 
 const route = useRoute();
@@ -19,7 +19,7 @@ const success = ref(null);
 
 const quantities = ref({});
 
-const ticketTypes = computed(() => event.value?.ticket_types || []);
+const ticketTypes = computed(() => event.value?.ticketTypes || event.value?.ticket_types || []);
 
 function ensureQuantities() {
   const q = {};
@@ -87,17 +87,27 @@ async function checkout() {
 
   submitting.value = true;
   try {
-    const response = await request("/bookings", {
-      method: "POST",
-      body: JSON.stringify({
-        user_id: user.id,
-        event_id: Number(event.value.id),
-        items: selectedItems(),
-      }),
+    const bookingResponse = await post("/bookings", {
+      user_id: user.id,
+      event_id: Number(event.value.id),
+      items: selectedItems(),
     });
-    success.value = response?.data || response;
+    const booking = bookingResponse?.data || bookingResponse;
+
+    // Record a paid payment so the backend confirms the booking and
+    // generates one actual Ticket record per purchased seat. Without this,
+    // no tickets are created and they never show on the My Tickets page.
+    await post("/payments", {
+      booking_id: booking.id,
+      payment_method: "card",
+      amount: Number(booking.total_amount || subtotal.value),
+      currency: "USD",
+      payment_status: "paid",
+    });
+
+    success.value = booking;
   } catch (e) {
-    submitError.value = e.message || "Could not complete your booking.";
+    submitError.value = e.response?.data?.message || e.message || "Could not complete your booking.";
   } finally {
     submitting.value = false;
   }

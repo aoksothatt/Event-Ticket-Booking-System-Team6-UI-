@@ -1,8 +1,12 @@
 <script setup>
 import { onMounted, ref } from "vue";
-import { Save, Lock, Loader2, Check } from "lucide-vue-next";
+import { useRouter } from "vue-router";
+import { Save, Lock, Loader2, Check, LayoutDashboard } from "lucide-vue-next";
 import { getProfile } from "../api/userApi.js";
-import { request } from "../api/http.js";
+import { patch, put } from "../api/http.js";
+import { isAdmin } from "../api/auth.js";
+
+const router = useRouter();
 
 const loading = ref(true);
 const profile = ref(null);
@@ -44,17 +48,14 @@ async function updateProfile() {
   profileMsg.value = "";
   profileError.value = "";
   try {
-    const response = await request("/profile", {
-      method: "PATCH",
-      body: JSON.stringify({
-        name: form.value.name,
-        email: form.value.email,
-        phone: form.value.phone,
-      }),
+    const response = await patch("/profile", {
+      name: form.value.name,
+      email: form.value.email,
+      phone: form.value.phone,
     });
     profileMsg.value = response?.message || "Profile updated.";
   } catch (e) {
-    profileError.value = e.message || "Could not update profile.";
+    profileError.value = e.response?.data?.message || e.message || "Could not update profile.";
   } finally {
     savingProfile.value = false;
   }
@@ -65,13 +66,10 @@ async function updatePassword() {
   passwordMsg.value = "";
   passwordError.value = "";
   try {
-    const response = await request("/profile/password", {
-      method: "PUT",
-      body: JSON.stringify({
-        current_password: passwordForm.value.current_password,
-        new_password: passwordForm.value.new_password,
-        new_password_confirmation: passwordForm.value.new_password_confirmation,
-      }),
+    const response = await put("/profile/password", {
+      current_password: passwordForm.value.current_password,
+      new_password: passwordForm.value.new_password,
+      new_password_confirmation: passwordForm.value.new_password_confirmation,
     });
     passwordMsg.value = response?.message || "Password changed.";
     passwordForm.value = {
@@ -80,7 +78,7 @@ async function updatePassword() {
       new_password_confirmation: "",
     };
   } catch (e) {
-    passwordError.value = e.message || "Could not change password.";
+    passwordError.value = e.response?.data?.message || e.message || "Could not change password.";
   } finally {
     savingPassword.value = false;
   }
@@ -94,6 +92,23 @@ onMounted(load);
     <div class="mx-auto w-full max-w-2xl">
       <h1 class="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Settings</h1>
       <p class="mt-1 text-sm text-[#9CA3AF]">Manage your account and security.</p>
+
+      <div v-if="isAdmin()" class="mt-6 rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/15 to-transparent p-5">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="text-base font-bold text-white">Admin Workspace</h2>
+            <p class="mt-0.5 text-xs text-[#9CA3AF]">You have administrator access. Open the dashboard to manage the platform.</p>
+          </div>
+          <button
+            type="button"
+            class="flex items-center justify-center gap-2 rounded-full bg-[#FFA500] px-5 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"
+            @click="router.push('/admin/overview')"
+          >
+            <LayoutDashboard :size="16" />
+            Go to Dashboard
+          </button>
+        </div>
+      </div>
 
       <div v-if="loading" class="mt-8 animate-pulse space-y-4">
         <div class="h-52 rounded-2xl bg-[#14171C]"></div>

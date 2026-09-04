@@ -16,6 +16,7 @@ import {
   Settings,
   LogOut,
   Plus,
+  TicketCheck,
 } from "lucide-vue-next";
 import { logout } from "../../api/auth.js";
 
@@ -42,6 +43,7 @@ const navSections = [
     title: "Sales & Operations",
     items: [
       { key: "bookings", label: "Bookings", permission: "manage_bookings", icon: ShoppingBag, to: "/admin/bookings" },
+      { key: "customer-tickets", label: "Tickets", permission: "manage_tickets", icon: TicketCheck, to: "/admin/customer-tickets" },
       { key: "payments", label: "Payments", permission: "manage_payments", icon: CreditCard, to: "/admin/payments" },
       { key: "checkins", label: "Check-Ins", permission: "manage_checkins", icon: QrCode, to: "/admin/check-ins" },
       { key: "reviews", label: "Reviews", permission: "manage_reviews", icon: Star, to: "/admin/reviews" },

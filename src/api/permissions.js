@@ -13,11 +13,13 @@ export const ROLE_PERMISSIONS = {
     'manage_payments',
     'manage_reviews',
     'manage_checkins',
+    'manage_tickets',
     'view_dashboard',
   ],
   organizer: [
     'manage_own_events',
     'manage_own_ticket_types',
+    'manage_tickets',
     'manage_own_event_images',
     'view_own_event_bookings',
     'manage_own_checkins',

@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { adminApi } from "@/api/admin.js";
 import {
   Layers,
   Search,
@@ -13,66 +14,45 @@ import {
   X,
 } from "lucide-vue-next";
 
-const stats = [
-  { label: "Total Categories", value: "12", change: "+2 added this quarter", icon: Layers, color: "bg-sky-50 text-sky-600" },
-  { label: "Active Categories", value: "10", change: "83% currently in use", icon: CheckCircle2, color: "bg-emerald-50 text-emerald-600" },
-  { label: "Categorized Events", value: "342", change: "+22 this week", icon: Tag, color: "bg-amber-50 text-amber-600" },
-];
+const categories = ref([]);
+const isLoading = ref(true);
+const error = ref(null);
 
 const searchQuery = ref("");
 const selectedStatus = ref("All");
 
-const categories = ref([
-  {
-    id: 1,
-    name: "Music & Concerts",
-    description: "Live concerts, music festivals, orchestral performances, and acoustic gigs.",
-    status: "active",
-    created_at: "Jan 10, 2024",
-  },
-  {
-    id: 2,
-    name: "Technology & Conferences",
-    description: "Tech summits, developer conferences, hackathons, and AI symposiums.",
-    status: "active",
-    created_at: "Jan 12, 2024",
-  },
-  {
-    id: 3,
-    name: "Comedy & Stand-up",
-    description: "Stand-up comedy nights, open mics, and improv theater shows.",
-    status: "active",
-    created_at: "Feb 01, 2024",
-  },
-  {
-    id: 4,
-    name: "Art & Exhibitions",
-    description: "Gallery exhibitions, museum tours, art galas, and sculpture displays.",
-    status: "active",
-    created_at: "Feb 15, 2024",
-  },
-  {
-    id: 5,
-    name: "Food & Drinks Expo",
-    description: "Culinary festivals, street food markets, wine tasting, and cooking masterclasses.",
-    status: "active",
-    created_at: "Mar 01, 2024",
-  },
-  {
-    id: 6,
-    name: "Sports & Fitness",
-    description: "Marathons, esports tournaments, fitness workshops, and cycling rallies.",
-    status: "active",
-    created_at: "Mar 20, 2024",
-  },
-  {
-    id: 7,
-    name: "Business & Networking",
-    description: "Investor meetups, startup pitches, and corporate workshops.",
-    status: "inactive",
-    created_at: "Apr 05, 2024",
-  },
-]);
+function formatDate(dateStr) {
+  if (!dateStr) return "N/A";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+const stats = computed(() => {
+  const total = categories.value.length;
+  const active = categories.value.filter((c) => c.status === "active").length;
+  const inactive = total - active;
+  return [
+    { label: "Total Categories", value: total, change: `${active} active`, icon: Layers, color: "bg-sky-50 text-sky-600" },
+    { label: "Active Categories", value: active, change: `${total ? Math.round((active / total) * 100) : 0}% currently in use`, icon: CheckCircle2, color: "bg-emerald-50 text-emerald-600" },
+    { label: "Inactive Categories", value: inactive, change: `${inactive} currently hidden`, icon: Tag, color: "bg-amber-50 text-amber-600" },
+  ];
+});
+
+async function fetchCategories() {
+  isLoading.value = true;
+  error.value = null;
+  try {
+    const response = await adminApi.getCategories();
+    const payload = response.data;
+    categories.value = Array.isArray(payload) ? payload : (payload.data || []);
+  } catch (err) {
+    error.value = err.response?.data?.message || err.message || "Failed to load categories.";
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+onMounted(fetchCategories);
 
 const statusStyle = {
   active: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -83,7 +63,7 @@ const filteredCategories = computed(() => {
   return categories.value.filter((cat) => {
     const matchesSearch =
       cat.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      cat.description.toLowerCase().includes(searchQuery.value.toLowerCase());
+      (cat.description || "").toLowerCase().includes(searchQuery.value.toLowerCase());
 
     const matchesStatus =
       selectedStatus.value === "All" || cat.status === selectedStatus.value;
@@ -95,6 +75,7 @@ const filteredCategories = computed(() => {
 // Modal State
 const isModalOpen = ref(false);
 const editingCategory = ref(null);
+const isSaving = ref(false);
 const form = ref({
   name: "",
   description: "",
@@ -118,35 +99,40 @@ function closeModal() {
   editingCategory.value = null;
 }
 
-function saveCategory() {
+async function saveCategory() {
   if (!form.value.name.trim()) return;
-
-  if (editingCategory.value) {
-    const idx = categories.value.findIndex((c) => c.id === editingCategory.value.id);
-    if (idx !== -1) {
-      categories.value[idx] = {
-        ...categories.value[idx],
+  isSaving.value = true;
+  try {
+    if (editingCategory.value) {
+      await adminApi.updateCategory(editingCategory.value.id, {
         name: form.value.name,
         description: form.value.description,
         status: form.value.status,
-      };
+      });
+    } else {
+      await adminApi.createCategory({
+        name: form.value.name,
+        description: form.value.description,
+        status: form.value.status,
+      });
     }
-  } else {
-    const newId = Math.max(...categories.value.map((c) => c.id), 0) + 1;
-    categories.value.unshift({
-      id: newId,
-      name: form.value.name,
-      description: form.value.description,
-      status: form.value.status,
-      created_at: "Just now",
-    });
+    await fetchCategories();
+    closeModal();
+  } catch (err) {
+    alert(err.response?.data?.message || err.message || "Failed to save category.");
+  } finally {
+    isSaving.value = false;
   }
-  closeModal();
 }
 
-function deleteCategory(id) {
+async function deleteCategory(id) {
   if (confirm("Are you sure you want to delete this category?")) {
-    categories.value = categories.value.filter((c) => c.id !== id);
+    try {
+      await adminApi.deleteCategory(id);
+      await fetchCategories();
+    } catch (err) {
+      alert(err.response?.data?.message || err.message || "Failed to delete category.");
+    }
   }
 }
 </script>
@@ -176,125 +162,147 @@ function deleteCategory(id) {
       </div>
     </div>
 
-    <!-- Stat cards -->
-    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div
-        v-for="stat in stats"
-        :key="stat.label"
-        class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
-      >
-        <div class="mb-4 flex items-start justify-between">
-          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ stat.label }}</p>
-          <span class="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm" :class="stat.color">
-            <component :is="stat.icon" :size="16" />
-          </span>
-        </div>
-        <p class="text-2xl font-bold text-slate-900">{{ stat.value }}</p>
-        <p class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
-          <ArrowUpRight :size="14" />
-          {{ stat.change }}
-        </p>
+    <!-- Loading State -->
+    <div v-if="isLoading" class="mb-8 flex items-center justify-center py-12">
+      <div class="flex items-center gap-3 text-slate-500">
+        <svg class="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <span class="text-sm font-medium">Loading categories...</span>
       </div>
     </div>
 
-    <!-- Search & Filter -->
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div class="relative min-w-[260px] flex-1">
-        <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search categories by name or description..."
-          class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
-        />
-      </div>
+    <!-- Error State -->
+    <div v-else-if="error" class="mb-8 rounded-xl border border-rose-200 bg-rose-50 p-6 text-center">
+      <XCircle :size="24" class="mx-auto mb-2 text-rose-400" />
+      <p class="text-sm font-semibold text-rose-700">{{ error }}</p>
+      <button @click="fetchCategories" class="mt-3 rounded-lg bg-rose-100 px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-200">
+        Retry
+      </button>
+    </div>
 
-      <div class="flex items-center gap-2">
-        <label class="text-xs font-semibold text-slate-500">Status:</label>
-        <select
-          v-model="selectedStatus"
-          class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize"
+    <template v-else>
+      <!-- Stat cards -->
+      <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div
+          v-for="stat in stats"
+          :key="stat.label"
+          class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
         >
-          <option value="All">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
+          <div class="mb-4 flex items-start justify-between">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ stat.label }}</p>
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm" :class="stat.color">
+              <component :is="stat.icon" :size="16" />
+            </span>
+          </div>
+          <p class="text-2xl font-bold text-slate-900">{{ stat.value }}</p>
+          <p class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
+            <ArrowUpRight :size="14" />
+            {{ stat.change }}
+          </p>
+        </div>
       </div>
-    </div>
 
-    <!-- Categories Table -->
-    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-        <h2 class="text-base font-bold text-slate-900">Event Categories ({{ filteredCategories.length }})</h2>
+      <!-- Search & Filter -->
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="relative min-w-[260px] flex-1">
+          <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search categories by name or description..."
+            class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+          />
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label class="text-xs font-semibold text-slate-500">Status:</label>
+          <select
+            v-model="selectedStatus"
+            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize"
+          >
+            <option value="All">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-slate-50/70 border-b border-slate-200">
-            <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <th class="px-6 py-3">Category Name</th>
-              <th class="px-6 py-3">Description</th>
-              <th class="px-6 py-3">Status</th>
-              <th class="px-6 py-3">Created Date</th>
-              <th class="px-6 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr
-              v-for="cat in filteredCategories"
-              :key="cat.id"
-              class="transition-colors hover:bg-slate-50/80"
-            >
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600 border border-sky-100 shadow-sm">
-                    <Layers :size="16" />
+      <!-- Categories Table -->
+      <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <h2 class="text-base font-bold text-slate-900">Event Categories ({{ filteredCategories.length }})</h2>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50/70 border-b border-slate-200">
+              <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="px-6 py-3">Category Name</th>
+                <th class="px-6 py-3">Description</th>
+                <th class="px-6 py-3">Status</th>
+                <th class="px-6 py-3">Created Date</th>
+                <th class="px-6 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr
+                v-for="cat in filteredCategories"
+                :key="cat.id"
+                class="transition-colors hover:bg-slate-50/80"
+              >
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600 border border-sky-100 shadow-sm">
+                      <Layers :size="16" />
+                    </div>
+                    <div>
+                      <p class="font-semibold text-slate-900">{{ cat.name }}</p>
+                      <p class="text-[10px] text-slate-400 font-mono">ID: #CAT-{{ cat.id }}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p class="font-semibold text-slate-900">{{ cat.name }}</p>
-                    <p class="text-[10px] text-slate-400 font-mono">ID: #CAT-{{ cat.id }}</p>
+                </td>
+                <td class="px-6 py-4 text-xs text-slate-600 max-w-sm">
+                  {{ cat.description || "No description provided." }}
+                </td>
+                <td class="px-6 py-4">
+                  <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize" :class="statusStyle[cat.status]">
+                    {{ cat.status }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-xs text-slate-500">
+                  {{ formatDate(cat.created_at) }}
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <div class="flex items-center justify-end gap-1.5">
+                    <button
+                      type="button"
+                      @click="openEditModal(cat)"
+                      class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
+                    >
+                      <Edit :size="14" />
+                    </button>
+                    <button
+                      type="button"
+                      @click="deleteCategory(cat.id)"
+                      class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100"
+                    >
+                      <Trash2 :size="14" />
+                    </button>
                   </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 text-xs text-slate-600 max-w-sm">
-                {{ cat.description || "No description provided." }}
-              </td>
-              <td class="px-6 py-4">
-                <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize" :class="statusStyle[cat.status]">
-                  {{ cat.status }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-xs text-slate-500">
-                {{ cat.created_at }}
-              </td>
-              <td class="px-6 py-4 text-right">
-                <div class="flex items-center justify-end gap-1.5">
-                  <button
-                    type="button"
-                    @click="openEditModal(cat)"
-                    class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
-                  >
-                    <Edit :size="14" />
-                  </button>
-                  <button
-                    type="button"
-                    @click="deleteCategory(cat.id)"
-                    class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100"
-                  >
-                    <Trash2 :size="14" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="filteredCategories.length === 0">
-              <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-400">
-                No categories found matching your query.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </td>
+              </tr>
+              <tr v-if="filteredCategories.length === 0">
+                <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-400">
+                  No categories found matching your query.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </template>
 
     <!-- Create / Edit Modal -->
     <div
@@ -354,9 +362,10 @@ function deleteCategory(id) {
             </button>
             <button
               type="submit"
-              class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600"
+              :disabled="isSaving"
+              class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 disabled:opacity-50"
             >
-              {{ editingCategory ? "Save Changes" : "Create Category" }}
+              {{ isSaving ? "Saving..." : (editingCategory ? "Save Changes" : "Create Category") }}
             </button>
           </div>
         </form>

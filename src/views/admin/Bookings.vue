@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { adminApi } from "@/api/admin.js";
 import {
   ShoppingBag,
   Search,
@@ -16,34 +17,42 @@ import {
   Ticket,
 } from "lucide-vue-next";
 
-const stats = [
-  { label: "Total Bookings", value: "6,418", change: "+12.4% vs last month", icon: ShoppingBag, color: "bg-orange-50 text-orange-600" },
-  { label: "Confirmed & Paid", value: "5,840", change: "91% fulfillment rate", icon: CheckCircle2, color: "bg-emerald-50 text-emerald-600" },
-  { label: "Pending Payment", value: "412", change: "Awaiting customer settlement", icon: Clock, color: "bg-amber-50 text-amber-600" },
-];
+const loading = ref(true);
+const error = ref(null);
+
+const bookings = ref([]);
+
+async function fetchBookings() {
+  loading.value = true;
+  error.value = null;
+  try {
+    const res = await adminApi.getBookings();
+    bookings.value = res.data ?? [];
+  } catch (e) {
+    error.value = e.response?.data?.message || e.message || "Failed to load bookings.";
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(fetchBookings);
+
+const stats = computed(() => {
+  const total = bookings.value.length;
+  const confirmedPaid = bookings.value.filter(
+    (b) => b.payments?.[0]?.payment_status === "paid"
+  ).length;
+  const pending = bookings.value.filter((b) => b.status === "pending").length;
+  const fulfillment = total ? Math.round((confirmedPaid / total) * 100) : 0;
+  return [
+    { label: "Total Bookings", value: String(total), change: "All time bookings", icon: ShoppingBag, color: "bg-orange-50 text-orange-600" },
+    { label: "Confirmed & Paid", value: String(confirmedPaid), change: `${fulfillment}% fulfillment rate`, icon: CheckCircle2, color: "bg-emerald-50 text-emerald-600" },
+    { label: "Pending Payment", value: String(pending), change: "Awaiting customer settlement", icon: Clock, color: "bg-amber-50 text-amber-600" },
+  ];
+});
 
 const searchQuery = ref("");
 const selectedStatus = ref("All");
-
-const bookings = ref([
-  {
-    id: 1,
-    booking_number: "BK-984210",
-    user: { id: 101, name: "Sarah Jenkins", email: "sarah.j@example.com", phone: "+1 (555) 234-5678" },
-    event: { id: 1, title: "Neon Nights Music Festival", venue: "Riverside Amphitheater", date: "Nov 14, 2024" },
-    booking_date: "Oct 24, 2024 • 02:45 PM",
-    total_amount: 250.00,
-    status: "confirmed",
-    items: [
-      { id: 1, ticket_type: "VIP Experience", quantity: 1, unit_price: 250.00, subtotal: 250.00 },
-    ],
-    payments: [
-      { id: 1, transaction_id: "TXN-88491A", payment_method: "ABA Pay (KHQR)", amount: 250.00, payment_status: "paid", paid_at: "Oct 24, 2024" },
-    ],
-  },
-
-
-]);
 
 const statusStyle = {
   confirmed: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -52,13 +61,27 @@ const statusStyle = {
   cancelled: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
+function formatDate(value) {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 const filteredBookings = computed(() => {
   return bookings.value.filter((b) => {
     const matchesSearch =
-      b.booking_number.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      b.user.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      b.user.email.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      b.event.title.toLowerCase().includes(searchQuery.value.toLowerCase());
+      (b.booking_number || "").toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (b.user?.name || "").toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (b.user?.email || "").toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (b.event?.title || "").toLowerCase().includes(searchQuery.value.toLowerCase());
 
     const matchesStatus =
       selectedStatus.value === "All" || b.status === selectedStatus.value;
@@ -99,7 +122,26 @@ function updateStatus(newStatus) {
     </div>
 
     <!-- Stat cards -->
-    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div v-if="loading" class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div
+        v-for="n in 3"
+        :key="n"
+        class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      >
+        <div class="mb-4 flex items-start justify-between">
+          <div class="h-3 w-24 animate-pulse rounded bg-slate-100"></div>
+          <div class="h-8 w-8 animate-pulse rounded-lg bg-slate-100"></div>
+        </div>
+        <div class="h-7 w-20 animate-pulse rounded bg-slate-100"></div>
+        <div class="mt-2 h-3 w-32 animate-pulse rounded bg-slate-100"></div>
+      </div>
+    </div>
+
+    <div v-else-if="error" class="mb-8 rounded-xl border border-rose-200 bg-rose-50 p-6 text-center">
+      <p class="text-sm font-semibold text-rose-700">{{ error }}</p>
+    </div>
+
+    <div v-else class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
       <div
         v-for="stat in stats"
         :key="stat.label"
@@ -152,7 +194,52 @@ function updateStatus(newStatus) {
         <h2 class="text-base font-bold text-slate-900">Customer Bookings ({{ filteredBookings.length }})</h2>
       </div>
 
-      <div class="overflow-x-auto">
+      <div v-if="loading" class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50/70 border-b border-slate-200">
+            <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <th class="px-6 py-3">Booking #</th>
+              <th class="px-6 py-3">Customer</th>
+              <th class="px-6 py-3">Event & Venue</th>
+              <th class="px-6 py-3">Date Booked</th>
+              <th class="px-6 py-3">Total Amount</th>
+              <th class="px-6 py-3">Status</th>
+              <th class="px-6 py-3 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="n in 4" :key="n">
+              <td class="px-6 py-4"><div class="h-3 w-24 animate-pulse rounded bg-slate-100"></div></td>
+              <td class="px-6 py-4">
+                <div class="h-3 w-32 animate-pulse rounded bg-slate-100"></div>
+                <div class="mt-2 h-3 w-24 animate-pulse rounded bg-slate-100"></div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="h-3 w-40 animate-pulse rounded bg-slate-100"></div>
+                <div class="mt-2 h-3 w-28 animate-pulse rounded bg-slate-100"></div>
+              </td>
+              <td class="px-6 py-4"><div class="h-3 w-32 animate-pulse rounded bg-slate-100"></div></td>
+              <td class="px-6 py-4"><div class="h-3 w-16 animate-pulse rounded bg-slate-100"></div></td>
+              <td class="px-6 py-4"><div class="h-5 w-20 animate-pulse rounded-full bg-slate-100"></div></td>
+              <td class="px-6 py-4"><div class="ml-auto h-8 w-24 animate-pulse rounded-lg bg-slate-100"></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-else-if="error" class="px-6 py-16 text-center">
+        <p class="text-sm font-semibold text-rose-700">{{ error }}</p>
+      </div>
+
+      <div v-else-if="bookings.length === 0" class="px-6 py-16 text-center">
+        <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+          <ShoppingBag :size="22" />
+        </div>
+        <p class="text-sm font-semibold text-slate-700">No bookings yet</p>
+        <p class="mt-1 text-xs text-slate-400">Customer bookings will appear here once placed.</p>
+      </div>
+
+      <div v-else class="overflow-x-auto">
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50/70 border-b border-slate-200">
             <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -175,21 +262,21 @@ function updateStatus(newStatus) {
                 {{ b.booking_number }}
               </td>
               <td class="px-6 py-4">
-                <p class="font-semibold text-slate-900">{{ b.user.name }}</p>
-                <p class="text-xs text-slate-400">{{ b.user.email }}</p>
+                <p class="font-semibold text-slate-900">{{ b.user?.name }}</p>
+                <p class="text-xs text-slate-400">{{ b.user?.email }}</p>
               </td>
               <td class="px-6 py-4">
-                <p class="font-medium text-slate-800 truncate max-w-xs">{{ b.event.title }}</p>
-                <p class="text-xs text-slate-400">{{ b.event.venue }}</p>
+                <p class="font-medium text-slate-800 truncate max-w-xs">{{ b.event?.title }}</p>
+                <p class="text-xs text-slate-400">{{ b.event?.venue?.name || 'N/A' }}</p>
               </td>
               <td class="px-6 py-4 text-xs text-slate-600">
-                {{ b.booking_date }}
+                {{ formatDate(b.booking_date) }}
               </td>
               <td class="px-6 py-4 font-mono text-sm font-bold text-slate-900">
-                ${{ b.total_amount.toFixed(2) }}
+                ${{ Number(b.total_amount).toFixed(2) }}
               </td>
               <td class="px-6 py-4">
-                <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize" :class="statusStyle[b.status]">
+                <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize" :class="statusStyle[b.status] || 'bg-slate-50 text-slate-600 border-slate-200'">
                   {{ b.status }}
                 </span>
               </td>
@@ -227,7 +314,7 @@ function updateStatus(newStatus) {
             </div>
             <div>
               <h3 class="text-lg font-bold text-slate-900">Booking Details: {{ selectedBooking.booking_number }}</h3>
-              <p class="text-xs text-slate-400">Booked on {{ selectedBooking.booking_date }}</p>
+              <p class="text-xs text-slate-400">Booked on {{ formatDate(selectedBooking.booking_date) }}</p>
             </div>
           </div>
           <button @click="isDetailOpen = false" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
@@ -240,15 +327,15 @@ function updateStatus(newStatus) {
           <div class="grid grid-cols-2 gap-4 rounded-xl bg-slate-50 p-4 border border-slate-200">
             <div>
               <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Customer Information</p>
-              <p class="text-sm font-bold text-slate-900">{{ selectedBooking.user.name }}</p>
-              <p class="text-xs text-slate-600">{{ selectedBooking.user.email }}</p>
-              <p class="text-xs text-slate-400">{{ selectedBooking.user.phone }}</p>
+              <p class="text-sm font-bold text-slate-900">{{ selectedBooking.user?.name }}</p>
+              <p class="text-xs text-slate-600">{{ selectedBooking.user?.email }}</p>
+              <p class="text-xs text-slate-400">{{ selectedBooking.user?.phone || 'N/A' }}</p>
             </div>
             <div>
               <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Event Information</p>
-              <p class="text-sm font-bold text-slate-900">{{ selectedBooking.event.title }}</p>
-              <p class="text-xs text-slate-600">{{ selectedBooking.event.venue }}</p>
-              <p class="text-xs text-amber-600 font-semibold">{{ selectedBooking.event.date }}</p>
+              <p class="text-sm font-bold text-slate-900">{{ selectedBooking.event?.title }}</p>
+              <p class="text-xs text-slate-600">{{ selectedBooking.event?.venue?.name || 'N/A' }}</p>
+              <p class="text-xs text-amber-600 font-semibold">{{ selectedBooking.event?.start_date || 'N/A' }}</p>
             </div>
           </div>
 
@@ -266,11 +353,11 @@ function updateStatus(newStatus) {
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                  <tr v-for="item in selectedBooking.items" :key="item.id">
-                    <td class="px-4 py-2.5 font-semibold text-slate-900">{{ item.ticket_type }}</td>
-                    <td class="px-4 py-2.5 text-slate-600">${{ item.unit_price.toFixed(2) }}</td>
+                  <tr v-for="item in selectedBooking.items || []" :key="item.id">
+                    <td class="px-4 py-2.5 font-semibold text-slate-900">{{ item.ticketType?.name || 'Ticket' }}</td>
+                    <td class="px-4 py-2.5 text-slate-600">${{ Number(item.unit_price).toFixed(2) }}</td>
                     <td class="px-4 py-2.5 text-slate-600">{{ item.quantity }}</td>
-                    <td class="px-4 py-2.5 text-right font-bold text-slate-900">${{ item.subtotal.toFixed(2) }}</td>
+                    <td class="px-4 py-2.5 text-right font-bold text-slate-900">${{ Number(item.subtotal).toFixed(2) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -291,12 +378,19 @@ function updateStatus(newStatus) {
                   <option value="pending">Pending</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
+                <span
+                  v-if="selectedBooking.payments?.[0]?.payment_status"
+                  class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize"
+                  :class="selectedBooking.payments?.[0]?.payment_status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'"
+                >
+                  {{ selectedBooking.payments?.[0]?.payment_status }}
+                </span>
               </div>
             </div>
 
             <div class="text-right">
               <p class="text-xs text-slate-500">Total Amount Charged</p>
-              <p class="text-2xl font-bold text-amber-600 font-mono">${{ selectedBooking.total_amount.toFixed(2) }}</p>
+              <p class="text-2xl font-bold text-amber-600 font-mono">${{ Number(selectedBooking.total_amount).toFixed(2) }}</p>
             </div>
           </div>
         </div>

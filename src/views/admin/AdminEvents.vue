@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { adminApi } from "@/api/admin.js";
 import {
   Search,
   Plus,
@@ -16,142 +17,23 @@ import {
   X,
   Layers,
   Building2,
+  Upload,
 } from "lucide-vue-next";
 
 const router = useRouter();
 
-const stats = [
-  {
-    label: "Total Events",
-    value: "342",
-    change: "+22 this week",
-    trend: "up",
-    icon: Calendar,
-    color: "bg-blue-50 text-blue-600",
-  },
-  {
-    label: "Published / Active",
-    value: "289",
-    change: "84.5% of all events",
-    trend: "up",
-    icon: Flame,
-    color: "bg-amber-50 text-amber-600",
-  },
-  {
-    label: "Total Tickets Sold",
-    value: "48,210",
-    change: "+15.2% vs last month",
-    trend: "up",
-    icon: Ticket,
-    color: "bg-emerald-50 text-emerald-600",
-  },
-];
+const loading = ref(true);
+const error = ref(null);
+const events = ref([]);
+
+const categoriesList = ref([]);
+const organizersList = ref([]);
+const venuesList = ref([]);
 
 const searchQuery = ref("");
 const selectedCategory = ref("All");
 const selectedStatus = ref("All");
 
-const events = ref([
-  {
-    id: 1,
-    title: "Neon Nights Music Festival",
-    slug: "neon-nights-music-festival-2024",
-    organizer: "Wavelength Live",
-    organizer_id: 1,
-    category: "Music & Concerts",
-    category_id: 1,
-    venue: "Riverside Amphitheater",
-    venue_id: 1,
-    start_date: "2024-11-14",
-    end_date: "2024-11-15",
-    start_time: "19:00",
-    end_time: "02:00",
-    status: "published",
-    description: "An electrifying electronic dance music festival featuring world-renowned DJs.",
-  },
-  {
-    id: 2,
-    title: "Symphony in the Park 2024",
-    slug: "symphony-in-the-park-2024",
-    organizer: "Civic Symphony Society",
-    organizer_id: 2,
-    category: "Music & Concerts",
-    category_id: 1,
-    venue: "Central Park Meadow",
-    venue_id: 2,
-    start_date: "2024-12-02",
-    end_date: "2024-12-02",
-    start_time: "18:30",
-    end_time: "21:30",
-    status: "published",
-  },
-  {
-    id: 3,
-    title: "Global Tech Summit 2024",
-    slug: "global-tech-summit-2024",
-    organizer: "Summit Conferences Co.",
-    organizer_id: 3,
-    category: "Technology & Conferences",
-    category_id: 2,
-    venue: "Grand Convention Center",
-    venue_id: 3,
-    start_date: "2024-12-10",
-    end_date: "2024-12-12",
-    start_time: "09:00",
-    end_time: "17:00",
-    status: "published",
-  },
-  {
-    id: 4,
-    title: "Underground Comedy Night",
-    slug: "underground-comedy-night",
-    organizer: "Laugh Track Presents",
-    organizer_id: 4,
-    category: "Comedy & Stand-up",
-    category_id: 3,
-    venue: "The Cellar Lounge",
-    venue_id: 4,
-    start_date: "2024-11-20",
-    end_date: "2024-11-20",
-    start_time: "20:00",
-    end_time: "22:30",
-    status: "published",
-  },
-  {
-    id: 5,
-    title: "Modern Art Gala & Auction",
-    slug: "modern-art-gala-auction",
-    organizer: "Gallery Nine",
-    organizer_id: 5,
-    category: "Art & Exhibitions",
-    category_id: 4,
-    venue: "Metropolitan Hall",
-    venue_id: 5,
-    start_date: "2025-01-15",
-    end_date: "2025-01-15",
-    start_time: "19:00",
-    end_time: "23:00",
-    status: "draft",
-  },
-  {
-    id: 6,
-    title: "Street Eats Food Expo",
-    slug: "street-eats-food-expo",
-    organizer: "Street Eats Collective",
-    organizer_id: 6,
-    category: "Food & Drinks Expo",
-    category_id: 5,
-    venue: "Koh Pich Theater Hall",
-    venue_id: 7,
-    start_date: "2024-10-10",
-    end_date: "2024-10-12",
-    start_time: "11:00",
-    end_time: "20:00",
-    status: "cancelled",
-  },
-]);
-
-const categories = ["All", "Music & Concerts", "Technology & Conferences", "Comedy & Stand-up", "Art & Exhibitions", "Food & Drinks Expo"];
 const statuses = ["All", "published", "draft", "cancelled"];
 
 const statusStyle = {
@@ -160,15 +42,54 @@ const statusStyle = {
   cancelled: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
+const categories = computed(() => {
+  const set = new Set(events.value.map((e) => e.category?.name).filter(Boolean));
+  return ["All", ...set];
+});
+
+const stats = computed(() => {
+  const total = events.value.length;
+  const published = events.value.filter((e) => e.status === "published").length;
+  const draft = events.value.filter((e) => e.status === "draft").length;
+  return [
+    {
+      label: "Total Events",
+      value: String(total),
+      change: `${published} published`,
+      trend: "up",
+      icon: Calendar,
+      color: "bg-blue-50 text-blue-600",
+    },
+    {
+      label: "Published",
+      value: String(published),
+      change: total ? `${Math.round((published / total) * 100)}% of all events` : "0%",
+      trend: "up",
+      icon: Flame,
+      color: "bg-amber-50 text-amber-600",
+    },
+    {
+      label: "Drafts",
+      value: String(draft),
+      change: `${draft} pending review`,
+      trend: "up",
+      icon: Ticket,
+      color: "bg-emerald-50 text-emerald-600",
+    },
+  ];
+});
+
 const filteredEvents = computed(() => {
   return events.value.filter((event) => {
+    const q = searchQuery.value.toLowerCase();
     const matchesSearch =
-      event.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      event.venue.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      event.organizer.toLowerCase().includes(searchQuery.value.toLowerCase());
+      event.title?.toLowerCase().includes(q) ||
+      event.category?.name?.toLowerCase().includes(q) ||
+      event.organizer?.company_name?.toLowerCase().includes(q) ||
+      event.venue?.name?.toLowerCase().includes(q);
 
     const matchesCategory =
-      selectedCategory.value === "All" || event.category === selectedCategory.value;
+      selectedCategory.value === "All" || event.category?.name === selectedCategory.value;
 
     const matchesStatus =
       selectedStatus.value === "All" || event.status === selectedStatus.value;
@@ -176,6 +97,40 @@ const filteredEvents = computed(() => {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 });
+
+async function fetchEvents() {
+  loading.value = true;
+  error.value = null;
+  try {
+    const res = await adminApi.getEvents();
+    events.value = res.data?.data || [];
+  } catch (e) {
+    error.value = e.response?.data?.message || e.message || "Failed to load events.";
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(() => {
+  fetchEvents();
+  fetchFormOptions();
+});
+
+async function fetchFormOptions() {
+  try {
+    const [catRes, orgRes, venRes] = await Promise.all([
+      adminApi.getCategories(),
+      adminApi.getOrganizers(),
+      adminApi.getVenues(),
+    ]);
+    categoriesList.value = catRes?.data || catRes?.data?.data || catRes || [];
+    organizersList.value = orgRes?.data?.data || orgRes?.data || [];
+    const venPayload = venRes?.data;
+    venuesList.value = Array.isArray(venPayload) ? venPayload : (venPayload?.data || []);
+  } catch (e) {
+    console.error("Failed to load form options:", e);
+  }
+}
 
 function viewEvent(id) {
   router.push(`/admin/events/${id}`);
@@ -187,71 +142,131 @@ const editingEvent = ref(null);
 const form = ref({
   title: "",
   slug: "",
-  organizer: "Wavelength Live",
-  category: "Music & Concerts",
-  venue: "Riverside Amphitheater",
+  organizer_id: "",
+  category_id: "",
+  venue_id: "",
   start_date: "",
   end_date: "",
-  start_time: "19:00",
-  end_time: "23:00",
-  capacity: 1000,
-  price_range: "$50",
+  start_time: "",
+  end_time: "",
   status: "published",
   description: "",
+  banner: null,
 });
+const bannerPreview = ref("");
+const formError = ref("");
 
 function openCreateModal() {
   editingEvent.value = null;
   form.value = {
     title: "",
     slug: "",
-    organizer: "Wavelength Live",
-    category: "Music & Concerts",
-    venue: "Riverside Amphitheater",
-    start_date: new Date().toISOString().split("T")[0],
-    end_date: new Date().toISOString().split("T")[0],
+    organizer_id: "",
+    category_id: "",
+    venue_id: "",
+    start_date: "",
+    end_date: "",
     start_time: "19:00",
     end_time: "23:00",
-    capacity: 1000,
-    price_range: "$50",
     status: "published",
     description: "",
+    banner: null,
   };
+  bannerPreview.value = "";
+  formError.value = "";
   isModalOpen.value = true;
 }
 
 function openEditModal(ev) {
   editingEvent.value = ev;
-  form.value = { ...ev };
+  form.value = {
+    title: ev.title || "",
+    slug: ev.slug || "",
+    organizer_id: ev.organizer?.id || "",
+    category_id: ev.category?.id || "",
+    venue_id: ev.venue?.id || "",
+    start_date: ev.start_date || "",
+    end_date: ev.end_date || "",
+    start_time: ev.start_time || "",
+    end_time: ev.end_time || "",
+    status: ev.status || "published",
+    description: ev.description || "",
+    banner: null,
+  };
+  bannerPreview.value = ev.banner || "";
+  formError.value = "";
   isModalOpen.value = true;
 }
 
-function saveEvent() {
-  if (!form.value.title.trim()) return;
-
-  if (editingEvent.value) {
-    const idx = events.value.findIndex((e) => e.id === editingEvent.value.id);
-    if (idx !== -1) {
-      events.value[idx] = {
-        ...events.value[idx],
-        ...form.value,
-      };
-    }
-  } else {
-    const newId = Math.max(...events.value.map((e) => e.id), 0) + 1;
-    events.value.unshift({
-      id: newId,
-      ...form.value,
-      sold: 0,
-      slug: form.value.title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    });
+function onBannerSelected(event) {
+  const file = event.target.files?.[0];
+  if (file) {
+    form.value.banner = file;
+    bannerPreview.value = URL.createObjectURL(file);
   }
-  isModalOpen.value = false;
 }
 
-function deleteEvent(id) {
-  if (confirm("Are you sure you want to delete this event?")) {
+async function saveEvent() {
+  if (!form.value.title.trim()) return;
+  formError.value = "";
+
+  const fd = new FormData();
+  fd.append("title", form.value.title);
+
+  let slug = form.value.slug;
+  if (!slug && form.value.title) {
+    slug = form.value.title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+  if (!slug) {
+    slug = "event-" + Date.now();
+  }
+  fd.append("slug", slug);
+  fd.append("organizer_id", form.value.organizer_id);
+  fd.append("category_id", form.value.category_id);
+  fd.append("venue_id", form.value.venue_id);
+  fd.append("start_date", form.value.start_date);
+  fd.append("end_date", form.value.end_date);
+  fd.append("start_time", form.value.start_time || "");
+  fd.append("end_time", form.value.end_time || "");
+  fd.append("status", form.value.status);
+  fd.append("description", form.value.description || "");
+  if (form.value.banner) {
+    fd.append("banner", form.value.banner);
+  }
+
+  try {
+    if (editingEvent.value) {
+      const res = await adminApi.updateEvent(editingEvent.value.id, fd);
+      const updated = res.data?.data || res.data;
+      const idx = events.value.findIndex((e) => e.id === editingEvent.value.id);
+      if (idx !== -1) {
+        events.value[idx] = { ...events.value[idx], ...updated };
+      }
+    } else {
+      const res = await adminApi.createEvent(fd);
+      const created = res.data?.data || res.data;
+      events.value.unshift(created);
+    }
+    isModalOpen.value = false;
+    fetchEvents();
+  } catch (e) {
+    formError.value = e.response?.data?.message || e.message || "Failed to save event.";
+  }
+}
+
+async function deleteEvent(id) {
+  if (!confirm("Are you sure you want to delete this event?")) return;
+  try {
+    await adminApi.deleteEvent(id);
     events.value = events.value.filter((e) => e.id !== id);
+  } catch (e) {
+    alert(e.response?.data?.message || e.message || "Failed to delete event.");
   }
 }
 </script>
@@ -281,8 +296,23 @@ function deleteEvent(id) {
       </div>
     </div>
 
+    <!-- Loading State -->
+    <div v-if="loading" class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div v-for="n in 3" :key="n" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm animate-pulse">
+        <div class="h-3 w-24 rounded bg-slate-200 mb-4"></div>
+        <div class="h-7 w-16 rounded bg-slate-200 mb-2"></div>
+        <div class="h-3 w-32 rounded bg-slate-100"></div>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="mb-8 rounded-xl border border-rose-200 bg-rose-50 p-6 text-center">
+      <p class="text-sm font-semibold text-rose-700">{{ error }}</p>
+      <button @click="fetchEvents" class="mt-3 text-xs font-semibold text-rose-600 underline hover:text-rose-800">Retry</button>
+    </div>
+
     <!-- Stat cards -->
-    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div v-else class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
       <div
         v-for="stat in stats"
         :key="stat.label"
@@ -345,7 +375,17 @@ function deleteEvent(id) {
         <h2 class="text-base font-bold text-slate-900">Events ({{ filteredEvents.length }})</h2>
       </div>
 
-      <div class="overflow-x-auto">
+      <!-- Table Loading Skeleton -->
+      <div v-if="loading" class="divide-y divide-slate-100">
+        <div v-for="n in 5" :key="n" class="flex items-center gap-6 px-6 py-4 animate-pulse">
+          <div class="h-4 w-48 rounded bg-slate-200"></div>
+          <div class="h-4 w-28 rounded bg-slate-200"></div>
+          <div class="h-4 w-32 rounded bg-slate-200"></div>
+          <div class="h-4 w-20 rounded bg-slate-200"></div>
+        </div>
+      </div>
+
+      <div v-else class="overflow-x-auto">
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50/70 border-b border-slate-200">
             <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -366,8 +406,8 @@ function deleteEvent(id) {
                 <div>
                   <p class="font-semibold text-slate-900">{{ event.title }}</p>
                   <div class="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                    <span class="rounded bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">{{ event.category }}</span>
-                    <span>by {{ event.organizer }}</span>
+                    <span class="rounded bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">{{ event.category?.name || 'N/A' }}</span>
+                    <span>by {{ event.organizer?.company_name || 'N/A' }}</span>
                   </div>
                 </div>
               </td>
@@ -378,7 +418,7 @@ function deleteEvent(id) {
               <td class="px-6 py-4 text-slate-700">
                 <div class="flex items-center gap-1.5 text-xs font-medium">
                   <MapPin :size="13" class="text-amber-600" />
-                  {{ event.venue }}
+                  {{ event.venue?.name || 'N/A' }}
                 </div>
               </td>
               <td class="px-6 py-4">
@@ -459,40 +499,51 @@ function deleteEvent(id) {
             <div>
               <label class="mb-1 block text-xs font-semibold text-slate-700">Category *</label>
               <select
-                v-model="form.category"
+                v-model="form.category_id"
+                required
                 class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
               >
-                <option v-for="c in categories.filter(x => x !== 'All')" :key="c" :value="c">{{ c }}</option>
+                <option value="" disabled>Select category...</option>
+                <option v-for="c in categoriesList" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
             </div>
             <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700">Organizer</label>
-              <input
-                v-model="form.organizer"
-                type="text"
+              <label class="mb-1 block text-xs font-semibold text-slate-700">Organizer *</label>
+              <select
+                v-model="form.organizer_id"
+                required
                 class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
-              />
+              >
+                <option value="" disabled>Select organizer...</option>
+                <option v-for="o in organizersList" :key="o.id" :value="o.id">
+                  {{ o.user?.name || o.company_name || `#${o.id}` }}
+                </option>
+              </select>
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700">Venue Location *</label>
-              <input
-                v-model="form.venue"
-                type="text"
+              <label class="mb-1 block text-xs font-semibold text-slate-700">Venue *</label>
+              <select
+                v-model="form.venue_id"
                 required
                 class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
-              />
+              >
+                <option value="" disabled>Select venue...</option>
+                <option v-for="v in venuesList" :key="v.id" :value="v.id">{{ v.name }}</option>
+              </select>
             </div>
             <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700">Capacity</label>
-              <input
-                v-model="form.capacity"
-                type="number"
-                min="1"
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
-              />
+              <label class="mb-1 block text-xs font-semibold text-slate-700">Status</label>
+              <select
+                v-model="form.status"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 capitalize"
+              >
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
             </div>
           </div>
 
@@ -517,7 +568,7 @@ function deleteEvent(id) {
             </div>
           </div>
 
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="mb-1 block text-xs font-semibold text-slate-700">Start Time</label>
               <input
@@ -534,16 +585,29 @@ function deleteEvent(id) {
                 class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
               />
             </div>
-            <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700">Status</label>
-              <select
-                v-model="form.status"
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 capitalize"
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-700">Banner Image</label>
+            <div class="flex items-center gap-4">
+              <label
+                class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-4 text-center text-slate-500 transition-colors hover:border-amber-500 hover:bg-amber-50"
               >
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
+                <Upload :size="20" />
+                <span class="text-xs font-medium">Upload banner</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="onBannerSelected"
+                />
+              </label>
+              <img
+                v-if="bannerPreview"
+                :src="bannerPreview"
+                alt="Banner preview"
+                class="h-20 w-40 rounded-lg border border-slate-200 object-cover"
+              />
             </div>
           </div>
 
@@ -554,6 +618,10 @@ function deleteEvent(id) {
               rows="3"
               class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
             />
+          </div>
+
+          <div v-if="formError" class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
+            {{ formError }}
           </div>
 
           <div class="mt-6 flex justify-end gap-3 pt-2">

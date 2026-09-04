@@ -149,11 +149,11 @@ watch(() => route.params.id, (id) => load(id));
             </div>
 
             <!-- Ticket types -->
-            <div v-if="event.ticket_types && event.ticket_types.length" class="rounded-2xl bg-[#14171C] p-5">
+            <div v-if="(event.ticketTypes || event.ticket_types || []).length" class="rounded-2xl bg-[#14171C] p-5">
               <h3 class="mb-3 text-base font-bold text-white">Ticket Options</h3>
               <div class="space-y-2">
                 <div
-                  v-for="ticket in event.ticket_types"
+                  v-for="ticket in (event.ticketTypes || event.ticket_types || [])"
                   :key="ticket.id"
                   class="flex items-center justify-between rounded-xl bg-[#1D2229] px-4 py-3"
                 >

@@ -1,200 +1,183 @@
 /**
- * API service layer mapping to Laravel Backend endpoints
+ * Admin API service — uses the shared http.js client so auth tokens
+ * and error handling are consistent across the entire application.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
-
-function getAuthHeader() {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function request(endpoint, options = {}) {
-  const url = `${API_BASE}${endpoint}`;
-  const headers = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    ...getAuthHeader(),
-    ...options.headers,
-  };
-
-  try {
-    const response = await fetch(url, { ...options, headers });
-    const data = await response.json().catch(() => null);
-    if (!response.ok) {
-      return { success: false, status: response.status, message: data?.message || "Request failed", data };
-    }
-    return { success: true, status: response.status, data };
-  } catch (error) {
-    return { success: false, message: error.message || "Network error", error };
-  }
-}
+import { get, post, put, del, postFormData, putFormData } from "./http.js";
 
 export const adminApi = {
-  // 1. view_dashboard
-  async getDashboardOverview() {
-    return request("/events");
+  // 0. Dashboard
+  async getDashboard() {
+    return get("/admin/dashboard");
   },
 
-  // 2. manage_users
+  // 1. manage_users
   async getUsers(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return request(`/users${query ? `?${query}` : ""}`);
+    return get("/users", params);
   },
   async getUser(id) {
-    return request(`/users/${id}`);
+    return get(`/users/${id}`);
   },
   async createUser(data) {
-    return request("/users", { method: "POST", body: JSON.stringify(data) });
+    return post("/users", data);
   },
   async updateUser(id, data) {
-    return request(`/users/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    return put(`/users/${id}`, data);
   },
   async deleteUser(id) {
-    return request(`/users/${id}`, { method: "DELETE" });
+    return del(`/users/${id}`);
   },
 
-  // 3. manage_organizers
+  // 2. manage_organizers
   async getOrganizers(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return request(`/organizers${query ? `?${query}` : ""}`);
+    return get("/organizers", params);
   },
   async getOrganizer(id) {
-    return request(`/organizers/${id}`);
+    return get(`/organizers/${id}`);
   },
   async createOrganizer(data) {
-    return request("/organizers", { method: "POST", body: JSON.stringify(data) });
+    return post("/organizers", data);
   },
   async updateOrganizer(id, data) {
-    return request(`/organizers/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    return put(`/organizers/${id}`, data);
   },
   async deleteOrganizer(id) {
-    return request(`/organizers/${id}`, { method: "DELETE" });
+    return del(`/organizers/${id}`);
   },
 
-  // 4. manage_venues
+  // 3. manage_venues
   async getVenues(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return request(`/venues${query ? `?${query}` : ""}`);
+    return get("/venues", params);
   },
   async getVenue(id) {
-    return request(`/venues/${id}`);
+    return get(`/venues/${id}`);
   },
   async createVenue(data) {
-    return request("/venues", { method: "POST", body: JSON.stringify(data) });
+    return post("/venues", data);
   },
   async updateVenue(id, data) {
-    return request(`/venues/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    return put(`/venues/${id}`, data);
   },
   async deleteVenue(id) {
-    return request(`/venues/${id}`, { method: "DELETE" });
+    return del(`/venues/${id}`);
   },
 
-  // 5. manage_categories
+  // 4. manage_categories
   async getCategories() {
-    return request("/categories");
+    return get("/categories");
   },
   async createCategory(data) {
-    return request("/categories", { method: "POST", body: JSON.stringify(data) });
+    return post("/categories", data);
   },
   async updateCategory(id, data) {
-    return request(`/categories/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    return put(`/categories/${id}`, data);
   },
   async deleteCategory(id) {
-    return request(`/categories/${id}`, { method: "DELETE" });
+    return del(`/categories/${id}`);
   },
 
-  // 6. manage_events
+  // 5. manage_events
   async getEvents(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return request(`/events${query ? `?${query}` : ""}`);
+    return get("/events", params);
   },
   async getEvent(id) {
-    return request(`/events/${id}`);
+    return get(`/events/${id}`);
   },
   async createEvent(data) {
-    return request("/events", { method: "POST", body: JSON.stringify(data) });
+    return postFormData("/events", data);
   },
   async updateEvent(id, data) {
-    return request(`/events/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    return putFormData(`/events/${id}`, data);
   },
   async deleteEvent(id) {
-    return request(`/events/${id}`, { method: "DELETE" });
+    return del(`/events/${id}`);
   },
 
-  // 7. manage_ticket_types
+  // 6. manage_ticket_types
   async getTicketTypes(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return request(`/ticket-types${query ? `?${query}` : ""}`);
+    return get("/ticket-types", params);
   },
   async getTicketType(id) {
-    return request(`/ticket-types/${id}`);
+    return get(`/ticket-types/${id}`);
   },
   async createTicketType(data) {
-    return request("/ticket-types", { method: "POST", body: JSON.stringify(data) });
+    return post("/ticket-types", data);
   },
   async updateTicketType(id, data) {
-    return request(`/ticket-types/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    return put(`/ticket-types/${id}`, data);
   },
   async deleteTicketType(id) {
-    return request(`/ticket-types/${id}`, { method: "DELETE" });
+    return del(`/ticket-types/${id}`);
   },
 
-  // 8. manage_bookings
+  // 7. manage_bookings
   async getBookings(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return request(`/bookings${query ? `?${query}` : ""}`);
+    return get("/bookings", params);
   },
   async getBooking(id) {
-    return request(`/bookings/${id}`);
+    return get(`/bookings/${id}`);
   },
   async createBooking(data) {
-    return request("/bookings", { method: "POST", body: JSON.stringify(data) });
+    return post("/bookings", data);
   },
   async updateBooking(id, data) {
-    return request(`/bookings/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    return put(`/bookings/${id}`, data);
   },
   async deleteBooking(id) {
-    return request(`/bookings/${id}`, { method: "DELETE" });
+    return del(`/bookings/${id}`);
   },
 
-  // 9. manage_payments
+  // 8. manage_payments
   async getPayments() {
-    return request("/payments");
+    return get("/payments");
   },
   async createPayment(data) {
-    return request("/payments", { method: "POST", body: JSON.stringify(data) });
+    return post("/payments", data);
   },
 
-  // 10. manage_reviews
+  // 9. manage_reviews
   async getReviews() {
-    return request("/reviews");
+    return get("/reviews");
   },
   async getReview(id) {
-    return request(`/reviews/${id}`);
+    return get(`/reviews/${id}`);
   },
   async createReview(data) {
-    return request("/reviews", { method: "POST", body: JSON.stringify(data) });
+    return post("/reviews", data);
   },
   async updateReview(id, data) {
-    return request(`/reviews/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    return put(`/reviews/${id}`, data);
   },
   async deleteReview(id) {
-    return request(`/reviews/${id}`, { method: "DELETE" });
+    return del(`/reviews/${id}`);
   },
 
-  // 11. manage_checkins
+  // 10. manage_checkins
   async getCheckIns() {
-    return request("/check-ins");
+    return get("/check-ins");
   },
   async getCheckIn(id) {
-    return request(`/check-ins/${id}`);
+    return get(`/check-ins/${id}`);
   },
   async createCheckIn(data) {
-    return request("/check-ins", { method: "POST", body: JSON.stringify(data) });
+    return post("/check-ins", data);
   },
   async updateCheckIn(id, data) {
-    return request(`/check-ins/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    return put(`/check-ins/${id}`, data);
+  },
+
+  // 11. manage_tickets (actual customer tickets, distinct from ticket types)
+  async getTickets(params = {}) {
+    return get("/tickets", params);
+  },
+  async getTicket(id) {
+    return get(`/tickets/${id}`);
+  },
+  async verifyTicket(qrToken) {
+    return post("/tickets/verify", { qr_token: qrToken });
+  },
+  async cancelTicket(id) {
+    return post(`/tickets/${id}/cancel`);
   },
 };
 

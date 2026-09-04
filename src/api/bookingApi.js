@@ -34,3 +34,20 @@ export async function getBooking(id) {
   const response = await get(`/bookings/${id}`);
   return response?.data;
 }
+
+/**
+ * Fetch the logged-in customer's actual per-seat tickets from /my-tickets.
+ * Returns an array of Ticket records (each with ticket_type, event, booking).
+ */
+export async function getMyTicketsData() {
+  try {
+    const response = await get("/my-tickets");
+    const data = response?.data;
+    return Array.isArray(data) ? data : data?.data || [];
+  } catch (error) {
+    if (USE_MOCK_FALLBACK && error.isNetwork) {
+      return [];
+    }
+    throw error;
+  }
+}
