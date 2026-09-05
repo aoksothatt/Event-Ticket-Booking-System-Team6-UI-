@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { Calendar, Clock, MapPin, Ticket, Heart } from "lucide-vue-next";
 import { coverImage, formatDate, formatTime, formatPrice, minPrice } from "../../utils/event.js";
+import { useFavorites } from "../../composables/useFavorites.js";
 
 const props = defineProps({
   event: { type: Object, required: true },
@@ -10,9 +11,8 @@ const props = defineProps({
   showBadges: { type: Boolean, default: true },
 });
 
-const emit = defineEmits(["save", "unsave"]);
-
 const router = useRouter();
+const { isFavorite, toggle } = useFavorites();
 
 const image = computed(() => coverImage(props.event));
 const price = computed(() => minPrice(props.event));
@@ -23,6 +23,7 @@ const date = computed(() => {
   const t = formatTime(props.event?.start_time);
   return t ? `${d} • ${t}` : d;
 });
+const saved = computed(() => isFavorite(props.event));
 
 // Pull trending/featured flags from any of the shapes the backend may use.
 const trending = computed(() => Boolean(props.event?.trending || props.event?.is_trending));
@@ -30,6 +31,14 @@ const featured = computed(() => Boolean(props.event?.featured || props.event?.is
 
 function open() {
   router.push(`/events/${props.event.id}`);
+}
+
+function goToBooking() {
+  router.push(`/events/${props.event.id}/booking`);
+}
+
+function onToggleFavorite() {
+  toggle(props.event);
 }
 </script>
 
@@ -77,10 +86,10 @@ function open() {
         v-if="showSave"
         type="button"
         class="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white/70 backdrop-blur transition hover:bg-black/70 hover:text-white"
-        :aria-label="event.saved ? 'Remove from saved' : 'Save event'"
-        @click.stop="() => (event.saved ? emit('unsave', event) : emit('save', event))"
+        :aria-label="saved ? 'Remove from favorites' : 'Add to favorites'"
+        @click.stop="onToggleFavorite"
       >
-        <Heart :size="15" :fill="event.saved ? 'currentColor' : 'none'" />
+        <Heart :size="15" :fill="saved ? 'currentColor' : 'none'" />
       </button>
 
       <!-- Category pill at bottom of image -->
@@ -109,15 +118,23 @@ function open() {
       </p>
 
       <div class="mt-1.5 flex items-center justify-between border-t border-white/5 pt-2.5">
-        <p v-if="price !== null" class="text-sm font-bold text-[#FFA500]">
-          From {{ formatPrice(price) }}
+        <p
+          :class="price !== null && price > 0
+            ? 'rounded-md bg-[#FFA500]/10 px-2 py-1 text-sm font-bold text-[#FFA500]'
+            : 'rounded-md bg-white/5 px-2 py-1 text-[11px] font-semibold text-white/70'"
+        >
+          <template v-if="price !== null && price > 0">From {{ formatPrice(price) }}</template>
+          <template v-else>Free Entry</template>
         </p>
-        <span v-else class="text-[11px] font-semibold text-white/50">Free</span>
 
-        <span class="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1 text-[10px] font-semibold text-white/70 transition-colors group-hover:bg-[#FFA500] group-hover:text-black">
+        <button
+          type="button"
+          class="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1 text-[10px] font-semibold text-white/70 transition-colors hover:bg-[#FFA500] hover:text-black"
+          @click.stop="goToBooking"
+        >
           <Ticket :size="11" />
           Book
-        </span>
+        </button>
       </div>
     </div>
   </article>

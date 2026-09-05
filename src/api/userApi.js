@@ -15,7 +15,7 @@ export async function getProfile() {
   } catch (error) {
     if (USE_MOCK_FALLBACK && error.isNetwork) {
       return { user: getUser(), profile: null };
-    }
+    } 
     throw error;
   }
 }

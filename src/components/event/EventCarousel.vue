@@ -13,8 +13,6 @@ const props = defineProps({
   minCards: { type: Number, default: 4 },
 });
 
-const emit = defineEmits(["save", "unsave"]);
-
 const track = ref(null);
 
 function scrollByCards(direction) {
@@ -88,8 +86,6 @@ function hasRoomToScroll() {
         :key="event.id"
         :event="event"
         class="snap-start"
-        @save="emit('save', $event)"
-        @unsave="emit('unsave', $event)"
       />
     </div>
   </section>

@@ -7,7 +7,7 @@
  * result as a simple list.
  */
 
-import { get, USE_MOCK_FALLBACK, mockData } from "./http.js";
+import { get, post, del, USE_MOCK_FALLBACK, mockData } from "./http.js";
 
 /** Unwrap Laravel paginated responses into a plain event array. */
 function unwrapList(response) {
@@ -76,15 +76,17 @@ export async function getFeaturedEvents() {
 }
 
 /**
- * Trending events.
- * Backend support may land as `/events?trending=true`. That endpoint is
- * easy to wire up here later — callers don't change.
+ * Trending events for the customer homepage.
+ * Admin-driven via `is_trending` — only published, still-active events that
+ * the admin manually flagged come back from `/events/trending`.
  */
 export async function getTrendingEvents() {
   try {
-    const { events } = await getEvents({ per_page: 10 });
-    // No trending flag yet — prefer published events with images.
-    return events.filter((e) => e.status !== "cancelled");
+    const response = await get("/events/trending");
+    const payload = response?.data;
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.data)) return payload.data;
+    return [];
   } catch (error) {
     if (USE_MOCK_FALLBACK && error.isNetwork) return mockData.trendingEvents;
     throw error;
@@ -125,4 +127,35 @@ export async function searchEvents(query) {
     if (USE_MOCK_FALLBACK && error.isNetwork) return mockData.searchEvents(query);
     throw error;
   }
+}
+
+/**
+ * Favorites — scoped to the authenticated user on the backend.
+ * `GET /api/user/favorites` returns a plain array of favorited events.
+ */
+export async function getFavorites() {
+  try {
+    const response = await get("/user/favorites");
+    const payload = response?.data;
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.data)) return payload.data;
+    return [];
+  } catch (error) {
+    if (USE_MOCK_FALLBACK && error.isNetwork) {
+      return mockData.trendingEvents.slice(0, 2);
+    }
+    throw error;
+  }
+}
+
+/** Add an event to the current user's favorites. */
+export async function addFavorite(eventId) {
+  const response = await post(`/events/${eventId}/favorite`);
+  return response?.data;
+}
+
+/** Remove an event from the current user's favorites. */
+export async function removeFavorite(eventId) {
+  const response = await del(`/events/${eventId}/favorite`);
+  return response?.data;
 }

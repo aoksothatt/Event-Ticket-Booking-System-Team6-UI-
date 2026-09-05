@@ -3,7 +3,7 @@
  * and error handling are consistent across the entire application.
  */
 
-import { get, post, put, del, postFormData, putFormData } from "./http.js";
+import { get, post, put, patch, del, postFormData, putFormData } from "./http.js";
 
 export const adminApi = {
   // 0. Dashboard
@@ -91,6 +91,9 @@ export const adminApi = {
   },
   async deleteEvent(id) {
     return del(`/events/${id}`);
+  },
+  async setEventTrending(id, isTrending) {
+    return patch(`/admin/events/${id}/trending`, { is_trending: isTrending });
   },
 
   // 6. manage_ticket_types

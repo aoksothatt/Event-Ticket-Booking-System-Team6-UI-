@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { adminApi } from "@/api/admin.js";
+import { coverImage } from "../../utils/event.js";
 import {
   Search,
   Plus,
@@ -10,6 +11,7 @@ import {
   MapPin,
   CalendarCheck,
   Flame,
+  Star,
   ArrowUpRight,
   Eye,
   Edit,
@@ -269,6 +271,45 @@ async function deleteEvent(id) {
     alert(e.response?.data?.message || e.message || "Failed to delete event.");
   }
 }
+
+// ── Trending toggle ─────────────────────────────────────────────────────────
+const trendingBusy = ref(new Set());
+const toast = ref("");
+let toastTimer = null;
+
+function showToast(message) {
+  toast.value = message;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.value = "";
+  }, 2600);
+}
+
+async function toggleTrending(event) {
+  const id = event.id;
+  const next = !Boolean(event.is_trending);
+  const prev = Boolean(event.is_trending);
+
+  event.is_trending = next;
+  trendingBusy.value = new Set(trendingBusy.value).add(id);
+
+  try {
+    const res = await adminApi.setEventTrending(id, next);
+    const updated = res?.data || res;
+    const idx = events.value.findIndex((e) => e.id === id);
+    if (idx !== -1 && updated) {
+      events.value[idx] = { ...events.value[idx], ...updated };
+    }
+    showToast(next ? "Event added to Trending." : "Event removed from Trending.");
+  } catch (e) {
+    event.is_trending = prev;
+    alert(e.response?.data?.message || e.message || "Failed to update trending status.");
+  } finally {
+    const s = new Set(trendingBusy.value);
+    s.delete(id);
+    trendingBusy.value = s;
+  }
+}
 </script>
 
 <template>
@@ -295,6 +336,26 @@ async function deleteEvent(id) {
         </button>
       </div>
     </div>
+
+    <!-- Trending confirmation toast -->
+    <transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="translate-y-1 opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="translate-y-1 opacity-0"
+    >
+      <div
+        v-if="toast"
+        class="fixed right-4 top-4 z-[60] flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-lg"
+        role="status"
+        aria-live="polite"
+      >
+        <Star :size="15" class="text-amber-500" :fill="'currentColor'" />
+        {{ toast }}
+      </div>
+    </transition>
 
     <!-- Loading State -->
     <div v-if="loading" class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -389,10 +450,11 @@ async function deleteEvent(id) {
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50/70 border-b border-slate-200">
             <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <th class="px-6 py-3">Event Title & Organizer</th>
+              <th class="px-6 py-3">Event</th>
               <th class="px-6 py-3">Dates & Timing</th>
               <th class="px-6 py-3">Venue Location</th>
               <th class="px-6 py-3">Status</th>
+              <th class="px-6 py-3">Trending</th>
               <th class="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -403,17 +465,31 @@ async function deleteEvent(id) {
               class="transition-colors hover:bg-slate-50/80"
             >
               <td class="px-6 py-4">
-                <div>
-                  <p class="font-semibold text-slate-900">{{ event.title }}</p>
-                  <div class="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                    <span class="rounded bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">{{ event.category?.name || 'N/A' }}</span>
-                    <span>by {{ event.organizer?.company_name || 'N/A' }}</span>
+                <div class="flex items-center gap-3">
+                  <div class="h-12 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                    <img
+                      v-if="coverImage(event)"
+                      :src="coverImage(event)"
+                      :alt="event.title"
+                      class="h-full w-full object-cover"
+                    />
+                    <span v-else class="flex h-full w-full items-center justify-center">
+                      <Calendar :size="16" class="text-slate-300" />
+                    </span>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="font-semibold text-slate-900">{{ event.title }}</p>
+                    <div class="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                      <span class="rounded bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">{{ event.category?.name || 'N/A' }}</span>
+                      <span class="truncate">by {{ event.organizer?.company_name || 'N/A' }}</span>
+                    </div>
                   </div>
                 </div>
               </td>
               <td class="px-6 py-4 text-slate-700">
                 <div class="text-sm font-semibold text-slate-900">{{ event.start_date }}</div>
                 <div class="text-xs text-slate-400">{{ event.start_time }} - {{ event.end_time }}</div>
+                <div class="text-xs text-slate-500">Ends {{ event.end_date }}</div>
               </td>
               <td class="px-6 py-4 text-slate-700">
                 <div class="flex items-center gap-1.5 text-xs font-medium">
@@ -428,6 +504,36 @@ async function deleteEvent(id) {
                 >
                   {{ event.status }}
                 </span>
+              </td>
+              <td class="px-6 py-4">
+                <div
+                  class="flex items-center gap-2"
+                  :class="trendingBusy.has(event.id) ? 'opacity-60 pointer-events-none' : ''"
+                >
+                  <button
+                    type="button"
+                    role="switch"
+                    :aria-checked="Boolean(event.is_trending)"
+                    :aria-label="`${event.is_trending ? 'Remove' : 'Add'} ${event.title} to Trending`"
+                    :title="event.is_trending ? 'Remove from Trending' : 'Add to Trending'"
+                    class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-wait"
+                    :class="event.is_trending ? 'bg-amber-500' : 'bg-slate-300'"
+                    :disabled="trendingBusy.has(event.id)"
+                    @click="toggleTrending(event)"
+                  >
+                    <span
+                      class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                      :class="event.is_trending ? 'translate-x-6' : 'translate-x-0.5'"
+                    ></span>
+                  </button>
+                  <span
+                    class="flex items-center gap-1 text-xs font-semibold"
+                    :class="event.is_trending ? 'text-amber-600' : 'text-slate-400'"
+                  >
+                    <Star :size="14" :fill="event.is_trending ? 'currentColor' : 'none'" />
+                    {{ event.is_trending ? 'ON' : 'OFF' }}
+                  </span>
+                </div>
               </td>
               <td class="px-6 py-4 text-right">
                 <div class="flex items-center justify-end gap-1.5">
@@ -459,7 +565,7 @@ async function deleteEvent(id) {
               </td>
             </tr>
             <tr v-if="filteredEvents.length === 0">
-              <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-400">
+              <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-400">
                 No events found matching your search.
               </td>
             </tr>

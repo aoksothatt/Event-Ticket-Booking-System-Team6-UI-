@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { User, Ticket, Settings, LogOut, ChevronDown } from "lucide-vue-next";
+import { User, Ticket, Heart, Settings, LogOut, ChevronDown } from "lucide-vue-next";
 import { getUser, isAuthenticated, logout } from "../../api/auth.js";
 import { STORAGE_BASE } from "../../api/http.js";
 
@@ -57,6 +57,7 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutside));
 const items = [
   { label: "My Profile", icon: User, to: "/profile" },
   { label: "My Tickets", icon: Ticket, to: "/my-tickets" },
+  { label: "Favorites", icon: Heart, to: "/favorites" },
   { label: "Settings", icon: Settings, to: "/settings" },
 ];
 </script>

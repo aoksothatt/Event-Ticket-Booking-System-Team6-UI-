@@ -13,9 +13,11 @@ import {
 } from "lucide-vue-next";
 import { getEvent } from "../api/eventApi.js";
 import { coverImage, formatDate, formatTime, formatPrice, minPrice } from "../utils/event.js";
+import { useFavorites } from "../composables/useFavorites.js";
 
 const route = useRoute();
 const router = useRouter();
+const favorites = useFavorites();
 
 const event = ref(null);
 const loading = ref(true);
@@ -25,6 +27,11 @@ const image = computed(() => (event.value ? coverImage(event.value) : ""));
 const price = computed(() => (event.value ? minPrice(event.value) : null));
 const category = computed(() => event.value?.category?.name || "");
 const venue = computed(() => event.value?.venue || null);
+const saved = computed(() => (event.value ? favorites.isFavorite(event.value) : false));
+
+function toggleFavorite() {
+  if (event.value) favorites.toggle(event.value);
+}
 
 async function load(id) {
   loading.value = true;
@@ -173,11 +180,11 @@ watch(() => route.params.id, (id) => load(id));
           <!-- Right: booking CTA -->
           <aside class="h-fit rounded-2xl border border-white/10 bg-[#14171C] p-5 lg:sticky lg:top-24">
             <p class="mb-1 text-xs text-[#9CA3AF]">Availability</p>
-            <p v-if="price !== null" class="flex items-center gap-2 text-2xl font-extrabold text-white">
+            <p v-if="price !== null && price > 0" class="flex items-center gap-2 text-2xl font-extrabold text-white">
               <Tag :size="20" class="text-[#FFA500]" />
-              {{ formatPrice(price) }}
+              From {{ formatPrice(price) }}
             </p>
-            <p v-else class="text-2xl font-extrabold text-white">Free</p>
+            <p v-else class="text-2xl font-extrabold text-white">Free Entry</p>
 
             <button
               type="button"
@@ -191,10 +198,14 @@ watch(() => route.params.id, (id) => load(id));
 
             <button
               type="button"
-              class="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              :class="saved
+                ? 'border-[#FFA500]/60 bg-[#FFA500]/10 text-[#FFA500]'
+                : 'border-white/15 bg-white/5 text-white hover:bg-white/10'"
+              class="mt-3 flex w-full items-center justify-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition hover:border-[#FFA500]/40"
+              @click="toggleFavorite"
             >
-              <Heart :size="16" />
-              Save Event
+              <Heart :size="16" :fill="saved ? 'currentColor' : 'none'" />
+              {{ saved ? 'Saved' : 'Save Event' }}
             </button>
 
             <div class="mt-5 border-t border-white/5 pt-4 text-xs text-[#9CA3AF]">

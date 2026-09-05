@@ -1,7 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
 import {
-  getFeaturedEvents,
   getTrendingEvents,
   getUpcomingEvents,
   getEventsByCategory,
@@ -12,14 +11,13 @@ import EventCarousel from "../components/event/EventCarousel.vue";
 import CategorySection from "../components/event/CategorySection.vue";
 import CategoryFilter from "../components/category/CategoryFilter.vue";
 
-const featuredEvents = ref([]);
 const trendingEvents = ref([]);
 const upcomingEvents = ref([]);
 const categories = ref([]);
 
-const heroLoading = ref(true);
 const trendingLoading = ref(true);
 const upcomingLoading = ref(true);
+const trendingError = ref(false);
 
 // Map of categoryId -> events array for the per-category rows.
 const categoryEvents = ref({});
@@ -34,25 +32,14 @@ const filteredSections = computed(() => {
   );
 });
 
-const errorMessage = ref("");
-
-async function loadHero() {
-  heroLoading.value = true;
-  try {
-    featuredEvents.value = await getFeaturedEvents();
-  } catch (error) {
-    errorMessage.value = error.message || "Could not load featured events.";
-  } finally {
-    heroLoading.value = false;
-  }
-}
-
 async function loadTrending() {
   trendingLoading.value = true;
+  trendingError.value = false;
   try {
     trendingEvents.value = await getTrendingEvents();
   } catch {
     trendingEvents.value = [];
+    trendingError.value = true;
   } finally {
     trendingLoading.value = false;
   }
@@ -105,7 +92,6 @@ function onSelectCategory(id) {
 }
 
 async function bootstrap() {
-  await loadHero();
   await Promise.all([loadTrending(), loadUpcoming()]);
   try {
     categories.value = await getCategories();
@@ -123,23 +109,13 @@ watch(selectedCategory, loadVisibleCategories);
 
 <template>
   <div>
-    <!-- Hero / Featured -->
+    <!-- Hero / Trending -->
     <HeroEvent
-      :events="featuredEvents"
-      :loading="heroLoading"
-      @save="() => {}"
-      @unsave="() => {}"
+      :events="trendingEvents"
+      :loading="trendingLoading"
+      :error="trendingError"
+      @retry="loadTrending"
     />
-
-    <!-- Global error banner -->
-    <div
-      v-if="errorMessage"
-      class="mx-auto max-w-7xl px-4 sm:px-6"
-    >
-      <div class="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-        {{ errorMessage }}
-      </div>
-    </div>
 
     <!-- Page content -->
     <div class="relative z-10 -mt-10 space-y-14 px-4 pb-20 sm:px-6 lg:px-8">

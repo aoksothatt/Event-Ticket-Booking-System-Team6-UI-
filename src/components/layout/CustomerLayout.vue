@@ -1,11 +1,14 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { Ticket as TicketIcon } from "lucide-vue-next";
 import { getProfile } from "../../api/userApi.js";
 import { isAuthenticated } from "../../api/auth.js";
+import { useFavorites } from "../../composables/useFavorites.js";
 import UserNavbar from "../navbar/UserNavbar.vue";
+import Footer from "../common/Footer.vue";
+import BackToTop from "../BackToTop.vue";
 
 const user = ref(null);
+const favorites = useFavorites();
 
 onMounted(async () => {
   if (!isAuthenticated()) return;
@@ -15,6 +18,7 @@ onMounted(async () => {
   } catch {
     user.value = null;
   }
+  favorites.loadFavorites();
 });
 </script>
 
@@ -26,18 +30,7 @@ onMounted(async () => {
       <router-view />
     </main>
 
-    <footer class="border-t border-white/5 px-6 py-10">
-      <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
-        <div class="flex items-center gap-2">
-          <span class="flex h-7 w-7 items-center justify-center rounded-md bg-[#FFA500] text-black">
-            <TicketIcon :size="15" />
-          </span>
-          <span class="text-sm font-extrabold tracking-tight">BILIT</span>
-        </div>
-        <p class="text-xs text-[#9CA3AF]">
-          Discover and book the best events near you.
-        </p>
-      </div>
-    </footer>
+    <Footer />
+    <BackToTop />
   </div>
 </template>

@@ -3,15 +3,18 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { Calendar, Clock, MapPin, Ticket, Heart, ChevronLeft, ChevronRight, Tag } from "lucide-vue-next";
 import { coverImage, formatDate, formatTime, formatPrice, minPrice } from "../../utils/event.js";
+import { useFavorites } from "../../composables/useFavorites.js";
 
 const props = defineProps({
   events: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
+  error: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(["save", "unsave"]);
+const emit = defineEmits(["retry"]);
 
 const router = useRouter();
+const { isFavorite, toggle } = useFavorites();
 
 const current = ref(0);
 const paused = ref(false);
@@ -23,6 +26,11 @@ const image = computed(() => (event.value ? coverImage(event.value) : ""));
 const price = computed(() => (event.value ? minPrice(event.value) : null));
 const category = computed(() => event.value?.category?.name || "");
 const venue = computed(() => event.value?.venue?.name || "");
+const saved = computed(() => (event.value ? isFavorite(event.value) : false));
+
+function toggleFavorite() {
+  if (event.value) toggle(event.value);
+}
 
 function go(next) {
   if (!slideCount.value) return;
@@ -90,13 +98,31 @@ function viewDetails() {
       </div>
     </div>
 
+    <!-- Error state -->
+    <div
+      v-else-if="error"
+      class="relative flex h-[80vh] w-full items-center justify-center bg-gradient-to-b from-[#14171C] to-[#0B0D10] p-6 text-center"
+    >
+      <div>
+        <h2 class="text-xl font-bold text-white">Unable to load trending events</h2>
+        <p class="mt-2 text-sm text-[#9CA3AF]">Something went wrong while fetching trending events.</p>
+        <button
+          type="button"
+          class="mt-5 inline-flex items-center gap-2 rounded-full bg-[#FFA500] px-6 py-3 text-sm font-bold text-black shadow-lg shadow-[#FFA500]/25 transition hover:bg-[#FFB52E] active:scale-[0.98]"
+          @click="emit('retry')"
+        >
+          Try Again
+        </button>
+      </div>
+    </div>
+
     <!-- Empty state -->
     <div
       v-else-if="!event"
       class="relative flex h-[80vh] w-full items-center justify-center bg-gradient-to-b from-[#14171C] to-[#0B0D10] p-6 text-center"
     >
       <div>
-        <h2 class="text-xl font-bold text-white">No featured events yet</h2>
+        <h2 class="text-xl font-bold text-white">No trending events available</h2>
         <p class="mt-2 text-sm text-[#9CA3AF]">Check back soon for highlights.</p>
       </div>
     </div>
@@ -174,11 +200,15 @@ function viewDetails() {
           </p>
 
           <div class="mt-5 flex items-center gap-4">
-            <span v-if="price !== null" class="flex items-center gap-1.5 text-sm text-white/90">
+            <span v-if="price !== null && price > 0" class="flex items-center gap-1.5 text-sm text-white/90">
               <Tag :size="15" class="text-[#FFA500]" />
-              <span class="font-bold text-white">{{ formatPrice(price) }}</span>
+              <span class="rounded-md bg-[#FFA500]/10 px-2 py-1 font-bold text-[#FFA500]">
+                From {{ formatPrice(price) }}
+              </span>
             </span>
-            <span v-else class="text-sm font-semibold text-white/80">Free</span>
+            <span v-else class="rounded-md bg-white/5 px-2 py-1 text-sm font-semibold text-white/80">
+              Free Entry
+            </span>
           </div>
 
           <div class="mt-6 flex flex-wrap items-center gap-3">
@@ -193,14 +223,14 @@ function viewDetails() {
 
             <button
               type="button"
-              :class="event.saved
+              :class="saved
                 ? 'bg-white text-black'
                 : 'border border-white/25 bg-white/5 text-white backdrop-blur-sm hover:bg-white/10'"
               class="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition active:scale-[0.98]"
-              @click="event.saved ? emit('unsave', event) : emit('save', event)"
+              @click="toggleFavorite"
             >
-              <Heart :size="16" :fill="event.saved ? 'currentColor' : 'none'" />
-              {{ event.saved ? 'Saved' : 'Save' }}
+              <Heart :size="16" :fill="saved ? 'currentColor' : 'none'" />
+              {{ saved ? 'Saved' : 'Save' }}
             </button>
 
             <button
@@ -221,7 +251,7 @@ function viewDetails() {
         <button
           type="button"
           class="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur transition hover:bg-black/60"
-          aria-label="Previous featured event"
+          aria-label="Previous trending event"
           @click="prev"
         >
           <ChevronLeft :size="20" />
@@ -229,7 +259,7 @@ function viewDetails() {
         <button
           type="button"
           class="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur transition hover:bg-black/60"
-          aria-label="Next featured event"
+          aria-label="Next trending event"
           @click="next"
         >
           <ChevronRight :size="20" />

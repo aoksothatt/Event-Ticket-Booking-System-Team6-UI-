@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { Home, CalendarDays, Ticket, Settings, Search, X, Menu } from "lucide-vue-next";
+import { Home, CalendarDays, Ticket, Heart, Settings, Search, X, Menu } from "lucide-vue-next";
 import { getUser } from "../../api/auth.js";
 import SearchBar from "./SearchBar.vue";
 import ProfileDropdown from "./ProfileDropdown.vue";
@@ -22,6 +22,7 @@ const user = computed(() => props.user || getUser() || {});
 const navItems = [
   { label: "Home", icon: Home, to: "/home", exact: true },
   { label: "Events", icon: CalendarDays, to: "/events" },
+  { label: "Favorites", icon: Heart, to: "/favorites" },
   { label: "My Tickets", icon: Ticket, to: "/my-tickets" },
 ];
 
