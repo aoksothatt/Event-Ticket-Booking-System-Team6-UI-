@@ -2,11 +2,13 @@
 import { ref, onMounted } from "vue";
 import { Ticket as TicketIcon } from "lucide-vue-next";
 import { getProfile } from "../../api/userApi.js";
+import { isAuthenticated } from "../../api/auth.js";
 import UserNavbar from "../navbar/UserNavbar.vue";
 
 const user = ref(null);
 
 onMounted(async () => {
+  if (!isAuthenticated()) return;
   try {
     const profile = await getProfile();
     user.value = profile?.user || null;

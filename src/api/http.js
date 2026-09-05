@@ -47,7 +47,9 @@ http.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      clearAuth();
+      if (error.config?.headers?.Authorization) {
+        clearAuth();
+      }
     }
     return Promise.reject(error);
   }

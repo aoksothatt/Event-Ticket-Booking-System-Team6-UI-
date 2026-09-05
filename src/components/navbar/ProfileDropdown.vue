@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { User, Ticket, Settings, LogOut, ChevronDown } from "lucide-vue-next";
-import { getUser, logout } from "../../api/auth.js";
+import { getUser, isAuthenticated, logout } from "../../api/auth.js";
 import { STORAGE_BASE } from "../../api/http.js";
 
 const props = defineProps({
@@ -13,6 +13,7 @@ const router = useRouter();
 const open = ref(false);
 const menu = ref(null);
 
+const loggedIn = computed(() => isAuthenticated());
 const displayUser = computed(() => props.user || getUser() || {});
 
 const initials = computed(() => {
@@ -61,7 +62,7 @@ const items = [
 </script>
 
 <template>
-  <div ref="menu" class="relative">
+  <div v-if="loggedIn" ref="menu" class="relative">
     <button
       type="button"
       class="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 p-1 transition hover:bg-white/10"
@@ -119,4 +120,12 @@ const items = [
       </div>
     </transition>
   </div>
+
+  <RouterLink
+    v-else
+    to="/login"
+    class="rounded-full bg-[#FFA500] px-4 py-1.5 text-xs font-bold text-black shadow-sm transition hover:bg-[#FFB52E]"
+  >
+    Sign In
+  </RouterLink>
 </template>

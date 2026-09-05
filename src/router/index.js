@@ -19,19 +19,19 @@ const routes = [
     path: "/home",
     name: "home",
     component: () => import("../views/HomeView.vue"),
-    meta: { customer: true, requiresAuth: true },
+    meta: { customer: true },
   },
   {
     path: "/events",
     name: "events",
     component: () => import("../views/EventsView.vue"),
-    meta: { customer: true, requiresAuth: true },
+    meta: { customer: true },
   },
   {
     path: "/events/:id",
     name: "event-detail",
     component: () => import("../views/EventDetailView.vue"),
-    meta: { customer: true, requiresAuth: true },
+    meta: { customer: true },
     props: true,
   },
   {

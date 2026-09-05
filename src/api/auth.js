@@ -16,19 +16,27 @@ let cachedUser = null;
 // ─── Token & User Storage Helpers ───────────────────────────────────────────
 
 export function getToken() {
-  return localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token || token === "undefined" || token === "null") return null;
+  return token;
 }
 
 export function setAuth(token, user) {
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
-  cachedUser = user;
+  if (token && token !== "undefined" && token !== "null") {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+  if (user && user !== "undefined" && user !== "null") {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    cachedUser = user;
+  }
 }
 
 export function getUser() {
   if (cachedUser) return cachedUser;
   try {
-    cachedUser = JSON.parse(localStorage.getItem(USER_KEY));
+    const raw = localStorage.getItem(USER_KEY);
+    if (!raw || raw === "undefined" || raw === "null") return null;
+    cachedUser = JSON.parse(raw);
   } catch {
     cachedUser = null;
   }
@@ -61,7 +69,10 @@ export function clearAuth() {
 
 export async function login(email, password) {
   const { data } = await http.post("/login", { email, password });
-  setAuth(data.access_token, data.user);
+  const payload = data?.data || data;
+  const token = payload?.access_token || data?.access_token;
+  const user = payload?.user || data?.user;
+  setAuth(token, user);
   return data;
 }
 
@@ -72,7 +83,10 @@ export async function register({ name, email, password, password_confirmation })
     password,
     password_confirmation,
   });
-  setAuth(data.access_token, data.user);
+  const payload = data?.data || data;
+  const token = payload?.access_token || data?.access_token;
+  const user = payload?.user || data?.user;
+  setAuth(token, user);
   return data;
 }
 
