@@ -4,12 +4,13 @@ import { Mail, Phone, User, CalendarDays, MapPin } from "lucide-vue-next";
 import { getProfile } from "../api/userApi.js";
 import { STORAGE_BASE } from "../api/http.js";
 import { formatPrice } from "../utils/event.js";
-import { getMyTickets } from "../api/bookingApi.js";
+import { getMyTickets, getMyTicketsData } from "../api/bookingApi.js";
 
 const loading = ref(true);
 const error = ref("");
 const profile = ref(null);
 const tickets = ref([]);
+const bookings = ref([]);
 
 const user = computed(() => profile.value?.user || null);
 const profileData = computed(() => profile.value?.profile || null);
@@ -28,7 +29,7 @@ const avatarUrl = computed(() => {
 
 const totalTickets = computed(() => tickets.value.length);
 const totalSpent = computed(() =>
-  tickets.value.reduce((sum, t) => sum + Number(t.total_amount || 0), 0)
+  bookings.value.reduce((sum, b) => sum + Number(b.total_amount || 0), 0)
 );
 
 const roleLabel = computed(() => {
@@ -48,7 +49,11 @@ async function load() {
   error.value = "";
   try {
     profile.value = await getProfile();
-    tickets.value = await getMyTickets();
+    // Use the same data source as the My Tickets page so the count always
+    // matches the actual per-seat tickets the user owns.
+    tickets.value = await getMyTicketsData();
+    // Bookings (each with a total_amount) are used for the "total spent" stat.
+    bookings.value = await getMyTickets();
   } catch (e) {
     error.value = e.message || "Could not load your profile.";
   } finally {

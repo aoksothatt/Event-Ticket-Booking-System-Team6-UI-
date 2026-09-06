@@ -11,12 +11,12 @@
  *
  * Design notes
  * ------------
- * - `token`, `isAuthenticated`, `role` and `isAdmin` are *derived* from the
- *   storage layer on every read, so they can never drift out of sync — e.g.
- *   the HTTP client already wipes localStorage on a 401, and this store will
- *   reflect that immediately.
- * - `user` is a reactive snapshot that is re-synced from storage after every
- *   auth mutation (login, register, Google login, profile fetch, logout).
+ * - `token` and `user` are reactive refs backed by localStorage. Derived
+ *   values (`isAuthenticated`, `role`, `isAdmin`) recompute from those refs,
+ *   so the UI (navbar, dropdown, router guards, views) re-renders immediately
+ *   when login/register/logout/profile-fetch update the session — no refresh.
+ * - `syncToken`/`syncUser` re-read storage into the refs after every auth
+ *   mutation (login, register, Google login, profile fetch, logout).
  * - `restoreSession()` is called once at app boot (see main.js). Every
  *   authenticated API call therefore has the obey of `booting` before the
  *   router guards fire, so a logged-in user never sees a login flash.
@@ -35,6 +35,12 @@ import * as authApi from "../api/auth.js";
 import http from "../api/http.js";
 
 export const useAuthStore = defineStore("auth", () => {
+  // Reactive snapshots of the current session. `token` and `user` are backed
+  // by localStorage but mirrored into refs so every consumer (navbar, router
+  // guards, views) re-renders immediately when login/register/logout happens
+  // — no page refresh required.
+  const token = ref(authApi.getToken());
+
   // Reactive snapshot of the current user. Initialised from whatever is
   // already persisted so a page refresh keeps the navbar/profile state.
   const user = ref(authApi.getUser());
@@ -45,11 +51,18 @@ export const useAuthStore = defineStore("auth", () => {
   // True until the boot-time session restore has completed.
   const booting = ref(true);
 
-  // Derived, live values that always reflect what is stored in localStorage.
-  const token = computed(() => authApi.getToken());
-  const isAuthenticated = computed(() => authApi.isAuthenticated());
-  const role = computed(() => authApi.userRole());
-  const isAdmin = computed(() => authApi.isAdmin());
+  // Derived, reactive values.
+  const isAuthenticated = computed(() => Boolean(token.value));
+  const role = computed(() => {
+    const u = user.value;
+    return String(u?.role || u?.data?.role || "").toLowerCase() || null;
+  });
+  const isAdmin = computed(() => ["admin", "organizer"].includes(role.value));
+
+  /** Re-read the persisted token into the reactive snapshot. */
+  function syncToken() {
+    token.value = authApi.getToken();
+  }
 
   /** Re-read the persisted user into the reactive snapshot. */
   function syncUser() {
@@ -59,12 +72,14 @@ export const useAuthStore = defineStore("auth", () => {
   /** Persist a token + user and refresh the snapshot. */
   function setSession(nextToken, nextUser) {
     authApi.setAuth(nextToken, nextUser);
+    syncToken();
     syncUser();
   }
 
   /** Wipe the persisted session and the snapshot. */
   function clearSession() {
     authApi.clearAuth();
+    token.value = null;
     user.value = null;
   }
 
@@ -80,6 +95,7 @@ export const useAuthStore = defineStore("auth", () => {
       const profile = body?.data?.data ?? body?.data?.user ?? body?.data ?? null;
       if (profile) {
         authApi.setAuth(authApi.getToken(), profile);
+        syncToken();
         syncUser();
       }
       return profile;
@@ -125,6 +141,7 @@ export const useAuthStore = defineStore("auth", () => {
   /** Email/password login — then refresh the authoritative profile. */
   async function login(credentials) {
     await authApi.login(credentials.email, credentials.password);
+    syncToken();
     syncUser();
     return fetchUser();
   }
@@ -135,6 +152,7 @@ export const useAuthStore = defineStore("auth", () => {
    */
   async function register(payload) {
     await authApi.register(payload);
+    syncToken();
     syncUser();
     return fetchUser();
   }
@@ -145,6 +163,7 @@ export const useAuthStore = defineStore("auth", () => {
       await authApi.logout();
     } finally {
       user.value = null;
+      token.value = null;
     }
   }
 
