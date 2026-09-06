@@ -32,14 +32,21 @@ export function setAuth(token, user) {
 }
 
 export function getUser() {
-  if (cachedUser) return cachedUser;
-  try {
-    const raw = localStorage.getItem(USER_KEY);
-    if (!raw || raw === "undefined" || raw === "null") return null;
-    cachedUser = JSON.parse(raw);
-  } catch {
-    cachedUser = null;
+  let user = cachedUser;
+  if (!user) {
+    try {
+      const raw = localStorage.getItem(USER_KEY);
+      if (!raw || raw === "undefined" || raw === "null") return null;
+      user = JSON.parse(raw);
+    } catch {
+      user = null;
+    }
   }
+  // Auto-unwrap if stored as API response wrapper: { success: true, data: user }
+  if (user && user.data && !user.role && !user.email) {
+    user = user.data;
+  }
+  cachedUser = user;
   return cachedUser;
 }
 
@@ -49,7 +56,8 @@ export function isAuthenticated() {
 
 export function userRole() {
   const user = getUser();
-  return (user?.role || "").toLowerCase() || null;
+  const role = user?.role || user?.data?.role || "";
+  return role.toLowerCase() || null;
 }
 
 export const ADMIN_ROLES = ["admin", "organizer"];

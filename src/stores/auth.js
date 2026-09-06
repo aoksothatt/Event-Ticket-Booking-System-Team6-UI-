@@ -76,7 +76,8 @@ export const useAuthStore = defineStore("auth", () => {
     loading.value = true;
     try {
       const body = await http.get("/user");
-      const profile = body?.data ?? null;
+      // Laravel returns { success: true, data: user }, and axios wraps it in body.data
+      const profile = body?.data?.data ?? body?.data?.user ?? body?.data ?? null;
       if (profile) {
         authApi.setAuth(authApi.getToken(), profile);
         syncUser();

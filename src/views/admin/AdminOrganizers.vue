@@ -22,6 +22,7 @@ const loading = ref(true);
 const error = ref(null);
 
 const organizers = ref([]);
+const users = ref([]);
 
 async function fetchOrganizers() {
   loading.value = true;
@@ -33,6 +34,15 @@ async function fetchOrganizers() {
     error.value = e.response?.data?.message || "Failed to load organizers.";
   } finally {
     loading.value = false;
+  }
+}
+
+async function fetchUsers() {
+  try {
+    const res = await adminApi.getUsers({ role: "organizer" });
+    users.value = res.data.data ?? res.data ?? [];
+  } catch {
+    users.value = [];
   }
 }
 
@@ -93,6 +103,7 @@ const filteredOrganizers = computed(() => {
 const isModalOpen = ref(false);
 const editingOrganizer = ref(null);
 const form = ref({
+  user_id: "",
   company_name: "",
   contact_name: "",
   email: "",
@@ -105,6 +116,7 @@ const form = ref({
 function openCreateModal() {
   editingOrganizer.value = null;
   form.value = {
+    user_id: "",
     company_name: "",
     contact_name: "",
     email: "",
@@ -119,6 +131,7 @@ function openCreateModal() {
 function openEditModal(org) {
   editingOrganizer.value = org;
   form.value = {
+    user_id: org.user_id || "",
     company_name: org.company_name,
     contact_name: org.user?.name || "",
     email: org.user?.email || "",
@@ -142,8 +155,10 @@ async function toggleVerify(org) {
 
 async function saveOrganizer() {
   if (!form.value.company_name.trim()) return;
+  if (!editingOrganizer.value && !form.value.user_id) return;
 
   const payload = {
+    user_id: form.value.user_id,
     company_name: form.value.company_name,
     contact_name: form.value.contact_name,
     email: form.value.email,
@@ -176,7 +191,10 @@ async function deleteOrganizer(id) {
   }
 }
 
-onMounted(fetchOrganizers);
+onMounted(() => {
+  fetchOrganizers();
+  fetchUsers();
+});
 </script>
 
 <template>
@@ -373,6 +391,21 @@ onMounted(fetchOrganizers);
               placeholder="e.g. Wavelength Live Productions"
               class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
             />
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-700">Assign User *</label>
+            <select
+              v-model="form.user_id"
+              :required="!editingOrganizer"
+              :disabled="!!editingOrganizer"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 disabled:opacity-60"
+            >
+              <option value="" disabled>Select a user...</option>
+              <option v-for="u in users" :key="u.id" :value="u.id">
+                {{ u.name }} ({{ u.email }})
+              </option>
+            </select>
           </div>
 
           <div class="grid grid-cols-2 gap-3">

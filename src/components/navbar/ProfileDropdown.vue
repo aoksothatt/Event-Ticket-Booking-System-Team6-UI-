@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { User, Ticket, Heart, Settings, LogOut, ChevronDown } from "lucide-vue-next";
+import { User, Ticket, Heart, Settings, LogOut, ChevronDown, LayoutGrid } from "lucide-vue-next";
 import { useAuthStore } from "../../stores/auth.js";
 import { STORAGE_BASE } from "../../api/http.js";
 import { toast } from "../../composables/useToast.js";
@@ -62,12 +62,19 @@ function onClickOutside(event) {
 onMounted(() => document.addEventListener("click", onClickOutside));
 onBeforeUnmount(() => document.removeEventListener("click", onClickOutside));
 
-const items = [
-  { label: "My Profile", icon: User, to: "/profile" },
-  { label: "My Tickets", icon: Ticket, to: "/my-tickets" },
-  { label: "Favorites", icon: Heart, to: "/favorites" },
-  { label: "Settings", icon: Settings, to: "/settings" },
-];
+const items = computed(() => {
+  const list = [];
+  if (auth.isAdmin) {
+    list.push({ label: "Admin Dashboard", icon: LayoutGrid, to: "/admin/overview" });
+  }
+  list.push(
+    { label: "My Profile", icon: User, to: "/profile" },
+    { label: "My Tickets", icon: Ticket, to: "/my-tickets" },
+    { label: "Favorites", icon: Heart, to: "/favorites" },
+    { label: "Settings", icon: Settings, to: "/settings" }
+  );
+  return list;
+});
 </script>
 
 <template>
