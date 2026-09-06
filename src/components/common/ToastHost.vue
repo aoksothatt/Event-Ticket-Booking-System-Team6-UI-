@@ -1,8 +1,8 @@
 <script setup>
-import { CheckCircle2, Info, AlertTriangle } from "lucide-vue-next";
-import { useFavorites } from "../../composables/useFavorites.js";
+import { CheckCircle2, Info, AlertTriangle, X } from "lucide-vue-next";
+import { useToast } from "../../composables/useToast.js";
 
-const { toast } = useFavorites();
+const { toasts, remove } = useToast();
 
 const iconMap = {
   success: CheckCircle2,
@@ -21,27 +21,38 @@ function toastStyle(type) {
 </script>
 
 <template>
-  <Transition
-    enter-active-class="transition duration-300 ease-out"
-    enter-from-class="-translate-y-3 opacity-0"
-    enter-to-class="translate-y-0 opacity-100"
-    leave-active-class="transition duration-200 ease-in"
-    leave-from-class="translate-y-0 opacity-100"
-    leave-to-class="-translate-y-3 opacity-0"
+  <div
+    class="pointer-events-none fixed inset-x-0 top-4 z-[100] flex flex-col items-center gap-2 px-4"
+    role="status"
+    aria-live="polite"
   >
-    <div
-      v-if="toast"
-      class="pointer-events-none fixed inset-x-0 top-4 z-[100] flex justify-center px-4"
-      role="status"
-      aria-live="polite"
+    <transition-group
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="-translate-y-3 opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="translate-y-0 opacity-100"
+      leave-to-class="-translate-y-3 opacity-0"
+      tag="div"
+      class="flex flex-col items-center gap-2"
     >
       <div
+        v-for="entry in toasts"
+        :key="entry.id"
         class="pointer-events-auto flex items-center gap-2.5 rounded-full border px-4 py-2.5 text-sm font-medium shadow-lg shadow-black/40 backdrop-blur-md"
-        :class="toastStyle(toast.type)"
+        :class="toastStyle(entry.type)"
       >
-        <component :is="iconMap[toast.type] || CheckCircle2" :size="16" class="shrink-0" />
-        <span>{{ toast.message }}</span>
+        <component :is="iconMap[entry.type] || CheckCircle2" :size="16" class="shrink-0" />
+        <span>{{ entry.message }}</span>
+        <button
+          type="button"
+          :aria-label="`Dismiss notification: ${entry.message}`"
+          class="ml-1 rounded-full p-0.5 text-inherit opacity-60 transition hover:bg-white/10 hover:opacity-100"
+          @click="remove(entry.id)"
+        >
+          <X :size="14" />
+        </button>
       </div>
-    </div>
-  </Transition>
+    </transition-group>
+  </div>
 </template>

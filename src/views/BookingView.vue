@@ -2,13 +2,14 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Loader2, Ticket, ChevronLeft, Minus, Plus, Check } from "lucide-vue-next";
-import { getUser } from "../api/auth.js";
 import { getEvent } from "../api/eventApi.js";
 import { post } from "../api/http.js";
+import { useAuthStore } from "../stores/auth.js";
 import { coverImage, formatDate, formatTime, formatPrice } from "../utils/event.js";
 
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
 
 const event = ref(null);
 const loading = ref(true);
@@ -79,7 +80,7 @@ async function checkout() {
     submitError.value = "Please select at least one ticket.";
     return;
   }
-  const user = getUser();
+  const user = auth.user;
   if (!user?.id) {
     submitError.value = "Please sign in to book tickets.";
     return;

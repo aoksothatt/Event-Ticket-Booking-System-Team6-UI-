@@ -4,19 +4,23 @@ import { useRoute, useRouter } from "vue-router";
 import { Mail, Eye, EyeOff, Loader2 } from "lucide-vue-next";
 import BrandLogo from "../../components/auth/BrandLogo.vue";
 import AuthField from "../../components/auth/AuthField.vue";
-import SocialLoginButton from "../../components/auth/SocialLoginButton.vue";
-import { login, isAdmin } from "../../api/auth.js";
+import GoogleLoginButton from "../../components/auth/GoogleLoginButton.vue";
+import { useAuthStore } from "../../stores/auth.js";
+import { computeDestination } from "../../composables/useAuthRedirect.js";
+import { toast } from "../../composables/useToast.js";
 
-// Login calls POST /api/login with email and password.
-// On success it stores the JWT token and user in localStorage,
-// then redirects to /admin/overview. On failure it shows the
-// backend error message (e.g. "Invalid email or password").
+// Login calls POST /api/login with email and password via the Pinia auth
+// store. On success it stores the JWT + user and fetches the authoritative
+// profile, then redirects to the page the user originally wanted (or home).
+// On failure it shows the backend error message (e.g. "Invalid email or
+// password").
 
 import heroVideo from "../../assets/video/From Klickpin.com- 9 Refined small bedroom decor ideas that help you create a polished look with very simple and affordable details for beginners.mp4";
 import heroPoster from "../../assets/hero.png";
 
 const router = useRouter();
 const route = useRoute();
+const auth = useAuthStore();
 
 const form = reactive({ email: "", password: "" });
 const errors = reactive({ email: "", password: "" });
@@ -50,16 +54,18 @@ async function handleSubmit() {
 
   loading.value = true;
   try {
-    await login(form.email.trim(), form.password);
-    const redirect = typeof route.query.redirect === "string" ? route.query.redirect : "";
-    // Honor an explicit redirect only if the user is allowed to open it.
-    if (redirect.startsWith("/admin") && !isAdmin()) {
-      router.push("/home");
-    } else {
-      router.push(redirect || (isAdmin() ? "/admin/overview" : "/home"));
-    }
+    await auth.login({ email: form.email.trim(), password: form.password });
+    toast("Welcome back!", "success");
+
+    // `?redirect=` wins (set by the route guard / buy-ticket gate); otherwise
+    // use the stored intent, then fall back to the role-based home page.
+    const destination = computeDestination({
+      queryRedirect: typeof route.query.redirect === "string" ? route.query.redirect : null,
+      fallback: auth.isAdmin ? "/admin/overview" : "/home",
+    });
+    router.replace(destination);
   } catch (error) {
-    serverError.value = error.message || "Unable to sign in. Please try again.";
+    serverError.value = error.response?.data?.message || error.message || "Unable to sign in. Please try again.";
   } finally {
     loading.value = false;
   }
@@ -169,9 +175,7 @@ async function handleSubmit() {
             <span class="h-px flex-1 bg-[#3A3A3A]"></span>
           </div>
 
-          <SocialLoginButton
-            @click="alert('Google sign-in is not available yet.')"
-          />
+          <GoogleLoginButton />
         </form>
       </section>
 

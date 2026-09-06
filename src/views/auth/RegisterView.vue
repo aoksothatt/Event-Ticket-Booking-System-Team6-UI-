@@ -1,21 +1,26 @@
 <script setup>
 import { reactive, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { User, Mail, Eye, EyeOff, Loader2 } from "lucide-vue-next";
 import BrandLogo from "../../components/auth/BrandLogo.vue";
 import AuthField from "../../components/auth/AuthField.vue";
-import SocialLoginButton from "../../components/auth/SocialLoginButton.vue";
-import { register, isAdmin } from "../../api/auth.js";
+import GoogleLoginButton from "../../components/auth/GoogleLoginButton.vue";
+import { useAuthStore } from "../../stores/auth.js";
+import { computeDestination } from "../../composables/useAuthRedirect.js";
+import { toast } from "../../composables/useToast.js";
 
 // Register calls POST /api/register with name, email, password, and
 // password_confirmation (required because the backend uses a "confirmed"
-// validation rule). On success it stores the returned JWT + user and
-// redirects to /admin/overview. On failure it shows the backend error.
+// validation rule). The backend issues a JWT immediately, so we auto-log the
+// user in (Option A — no second login step) and send them to the page they
+// were headed for, or the home page.
 
 import heroVideo from "../../assets/video/From Klickpin.com- 9 Refined small bedroom decor ideas that help you create a polished look with very simple and affordable details for beginners.mp4";
 import heroPoster from "../../assets/hero.png";
 
 const router = useRouter();
+const route = useRoute();
+const auth = useAuthStore();
 
 const form = reactive({
   name: "",
@@ -68,16 +73,22 @@ async function handleSubmit() {
 
   loading.value = true;
   try {
-    await register({
+    await auth.register({
       name: form.name.trim(),
       email: form.email.trim(),
       password: form.password,
       password_confirmation: form.confirm,
     });
-    router.push(isAdmin() ? "/admin/overview" : "/home");
+    toast("Account created — you're signed in!", "success");
+
+    const destination = computeDestination({
+      queryRedirect: typeof route.query.redirect === "string" ? route.query.redirect : null,
+      fallback: auth.isAdmin ? "/admin/overview" : "/home",
+    });
+    router.replace(destination);
   } catch (error) {
     serverError.value =
-      error.message || "Unable to create your account. Please try again.";
+      error.response?.data?.message || error.message || "Unable to create your account. Please try again.";
   } finally {
     loading.value = false;
   }
@@ -204,10 +215,7 @@ async function handleSubmit() {
             <span class="h-px flex-1 bg-[#3A3A3A]"></span>
           </div>
 
-          <SocialLoginButton
-            label="Sign up with Google"
-            @click="alert('Google sign-up is not available yet.')"
-          />
+          <GoogleLoginButton label="Sign up with Google" />
         </form>
       </section>
 

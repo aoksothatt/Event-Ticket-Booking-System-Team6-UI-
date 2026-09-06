@@ -5,7 +5,8 @@
  *  - prepends VITE_API_BASE (or "/api" via the Vite dev proxy)
  *  - attaches `Authorization: Bearer <token>` automatically via interceptor
  *  - unwraps JSON and normalizes Laravel API error responses
- *  - clears local auth on 401
+ *  - clears local auth on 401 and notifies a registered handler (main.js
+ *    wires this into the Pinia auth store and the router)
  */
 
 import axios from "axios";
@@ -42,13 +43,29 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
+// ── 401 handling ────────────────────────────────────────────────────────────
+// A handler may be registered (from main.js) when an invalid/expired token
+// needs to be reflected in the Pinia store and trigger a redirect to login.
+let unauthorizedHandler = null;
+
+export function setUnauthorizedHandler(handler) {
+  unauthorizedHandler = handler;
+}
+
 // ── Response interceptor: normalize errors ──────────────────────────────────
 http.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      if (error.config?.headers?.Authorization) {
-        clearAuth();
+    // Only global auth expiry is handled here — requests that 401 *without*
+    // a token (e.g. a wrong email/password on POST /login) must NOT log the
+    // user out or trigger a redirect; the caller shows the error itself.
+    if (
+      error.response?.status === 401 &&
+      error.config?.headers?.Authorization
+    ) {
+      clearAuth();
+      if (typeof unauthorizedHandler === "function") {
+        unauthorizedHandler();
       }
     }
     return Promise.reject(error);

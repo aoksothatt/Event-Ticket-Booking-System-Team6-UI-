@@ -2,19 +2,21 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { User, Ticket, Heart, Settings, LogOut, ChevronDown } from "lucide-vue-next";
-import { getUser, isAuthenticated, logout } from "../../api/auth.js";
+import { useAuthStore } from "../../stores/auth.js";
 import { STORAGE_BASE } from "../../api/http.js";
+import { toast } from "../../composables/useToast.js";
 
 const props = defineProps({
   user: { type: Object, default: null },
 });
 
 const router = useRouter();
+const auth = useAuthStore();
 const open = ref(false);
 const menu = ref(null);
 
-const loggedIn = computed(() => isAuthenticated());
-const displayUser = computed(() => props.user || getUser() || {});
+const loggedIn = computed(() => auth.isAuthenticated);
+const displayUser = computed(() => props.user || auth.user || {});
 
 const initials = computed(() => {
   const name = String(displayUser.value?.name || "U");
@@ -41,8 +43,14 @@ function go(path) {
 
 async function handleLogout() {
   open.value = false;
-  await logout();
-  router.push("/login");
+  try {
+    await auth.logout();
+  } finally {
+    // The 401/network edge case still leaves the local session cleared by
+    // authApi.logout(); make sure the UI reflects that either way.
+    toast("You've been signed out.", "info");
+    router.push("/home");
+  }
 }
 
 function onClickOutside(event) {

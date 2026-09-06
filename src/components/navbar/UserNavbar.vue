@@ -1,8 +1,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { Home, CalendarDays, Ticket, Heart, Settings, Search, X, Menu } from "lucide-vue-next";
-import { getUser } from "../../api/auth.js";
+import { Home, CalendarDays, Ticket, Heart, Settings, Search, X, Menu, LogIn, UserPlus, User } from "lucide-vue-next";
+import { useAuthStore } from "../../stores/auth.js";
 import SearchBar from "./SearchBar.vue";
 import ProfileDropdown from "./ProfileDropdown.vue";
 
@@ -12,19 +12,27 @@ const props = defineProps({
 
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
 
 const scrolled = ref(false);
 const mobileOpen = ref(false);
 const mobileSearch = ref(false);
 
-const user = computed(() => props.user || getUser() || {});
+const loggedIn = computed(() => auth.isAuthenticated);
+const user = computed(() => props.user || auth.user || {});
 
-const navItems = [
+// Public links for guests; authenticated links once signed in.
+const guestNav = [
+  { label: "Home", icon: Home, to: "/home", exact: true },
+  { label: "Events", icon: CalendarDays, to: "/events" },
+];
+const authNav = [
   { label: "Home", icon: Home, to: "/home", exact: true },
   { label: "Events", icon: CalendarDays, to: "/events" },
   { label: "Favorites", icon: Heart, to: "/favorites" },
   { label: "My Tickets", icon: Ticket, to: "/my-tickets" },
 ];
+const navItems = computed(() => (loggedIn.value ? authNav : guestNav));
 
 function isActive(item) {
   if (item.exact) return route.path === item.to;
@@ -94,8 +102,27 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
             <SearchBar />
           </div>
 
-          <!-- Settings (desktop) -->
+          <!-- Guest: quick sign-in / sign-up actions -->
+          <template v-if="!loggedIn">
+            <RouterLink
+              to="/login"
+              class="hidden h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white sm:flex"
+            >
+              <LogIn :size="15" />
+              Login
+            </RouterLink>
+            <RouterLink
+              to="/register"
+              class="hidden h-9 items-center gap-1.5 rounded-full bg-[#FFA500] px-3.5 text-sm font-bold text-black transition hover:bg-[#FFB52E] sm:flex"
+            >
+              <UserPlus :size="15" />
+              Register
+            </RouterLink>
+          </template>
+
+          <!-- Authenticated: settings -->
           <button
+            v-if="loggedIn"
             type="button"
             class="hidden h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white sm:flex"
             :aria-label="route.path === '/settings' ? 'Settings' : 'Open settings'"
@@ -116,8 +143,8 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
             <X v-else :size="16" />
           </button>
 
-          <!-- Profile dropdown -->
-          <ProfileDropdown :user="user" />
+          <!-- Profile dropdown (authenticated users only) -->
+          <ProfileDropdown v-if="loggedIn" :user="user" />
 
           <!-- Mobile hamburger -->
           <button
@@ -162,15 +189,48 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
           <component :is="item.icon" :size="17" />
           {{ item.label }}
         </button>
-        <button
-          type="button"
-          :class="route.path === '/settings' ? 'bg-[#FFA500]/15 text-white' : 'text-white/70'"
-          class="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition hover:bg-white/5"
-          @click="goPath('/settings')"
-        >
-          <Settings :size="17" />
-          Settings
-        </button>
+
+        <!-- Guest: auth actions in the mobile drawer -->
+        <template v-if="!loggedIn">
+          <button
+            type="button"
+            class="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-white/70 transition hover:bg-white/5"
+            @click="goPath('/login')"
+          >
+            <LogIn :size="17" />
+            Login
+          </button>
+          <button
+            type="button"
+            class="mt-1 flex w-full items-center gap-3 rounded-xl bg-[#FFA500] px-4 py-3 text-left text-sm font-bold text-black transition hover:bg-[#FFB52E]"
+            @click="goPath('/register')"
+          >
+            <UserPlus :size="17" />
+            Register
+          </button>
+        </template>
+
+        <!-- Authenticated: profile + settings in the mobile drawer -->
+        <template v-if="loggedIn">
+          <button
+            type="button"
+            :class="route.path === '/profile' ? 'bg-[#FFA500]/15 text-white' : 'text-white/70'"
+            class="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition hover:bg-white/5"
+            @click="goPath('/profile')"
+          >
+            <User :size="17" />
+            Profile
+          </button>
+          <button
+            type="button"
+            :class="route.path === '/settings' ? 'bg-[#FFA500]/15 text-white' : 'text-white/70'"
+            class="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition hover:bg-white/5"
+            @click="goPath('/settings')"
+          >
+            <Settings :size="17" />
+            Settings
+          </button>
+        </template>
       </div>
     </transition>
   </header>

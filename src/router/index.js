@@ -1,19 +1,14 @@
 import { createRouter, createWebHistory } from "vue-router";
-// Auth helpers: check JWT presence and the user's role
-import { isAuthenticated, isAdmin } from "../api/auth.js";
-
-/**
- * Routes visitors to their default landing page based on role.
- * Admins/organizers → admin dashboard; everyone else → customer home.
- */
-function defaultHome() {
-  return isAdmin() ? "/admin/overview" : "/home";
-}
+import { useAuthStore } from "../stores/auth.js";
+import { pinia } from "../stores/index.js";
+import { authGuard, defaultHome } from "../middleware/guards.js";
 
 const routes = [
   {
+    // Landing page: show the customer Home (or the admin dashboard for
+    // admins) so visitors can browse events without logging in.
     path: "/",
-    redirect: () => defaultHome(),
+    redirect: () => defaultHome(useAuthStore(pinia)),
   },
   {
     path: "/home",
@@ -81,6 +76,16 @@ const routes = [
     name: "forgot-password",
     component: () => import("../views/auth/ForgotPasswordView.vue"),
     meta: { layout: "auth" },
+  },
+  {
+    // Landing page for the Google OAuth round-trip. Laravel redirects the
+    // browser here with `?token=<jwt>` (or `?error=...` on failure).
+    // `allowAuthenticated` keeps the auth-layout guard from bouncing the
+    // user away before this page has stored the new token.
+    path: "/auth/google/callback",
+    name: "google-callback",
+    component: () => import("../views/auth/GoogleCallbackView.vue"),
+    meta: { layout: "auth", allowAuthenticated: true },
   },
   {
     path: "/admin",
@@ -200,30 +205,8 @@ const router = createRouter({
 });
 
 /**
- * Route guard — runs before every navigation.
- * - Unauthenticated users are sent to /login for protected routes.
- * - Non-admin roles are kept out of /admin/* routes.
- * - Authenticated users cannot visit auth pages (login/register/forgot).
+ * Navigation guard — rules live in src/middleware/guards.js.
  */
-router.beforeEach((to) => {
-  const needsAuth = to.meta.requiresAuth === true;
-
-  if (needsAuth && !isAuthenticated()) {
-    return { name: "login", query: { redirect: to.fullPath } };
-  }
-
-  // Admin area is restricted to admin/organizer roles only.
-  if (to.path.startsWith("/admin") && !isAdmin()) {
-    return { path: "/home" };
-  }
-
-  if (to.meta.layout === "auth") {
-    if (isAuthenticated()) {
-      return { path: to.path.startsWith("/admin") ? "/admin/overview" : defaultHome() };
-    }
-  }
-
-  return true;
-});
+router.beforeEach(authGuard);
 
 export default router;

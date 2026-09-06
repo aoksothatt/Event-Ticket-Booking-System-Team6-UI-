@@ -18,10 +18,11 @@ import {
   Plus,
   TicketCheck,
 } from "lucide-vue-next";
-import { logout } from "../../api/auth.js";
+import { useAuthStore } from "../../stores/auth.js";
 
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
 
 const navSections = [
   {
@@ -60,11 +61,14 @@ const navSections = [
 
 const active = computed(() => route.meta?.navKey || "");
 
-// Logout calls POST /api/logout to invalidate the JWT on the server,
-// clears the local auth state, then sends the user back to /login.
+// Logout invalidates the JWT on the server via the Pinia auth store, clears
+// the local session (localStorage + store snapshot), then returns to /login.
 async function handleLogout() {
-  await logout();
-  router.push("/login");
+  try {
+    await auth.logout();
+  } finally {
+    router.push("/login");
+  }
 }
 </script>
 

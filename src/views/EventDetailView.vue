@@ -14,10 +14,13 @@ import {
 import { getEvent } from "../api/eventApi.js";
 import { coverImage, formatDate, formatTime, formatPrice, minPrice } from "../utils/event.js";
 import { useFavorites } from "../composables/useFavorites.js";
+import { useAuthStore } from "../stores/auth.js";
+import { redirectToLogin } from "../composables/useAuthRedirect.js";
 
 const route = useRoute();
 const router = useRouter();
 const favorites = useFavorites();
+const auth = useAuthStore();
 
 const event = ref(null);
 const loading = ref(true);
@@ -47,7 +50,18 @@ async function load(id) {
 }
 
 function book() {
-  if (event.value) router.push(`/events/${event.value.id}/booking`);
+  if (!event.value) return;
+
+  // Guests may browse, but purchasing requires an account. Explain why we're
+  // sending them to login and bring them straight back here afterwards.
+  if (!auth.isAuthenticated) {
+    redirectToLogin(router, {
+      message: "You must sign in or create an account before purchasing tickets.",
+    });
+    return;
+  }
+
+  router.push(`/events/${event.value.id}/booking`);
 }
 
 onMounted(() => load(route.params.id));
