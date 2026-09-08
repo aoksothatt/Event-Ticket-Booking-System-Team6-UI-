@@ -20,12 +20,6 @@ import {
 const loading = ref(true);
 const error = ref(null);
 
-const stats = [
-  { label: "Total Ticket Types", value: "180", change: "+12 new tiers", icon: Ticket, color: "bg-purple-50 text-purple-600" },
-  { label: "Total Tickets Sold", value: "48,210", change: "78% platform inventory", icon: CheckCircle2, color: "bg-emerald-50 text-emerald-600" },
-  { label: "Sold Out Tiers", value: "32", change: "High demand events", icon: Clock, color: "bg-amber-50 text-amber-600" },
-];
-
 const searchQuery = ref("");
 const selectedStatus = ref("All");
 
@@ -70,6 +64,39 @@ onMounted(() => {
   fetchTicketTypes();
 });
 
+const stats = computed(() => {
+  const total = ticketTypes.value.length;
+  const sold = ticketTypes.value.reduce((s, t) => s + (Number(t.sold_quantity) || 0), 0);
+  const capacity = ticketTypes.value.reduce((s, t) => s + (Number(t.quantity) || 0), 0);
+  const soldOut = ticketTypes.value.filter(
+    (t) => Number(t.quantity) > 0 && Number(t.sold_quantity) >= Number(t.quantity)
+  ).length;
+
+  return [
+    {
+      label: "Total Ticket Types",
+      value: total.toLocaleString(),
+      change: "configured tiers",
+      icon: Ticket,
+      color: "bg-purple-50 text-purple-600",
+    },
+    {
+      label: "Total Tickets Sold",
+      value: sold.toLocaleString(),
+      change: capacity ? `${Math.round((sold / capacity) * 100)}% of platform capacity` : "no inventory yet",
+      icon: CheckCircle2,
+      color: "bg-emerald-50 text-emerald-600",
+    },
+    {
+      label: "Sold Out Tiers",
+      value: soldOut.toLocaleString(),
+      change: "high demand events",
+      icon: Clock,
+      color: "bg-amber-50 text-amber-600",
+    },
+  ];
+});
+
 const statuses = ["All", "active", "sold_out", "inactive"];
 
 const statusStyle = {
@@ -83,7 +110,7 @@ const filteredTicketTypes = computed(() => {
     const matchesSearch =
       t.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       t.event.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      t.description.toLowerCase().includes(searchQuery.value.toLowerCase());
+      (t.description || "").toLowerCase().includes(searchQuery.value.toLowerCase());
 
     const matchesStatus =
       selectedStatus.value === "All" || t.status === selectedStatus.value;

@@ -15,6 +15,14 @@ export async function getCheckIns(params = {}) {
 }
 
 /**
+ * Fetch the authenticated customer's own check-ins (for their dashboard).
+ */
+export async function getMyCheckIns() {
+  const response = await get("/my/check-ins");
+  return response?.data || response;
+}
+
+/**
  * Fetch a single check-in by ID.
  * @param {number|string} id Check-in ID
  */
@@ -85,6 +93,7 @@ export async function cancelTicket(id) {
 
 export const checkInApi = {
   getCheckIns,
+  getMyCheckIns,
   getCheckIn,
   createCheckIn,
   updateCheckIn,

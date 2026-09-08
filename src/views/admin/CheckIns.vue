@@ -14,16 +14,11 @@ import {
   X,
   Scan,
   RefreshCw,
+  Loader2,
 } from "lucide-vue-next";
 
 const loading = ref(true);
 const error = ref(null);
-
-const stats = [
-  { label: "Total Check-Ins", value: "14,890", change: "+412 today", icon: QrCode, color: "bg-indigo-50 text-indigo-600" },
-  { label: "Attendance Rate", value: "76.4%", change: "Based on issued tickets", icon: UserCheck, color: "bg-emerald-50 text-emerald-600" },
-  { label: "Active Scanner Staff", value: "24", change: "Across 6 live event gates", icon: CheckCircle2, color: "bg-blue-50 text-blue-600" },
-];
 
 const searchQuery = ref("");
 const selectedStatus = ref("All");
@@ -54,6 +49,43 @@ async function fetchCheckIns() {
 
 onMounted(fetchCheckIns);
 
+const stats = computed(() => {
+  const total = checkIns.value.length;
+  const verified = checkIns.value.filter(
+    (c) => c.status !== "cancelled" && c.status !== "duplicate"
+  ).length;
+  const rate = total ? Math.round((verified / total) * 100) : 0;
+  const today = new Date().toDateString();
+  const todays = checkIns.value.filter(
+    (c) => c.checked_in_at && new Date(c.checked_in_at).toDateString() === today
+  ).length;
+  const duplicates = checkIns.value.filter((c) => c.status === "duplicate").length;
+
+  return [
+    {
+      label: "Total Check-Ins",
+      value: total.toLocaleString(),
+      change: `${todays} today`,
+      icon: QrCode,
+      color: "bg-indigo-50 text-indigo-600",
+    },
+    {
+      label: "Verified Entries",
+      value: verified.toLocaleString(),
+      change: total ? `${rate}% acceptance rate` : "based on issued tickets",
+      icon: UserCheck,
+      color: "bg-emerald-50 text-emerald-600",
+    },
+    {
+      label: "Duplicate Attempts",
+      value: duplicates.toLocaleString(),
+      change: "flagged & rejected at gates",
+      icon: CheckCircle2,
+      color: "bg-blue-50 text-blue-600",
+    },
+  ];
+});
+
 const statusStyle = {
   checked_in: "bg-emerald-50 text-emerald-700 border-emerald-200",
   completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -81,48 +113,36 @@ const filteredCheckIns = computed(() => {
 const isScanModalOpen = ref(false);
 const scanCode = ref("");
 const scanFeedback = ref(null);
+const scanning = ref(false);
 
-function processManualCheckIn() {
+async function processManualCheckIn() {
   if (!scanCode.value.trim()) return;
 
-  const code = scanCode.value.trim().toUpperCase();
-  const existing = checkIns.value.find((c) => c.booking_number === code);
-
-  if (existing) {
-    if (existing.status === "checked_in") {
-      scanFeedback.value = {
-        type: "error",
-        title: "Duplicate Check-In Warning!",
-        message: `Ticket ${code} was already checked in at ${existing.checked_in_at}.`,
-      };
-    } else {
-      existing.status = "checked_in";
-      existing.checked_in_at = "Just now";
-      scanFeedback.value = {
-        type: "success",
-        title: "Access Granted!",
-        message: `Welcome ${existing.attendee} to ${existing.event}.`,
-      };
-    }
-  } else {
-    // Add new verified check-in
-    checkIns.value.unshift({
-      id: Date.now(),
-      booking_number: code,
-      attendee: "Verified Attendee",
-      email: "attendee@ticket.com",
-      event: "",
-      checked_by: "Admin (Direct Scan)",
-      checked_in_at: "Just now",
-      status: "checked_in",
-    });
+  scanning.value = true;
+  scanFeedback.value = null;
+  try {
+    // Called through /tickets/verify, which persists the ticket state AND
+    // creates a CheckIn record in the database (see TicketController@verify).
+    const response = await adminApi.verifyTicket(scanCode.value.trim());
+    const ok = response?.success ?? true;
     scanFeedback.value = {
-      type: "success",
-      title: "Check-in Successful!",
-      message: `Booking ${code} validated and checked in successfully.`,
+      type: ok ? "success" : "error",
+      title: ok ? "Access Granted!" : "Check-In Failed",
+      message: response?.message || "Ticket validated.",
     };
+    if (ok) {
+      scanCode.value = "";
+      await fetchCheckIns();
+    }
+  } catch (e) {
+    scanFeedback.value = {
+      type: "error",
+      title: "Check-In Failed",
+      message: e.response?.data?.message || e.message || "Could not verify this ticket.",
+    };
+  } finally {
+    scanning.value = false;
   }
-  scanCode.value = "";
 }
 </script>
 
@@ -323,10 +343,12 @@ function processManualCheckIn() {
           </button>
           <button
             type="button"
+            :disabled="scanning || !scanCode.trim()"
             @click="processManualCheckIn"
-            class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600"
+            class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 disabled:opacity-50"
           >
-            Verify Ticket
+            <Loader2 v-if="scanning" :size="13" class="inline animate-spin mr-1" />
+            {{ scanning ? "Verifying..." : "Verify Ticket" }}
           </button>
         </div>
       </div>

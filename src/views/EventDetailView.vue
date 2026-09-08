@@ -10,12 +10,15 @@ import {
   Tag,
   ChevronLeft,
   Users,
+  Star,
 } from "lucide-vue-next";
 import { getEvent } from "../api/eventApi.js";
 import { coverImage, formatDate, formatTime, formatPrice, minPrice } from "../utils/event.js";
 import { useFavorites } from "../composables/useFavorites.js";
 import { useAuthStore } from "../stores/auth.js";
 import { redirectToLogin } from "../composables/useAuthRedirect.js";
+import { createReview } from "../api/reviewApi.js";
+import { getEventReviews } from "../api/reviewApi.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -26,14 +29,37 @@ const event = ref(null);
 const loading = ref(true);
 const error = ref("");
 
+// Review state (customer submission — saved to the backend via POST /reviews).
+const reviews = ref([]);
+const rating = ref(5);
+const comment = ref("");
+const reviewSubmitting = ref(false);
+const reviewError = ref("");
+const reviewSuccess = ref("");
+
 const image = computed(() => (event.value ? coverImage(event.value) : ""));
 const price = computed(() => (event.value ? minPrice(event.value) : null));
 const category = computed(() => event.value?.category?.name || "");
 const venue = computed(() => event.value?.venue || null);
 const saved = computed(() => (event.value ? favorites.isFavorite(event.value) : false));
 
+const avgRating = computed(() => {
+  if (!reviews.value.length) return null;
+  const sum = reviews.value.reduce((s, r) => s + Number(r.rating || 0), 0);
+  return (sum / reviews.value.length).toFixed(1);
+});
+
 function toggleFavorite() {
   if (event.value) favorites.toggle(event.value);
+}
+
+async function loadReviews() {
+  if (!event.value) return;
+  try {
+    reviews.value = await getEventReviews(event.value.id);
+  } catch {
+    reviews.value = [];
+  }
 }
 
 async function load(id) {
@@ -41,11 +67,44 @@ async function load(id) {
   error.value = "";
   try {
     event.value = await getEvent(id);
+    await loadReviews();
   } catch (e) {
     error.value = e.message || "Could not load this event.";
     event.value = null;
   } finally {
     loading.value = false;
+  }
+}
+
+async function submitReview() {
+  if (!auth.isAuthenticated) {
+    redirectToLogin(router, {
+      message: "Please sign in before leaving a review.",
+    });
+    return;
+  }
+  if (!comment.value.trim()) {
+    reviewError.value = "Please write a short comment before submitting.";
+    return;
+  }
+
+  reviewSubmitting.value = true;
+  reviewError.value = "";
+  reviewSuccess.value = "";
+  try {
+    await createReview({
+      event_id: event.value.id,
+      rating: Number(rating.value),
+      comment: comment.value.trim(),
+    });
+    reviewSuccess.value = "Thanks! Your review was saved.";
+    comment.value = "";
+    rating.value = 5;
+    await loadReviews();
+  } catch (e) {
+    reviewError.value = e.response?.data?.message || e.message || "Could not submit your review.";
+  } finally {
+    reviewSubmitting.value = false;
   }
 }
 
@@ -140,6 +199,88 @@ watch(() => route.params.id, (id) => load(id));
               <p class="text-sm leading-relaxed text-white/70">
                 {{ event.description || "No description provided yet." }}
               </p>
+            </div>
+
+            <!-- Reviews -->
+            <div class="rounded-2xl bg-[#14171C] p-5">
+              <div class="mb-4 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                  <Star :size="16" class="text-amber-400" />
+                  <h3 class="text-base font-bold text-white">Reviews</h3>
+                  <span v-if="avgRating" class="rounded-full bg-white/5 px-2.5 py-0.5 text-xs font-semibold text-[#FFA500]">
+                    {{ avgRating }} / 5
+                  </span>
+                </div>
+                <span class="text-xs text-[#9CA3AF]">{{ reviews.length }} reviews</span>
+              </div>
+
+              <!-- Review form -->
+              <form class="mb-4 rounded-xl border border-white/10 bg-[#1D2229] p-4" @submit.prevent="submitReview">
+                <div class="mb-3 flex items-center gap-1">
+                  <button
+                    v-for="i in 5"
+                    :key="i"
+                    type="button"
+                    class="transition hover:scale-110"
+                    @click="rating = i"
+                  >
+                    <Star
+                      :size="18"
+                      :class="i <= rating ? 'text-amber-400 fill-amber-400' : 'text-white/20'"
+                    />
+                  </button>
+                  <span class="ml-2 text-xs text-[#9CA3AF]">{{ rating }} of 5</span>
+                </div>
+                <textarea
+                  v-model="comment"
+                  rows="3"
+                  placeholder="Share your experience at this event..."
+                  class="w-full rounded-lg border border-white/10 bg-[#0B0D10] px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#FFA500]/60"
+                ></textarea>
+                <div class="mt-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p v-if="reviewError" class="text-xs text-red-400">{{ reviewError }}</p>
+                    <p v-else-if="reviewSuccess" class="text-xs text-emerald-400">{{ reviewSuccess }}</p>
+                  </div>
+                  <button
+                    type="submit"
+                    :disabled="reviewSubmitting"
+                    class="shrink-0 rounded-full bg-[#FFA500] px-5 py-2 text-xs font-bold text-black transition hover:bg-[#FFB52E] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {{ reviewSubmitting ? "Submitting..." : "Submit Review" }}
+                  </button>
+                </div>
+              </form>
+
+              <!-- Review list -->
+              <div v-if="!reviews.length" class="py-6 text-center text-sm text-[#9CA3AF]">
+                No reviews yet — be the first to share your experience.
+              </div>
+              <ul v-else class="space-y-3">
+                <li
+                  v-for="r in reviews"
+                  :key="r.id"
+                  class="rounded-xl border border-white/10 bg-[#1D2229] p-4"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                      <span class="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFA500]/15 text-[10px] font-bold text-[#FFA500]">
+                        {{ (r.user?.name || "?").split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) }}
+                      </span>
+                      <span class="text-sm font-semibold text-white">{{ r.user?.name || "Attendee" }}</span>
+                    </div>
+                    <div class="flex gap-0.5">
+                      <Star
+                        v-for="i in 5"
+                        :key="i"
+                        :size="12"
+                        :class="i <= r.rating ? 'text-amber-400 fill-amber-400' : 'text-white/15'"
+                      />
+                    </div>
+                  </div>
+                  <p v-if="r.comment" class="mt-2 text-sm leading-relaxed text-white/70">{{ r.comment }}</p>
+                </li>
+              </ul>
             </div>
 
             <div class="grid gap-3 sm:grid-cols-2">

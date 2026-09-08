@@ -19,12 +19,6 @@ import {
 const loading = ref(true);
 const error = ref(null);
 
-const stats = [
-  { label: "Total Reviews", value: "1,240", change: "+48 this week", icon: MessageSquare, color: "bg-blue-50 text-blue-600" },
-  { label: "Average Platform Rating", value: "4.8 / 5.0", change: "94% 4 & 5 stars", icon: Star, color: "bg-amber-50 text-amber-600" },
-  { label: "Pending Moderation", value: "14", change: "Awaiting staff review", icon: Clock, color: "bg-orange-50 text-orange-600" },
-];
-
 const searchQuery = ref("");
 const selectedRating = ref("All");
 const selectedStatus = ref("All");
@@ -62,6 +56,40 @@ async function fetchReviews() {
 
 onMounted(fetchReviews);
 
+const stats = computed(() => {
+  const total = reviews.value.length;
+  const avg = total
+    ? (reviews.value.reduce((s, r) => s + Number(r.rating || 0), 0) / total).toFixed(1)
+    : "0.0";
+  const published = reviews.value.filter((r) => r.status === "published").length;
+  const pending = reviews.value.filter((r) => r.status === "pending").length;
+  const fiveStars = reviews.value.filter((r) => r.rating === 5).length;
+
+  return [
+    {
+      label: "Total Reviews",
+      value: total.toLocaleString(),
+      change: `${published} published`,
+      icon: MessageSquare,
+      color: "bg-blue-50 text-blue-600",
+    },
+    {
+      label: "Average Platform Rating",
+      value: `${avg} / 5.0`,
+      change: total ? `${Math.round((fiveStars / total) * 100)}% 5-star ratings` : "no ratings yet",
+      icon: Star,
+      color: "bg-amber-50 text-amber-600",
+    },
+    {
+      label: "Pending Moderation",
+      value: pending.toLocaleString(),
+      change: "awaiting staff review",
+      icon: Clock,
+      color: "bg-orange-50 text-orange-600",
+    },
+  ];
+});
+
 const ratings = ["All", "5 Stars", "4 Stars", "3 Stars", "2 Stars", "1 Star"];
 const statuses = ["All", "published", "pending", "rejected"];
 
@@ -77,7 +105,7 @@ const filteredReviews = computed(() => {
     const matchesSearch =
       r.user.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       r.event.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      r.comment.toLowerCase().includes(searchQuery.value.toLowerCase());
+      (r.comment || "").toLowerCase().includes(searchQuery.value.toLowerCase());
 
     const matchesRating =
       selectedRating.value === "All" ||

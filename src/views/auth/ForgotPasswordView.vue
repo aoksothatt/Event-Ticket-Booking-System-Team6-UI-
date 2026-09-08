@@ -40,6 +40,12 @@ const otp = ref("");
 const loading = ref(false);
 const serverError = ref("");
 
+// Returns the most useful error message from a failed API call:
+// the backend's `message`, axios's text, or a fallback.
+function apiError(e, fallback) {
+  return e?.response?.data?.message || e?.message || fallback;
+}
+
 // Holds the reset_token returned by OTP verification (used in step 3)
 let resetToken = "";
 
@@ -98,8 +104,7 @@ async function handleSendOtp() {
     step.value = 2;
     startOtpCountdown(); // begin the 5-minute expiry countdown
   } catch (error) {
-    serverError.value =
-      error.message || "Unable to send the code. Please try again.";
+    serverError.value = apiError(error, "Unable to send the code. Please try again.");
   } finally {
     loading.value = false;
   }
@@ -119,7 +124,7 @@ async function handleVerifyOtp() {
     resetToken = data?.data?.reset_token;
     step.value = 3;
   } catch (error) {
-    serverError.value = error.message || "Invalid code. Please try again.";
+    serverError.value = apiError(error, "Invalid code. Please try again.");
   } finally {
     loading.value = false;
   }
@@ -147,8 +152,7 @@ async function handleResetPassword() {
     step.value = 4; // success screen
     stopOtpCountdown(); // no longer need the expiry countdown
   } catch (error) {
-    serverError.value =
-      error.message || "Unable to reset your password. Please try again.";
+    serverError.value = apiError(error, "Unable to reset your password. Please try again.");
   } finally {
     loading.value = false;
   }

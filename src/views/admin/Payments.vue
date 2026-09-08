@@ -19,12 +19,6 @@ import {
 const loading = ref(true);
 const error = ref(null);
 
-const stats = [
-  { label: "Total Volume Settled", value: "$1,248,500", change: "+14.5% vs last month", icon: DollarSign, color: "bg-emerald-50 text-emerald-600" },
-  { label: "Successful Transactions", value: "6,192", change: "98.2% transaction success", icon: CheckCircle2, color: "bg-blue-50 text-blue-600" },
-  { label: "Pending Settlements", value: "$3,420", change: "18 transactions in escrow", icon: Clock, color: "bg-amber-50 text-amber-600" },
-];
-
 const searchQuery = ref("");
 const selectedStatus = ref("All");
 const selectedMethod = ref("All");
@@ -58,7 +52,46 @@ async function fetchPayments() {
 
 onMounted(fetchPayments);
 
-const methods = ["All", "Credit Card", "ABA Pay", "PayPal"];
+const money = (n) =>
+  n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const stats = computed(() => {
+  const settled = payments.value
+    .filter((p) => p.payment_status === "paid")
+    .reduce((sum, p) => sum + p.amount, 0);
+  const successCount = payments.value.filter((p) => p.payment_status === "paid").length;
+  const pending = payments.value.filter((p) => p.payment_status === "pending");
+  const pendingAmount = pending.reduce((sum, p) => sum + p.amount, 0);
+
+  return [
+    {
+      label: "Total Volume Settled",
+      value: `$${money(settled)}`,
+      change: `${successCount} successful transaction(s)`,
+      icon: DollarSign,
+      color: "bg-emerald-50 text-emerald-600",
+    },
+    {
+      label: "Successful Transactions",
+      value: successCount.toLocaleString(),
+      change: `${payments.value.length} total payment(s)`,
+      icon: CheckCircle2,
+      color: "bg-blue-50 text-blue-600",
+    },
+    {
+      label: "Pending Settlements",
+      value: `$${money(pendingAmount)}`,
+      change: `${pending.length} awaiting confirmation`,
+      icon: Clock,
+      color: "bg-amber-50 text-amber-600",
+    },
+  ];
+});
+
+const methods = computed(() => {
+  const values = new Set(payments.value.map((p) => p.payment_method).filter(Boolean));
+  return ["All", ...Array.from(values)];
+});
 const statuses = ["All", "paid", "pending", "refunded", "failed"];
 
 const statusStyle = {
@@ -71,15 +104,16 @@ const statusStyle = {
 const filteredPayments = computed(() => {
   return payments.value.filter((p) => {
     const matchesSearch =
-      p.transaction_id.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      p.booking_number.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      p.payment_method.toLowerCase().includes(searchQuery.value.toLowerCase());
+      (p.transaction_id || "").toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (p.booking_number || "").toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (p.payment_method || "").toLowerCase().includes(searchQuery.value.toLowerCase());
 
     const matchesStatus =
       selectedStatus.value === "All" || p.payment_status === selectedStatus.value;
 
     const matchesMethod =
-      selectedMethod.value === "All" || p.payment_method.includes(selectedMethod.value);
+      selectedMethod.value === "All" ||
+      (p.payment_method || "").toLowerCase().includes(selectedMethod.value.toLowerCase());
 
     return matchesSearch && matchesStatus && matchesMethod;
   });

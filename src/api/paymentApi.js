@@ -15,6 +15,25 @@ export async function getPayments(params = {}) {
 }
 
 /**
+ * Fetch the authenticated customer's own payments (for their dashboard).
+ */
+export async function getMyPayments() {
+  const response = await get("/my/payments");
+  return response?.data || response;
+}
+
+/**
+ * Fetch the authenticated customer's aggregated dashboard totals.
+ * Returns { total_bookings, total_spent, total_tickets, active_tickets,
+ *           used_tickets, total_checkins, checked_in, total_reviews,
+ *           avg_rating, total_favorites }.
+ */
+export async function getMySummary() {
+  const response = await get("/my/summary");
+  return response?.data || response;
+}
+
+/**
  * Fetch a single payment by ID.
  * @param {number|string} id Payment ID
  */
@@ -43,6 +62,7 @@ export async function createPayment(data) {
 
 export const paymentApi = {
   getPayments,
+  getMyPayments,
   getPayment,
   createPayment,
 };

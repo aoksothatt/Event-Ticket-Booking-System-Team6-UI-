@@ -15,6 +15,14 @@ export async function getReviews(params = {}) {
 }
 
 /**
+ * Fetch the authenticated customer's own reviews (for their dashboard).
+ */
+export async function getMyReviews() {
+  const response = await get("/my/reviews");
+  return response?.data || response;
+}
+
+/**
  * Fetch reviews filtered for a specific event.
  * @param {number|string} eventId
  */
@@ -35,15 +43,16 @@ export async function getReview(id) {
 
 /**
  * Create a new review.
- * @param {Object} data { event_id, user_id, rating, comment, status }
+ * The backend attributes the review to the authenticated user automatically,
+ * so no user_id is sent from the client.
+ * @param {Object} data { event_id, rating, comment, status? }
  */
 export async function createReview(data) {
   const response = await post("/reviews", {
     event_id: Number(data.event_id),
-    user_id: Number(data.user_id),
     rating: Number(data.rating),
     comment: data.comment || "",
-    status: data.status || "published",
+    status: data.status || undefined,
   });
   return response?.data || response;
 }
@@ -69,6 +78,7 @@ export async function deleteReview(id) {
 
 export const reviewApi = {
   getReviews,
+  getMyReviews,
   getEventReviews,
   getReview,
   createReview,
