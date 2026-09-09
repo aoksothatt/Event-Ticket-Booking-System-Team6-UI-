@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Loader2, Ticket, ChevronLeft, Minus, Plus, Check } from "lucide-vue-next";
+import QRCode from "qrcode";
 import { getEvent } from "../api/eventApi.js";
-import { post } from "../api/http.js";
+import { createBakongCheckout, verifyPayment, formatCountdown } from "../api/bakongApi.js";
 import { useAuthStore } from "../stores/auth.js";
 import { coverImage, formatDate, formatTime, formatPrice } from "../utils/event.js";
 
@@ -17,6 +18,11 @@ const error = ref("");
 const submitting = ref(false);
 const submitError = ref("");
 const success = ref(null);
+const paying = ref(false);
+const paymentItems = ref([]);
+
+let countdownTimer = null;
+let verifyTimer = null;
 
 const quantities = ref({});
 
@@ -88,33 +94,113 @@ async function checkout() {
 
   submitting.value = true;
   try {
-    const bookingResponse = await post("/bookings", {
-      user_id: user.id,
-      event_id: Number(event.value.id),
-      items: selectedItems(),
-    });
-    const booking = bookingResponse?.data || bookingResponse;
+    // One Bakong checkout per selected ticket type. Each returns its own
+    // pending payment + KHQR payload. Polling + verify are started below.
+    const created = [];
+    for (const item of selectedItems()) {
+      const res = await createBakongCheckout({
+        event_id: Number(event.value.id),
+        ticket_type_id: item.ticket_type_id,
+        quantity: item.quantity,
+      });
+      const data = res.data;
+      const ticketType = ticketTypes.value.find((t) => t.id === Number(item.ticket_type_id));
+      created.push({
+        ticketName: ticketType?.name || `Ticket #${item.ticket_type_id}`,
+        quantity: item.quantity,
+        paymentId: data.payment.id,
+        bookingNumber: data.booking.booking_number,
+        amount: Number(data.amount),
+        currency: data.currency,
+        qrPayload: data.qr_payload,
+        expiresAt: data.expires_at,
+        qrDataUrl: null,
+        status: "pending",
+        countdown: formatCountdown(data.expires_at),
+      });
+    }
 
-    // Record a paid payment so the backend confirms the booking and
-    // generates one actual Ticket record per purchased seat. Without this,
-    // no tickets are created and they never show on the My Tickets page.
-    await post("/payments", {
-      booking_id: booking.id,
-      payment_method: "card",
-      amount: Number(booking.total_amount || subtotal.value),
-      currency: "USD",
-      payment_status: "paid",
-    });
-
-    success.value = booking;
+    paymentItems.value = created;
+    paying.value = true;
+    renderQrCodes();
+    startPolling();
   } catch (e) {
-    submitError.value = e.response?.data?.message || e.message || "Could not complete your booking.";
+    submitError.value = e.response?.data?.message || e.message || "Could not initiate payment.";
   } finally {
     submitting.value = false;
   }
 }
 
+async function renderQrCodes() {
+  await Promise.all(
+    paymentItems.value.map(async (item) => {
+      item.qrDataUrl = await QRCode.toDataURL(item.qrPayload, {
+        errorCorrectionLevel: "H",
+        width: 240,
+        margin: 1,
+      });
+    })
+  );
+}
+
+// The backend's `status` endpoint is local-only; `verify` is what actually
+// asks Bakong whether the transaction completed. Poll verify on an interval
+// (idempotent server-side) and keep it running until every payment resolves.
+function startPolling() {
+  stopPolling();
+
+  countdownTimer = setInterval(() => {
+    for (const item of paymentItems.value) {
+      item.countdown = formatCountdown(item.expiresAt);
+      if (item.countdown === "00:00" && item.status === "pending") {
+        verifyAll();
+      }
+    }
+  }, 1000);
+
+  verifyTimer = setInterval(verifyAll, 15000);
+}
+
+async function verifyAll() {
+  for (const item of paymentItems.value) {
+    if (item.status === "paid" || item.status === "expired" || item.status === "failed") continue;
+    try {
+      const res = await verifyPayment(item.paymentId);
+      item.status = res.data?.status || item.status;
+    } catch {
+      // Transient/network error — the next poll will retry.
+    }
+  }
+  if (allPaid.value) {
+    finish();
+  }
+}
+
+function stopPolling() {
+  if (countdownTimer) clearInterval(countdownTimer);
+  if (verifyTimer) clearInterval(verifyTimer);
+  countdownTimer = null;
+  verifyTimer = null;
+}
+
+const allPaid = computed(
+  () => paymentItems.value.length > 0 && paymentItems.value.every((p) => p.status === "paid")
+);
+
+const totalPaid = computed(() =>
+  paymentItems.value.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+);
+
+function finish() {
+  stopPolling();
+  success.value = {
+    booking_number: paymentItems.value.map((p) => p.bookingNumber).filter(Boolean).join(", "),
+    total_amount: totalPaid.value,
+  };
+}
+
 onMounted(() => load(route.params.id));
+onBeforeUnmount(stopPolling);
 </script>
 
 <template>
@@ -171,6 +257,57 @@ onMounted(() => load(route.params.id));
             Back Home
           </button>
         </div>
+      </div>
+
+      <!-- Pay with Bakong KHQR -->
+      <div
+        v-else-if="paying"
+        class="mx-auto mt-6 max-w-lg space-y-4"
+      >
+        <div
+          v-for="(item, idx) in paymentItems"
+          :key="idx"
+          class="rounded-2xl border border-white/10 bg-[#14171C] p-6 text-center"
+        >
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-semibold text-white">{{ item.ticketName }} × {{ item.quantity }}</p>
+            <p class="text-sm font-bold text-[#FFA500]">{{ formatPrice(item.amount) }}</p>
+          </div>
+
+          <div class="my-4 flex justify-center">
+            <img
+              v-if="item.qrDataUrl"
+              :src="item.qrDataUrl"
+              alt="KHQR payment code"
+              class="rounded-xl border border-white/10 bg-white p-2"
+            />
+            <Loader2 v-else :size="28" class="animate-spin text-[#FFA500]" />
+          </div>
+
+          <p class="text-sm text-[#9CA3AF]">
+            Scan with the Bakong / ABA / WING app.<br />
+            Expires in <span class="font-mono font-bold text-white">{{ item.countdown }}</span>
+          </p>
+
+          <p
+            class="mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
+            :class="{
+              'bg-amber-500/10 text-amber-300': item.status === 'pending',
+              'bg-emerald-500/10 text-emerald-300': item.status === 'paid',
+              'bg-red-500/10 text-red-300': item.status === 'expired' || item.status === 'failed',
+            }"
+          >
+            <Loader2 v-if="item.status === 'pending'" :size="12" class="animate-spin" />
+            {{ item.status === 'paid' ? 'Paid' : item.status === 'expired' ? 'Expired' : item.status === 'failed' ? 'Failed' : 'Awaiting payment…' }}
+          </p>
+        </div>
+
+        <p v-if="submitError" class="rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-300">
+          {{ submitError }}
+        </p>
+        <p class="text-center text-xs text-[#9CA3AF]">
+          We check your payment automatically. It may take a few seconds to confirm.
+        </p>
       </div>
 
       <template v-else-if="event">

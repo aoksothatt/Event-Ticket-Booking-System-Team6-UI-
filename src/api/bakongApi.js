@@ -11,9 +11,12 @@
  *   1. const res = await createBakongCheckout({ event_id, ticket_type_id, quantity })
  *   2. Render res.data.qr_payload into a QR image (e.g. `qrcode` or `vue-qrcode`).
  *   3. Show a countdown from res.data.expires_at + amount + currency.
- *   4. Poll getPaymentStatus(res.data.payment.id) every 10 s.
- *   5. On status === "paid" → redirect to the success page with the tickets.
- *   6. When the countdown hits zero → call verifyPayment(id) once, then stop.
+ *   4. Call verifyPayment(paymentId) every ~15 s — this is the call that
+ *      actually asks Bakong whether the transaction completed and confirms
+ *      the booking + issues tickets when paid (idempotent server-side).
+ *   5. Stop when the result status is "paid" (all tickets confirmed) or
+ *      "expired"/"failed". `getPaymentStatus` only reads local state, so it
+ *      is suitable for display, not for the authoritative confirmation.
  */
 
 import { get, post } from "./http.js";
@@ -33,9 +36,10 @@ export async function createBakongCheckout(opts) {
 }
 
 /**
- * Poll the payment status (backend-local). Returns:
- *   { status: "pending"|"paid"|"failed"|"expired"|"cancelled",
- *     is_expired, expires_at, paid_at, booking_status }
+ * Read the payment's LOCAL status. Use for display only — it does not check
+ * Bakong. Call `verifyPayment` for the authoritative confirmation.
+ * Returns: { status: "pending"|"paid"|"failed"|"expired"|"cancelled",
+ *            is_expired, expires_at, paid_at, booking_status }
  * @param {number|string} paymentId
  */
 export async function getPaymentStatus(paymentId) {
@@ -43,8 +47,10 @@ export async function getPaymentStatus(paymentId) {
 }
 
 /**
- * Force a verification round against Bakong. Idempotent — safe to call on
- * countdown expiry or when the user taps "I have paid".
+ * Ask the backend to verify the payment against Bakong and, if the customer
+ * has paid, confirm the booking and issue the tickets. Idempotent — safe to
+ * call on a short interval while the QR window is open, and on countdown
+ * expiry or when the user taps "I have paid".
  * @param {number|string} paymentId
  */
 export async function verifyPayment(paymentId) {
