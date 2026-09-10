@@ -72,6 +72,21 @@ export function formatTime(timeStr) {
   return `${hours}:${minutes} ${meridiem}`;
 }
 
+/** Formats a full date-time (ISO or "YYYY-MM-DD HH:MM:SS") for timestamps
+ * like check-in times / expiry, e.g. "Sep 8, 2026, 4:32 PM". */
+export function formatDateTime(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 /** Formats a float price into a currency string. */
 export function formatPrice(value, currency = "USD") {
   const num = Number(value);

@@ -1,20 +1,25 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { adminApi } from "@/api/admin.js";
+import QRCodeScanner from "@/components/ticket/QRCodeScanner.vue";
+import { formatDateTime } from "@/utils/event.js";
 import {
   QrCode,
   Search,
   CheckCircle2,
-  AlertTriangle,
+  TriangleAlert,
   XCircle,
   Clock,
   ArrowUpRight,
   UserCheck,
-  Plus,
   X,
   Scan,
   RefreshCw,
-  Loader2,
+  Ticket,
+  User,
+  CalendarDays,
+  Recycle,
+  KeyRound,
 } from "lucide-vue-next";
 
 const loading = ref(true);
@@ -96,11 +101,12 @@ const statusStyle = {
 
 const filteredCheckIns = computed(() => {
   return checkIns.value.filter((c) => {
+    const q = searchQuery.value.toLowerCase();
     const matchesSearch =
-      c.booking_number.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      c.attendee.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      c.event.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      c.checked_by.toLowerCase().includes(searchQuery.value.toLowerCase());
+      c.booking_number.toLowerCase().includes(q) ||
+      c.attendee.toLowerCase().includes(q) ||
+      c.event.toLowerCase().includes(q) ||
+      c.checked_by.toLowerCase().includes(q);
 
     const matchesStatus =
       selectedStatus.value === "All" || c.status === selectedStatus.value;
@@ -109,40 +115,88 @@ const filteredCheckIns = computed(() => {
   });
 });
 
-// Modal for manual verification
+/* ───────────── QR scan → auto check-in (single-step) ───────────── */
+
 const isScanModalOpen = ref(false);
-const scanCode = ref("");
-const scanFeedback = ref(null);
-const scanning = ref(false);
+const scanKey = ref(0);
+const scanStep = ref("idle"); // idle | loading | checked | already | invalid | error
+const scannedRaw = ref("");
+const lookup = ref(null);
+const scanError = ref("");
 
-async function processManualCheckIn() {
-  if (!scanCode.value.trim()) return;
+function openScanModal() {
+  resetScan();
+  isScanModalOpen.value = true;
+}
 
-  scanning.value = true;
-  scanFeedback.value = null;
+function resetScan() {
+  scannedRaw.value = "";
+  lookup.value = null;
+  scanError.value = "";
+  scanStep.value = "idle";
+  scanKey.value += 1;
+}
+
+/**
+ * Single-step check-in: scan QR → extract token → send to backend →
+ * backend validates + checks in atomically → display result.
+ */
+async function onScanValue(raw) {
+  scannedRaw.value = raw;
+  scanStep.value = "loading";
+  scanError.value = "";
+  lookup.value = null;
+
   try {
-    // Called through /tickets/verify, which persists the ticket state AND
-    // creates a CheckIn record in the database (see TicketController@verify).
-    const response = await adminApi.verifyTicket(scanCode.value.trim());
-    const ok = response?.success ?? true;
-    scanFeedback.value = {
-      type: ok ? "success" : "error",
-      title: ok ? "Access Granted!" : "Check-In Failed",
-      message: response?.message || "Ticket validated.",
-    };
-    if (ok) {
-      scanCode.value = "";
+    const res = await adminApi.checkInTicket(raw);
+    lookup.value = res;
+
+    if (res.already_checked_in) {
+      scanStep.value = "already";
+    } else {
+      scanStep.value = "checked";
       await fetchCheckIns();
     }
   } catch (e) {
-    scanFeedback.value = {
-      type: "error",
-      title: "Check-In Failed",
-      message: e.response?.data?.message || e.message || "Could not verify this ticket.",
-    };
-  } finally {
-    scanning.value = false;
+    lookup.value = null;
+    const body = e.response?.data;
+    scanError.value = body?.message || e.message || "Check-in failed. Please try again.";
+
+    if (body?.already_checked_in) {
+      lookup.value = body;
+      scanStep.value = "already";
+    } else if (body?.status === "not_found") {
+      scanStep.value = "invalid";
+    } else {
+      scanStep.value = "error";
+    }
   }
+}
+
+const ticketData = computed(() => lookup.value?.data || null);
+const checkInRecord = computed(() => lookup.value?.check_in || null);
+
+const scanBanner = computed(() => {
+  switch (scanStep.value) {
+    case "checked":
+      return { tone: "emerald", title: "CHECK-IN SUCCESSFUL", subtitle: "Ticket successfully checked in", icon: CheckCircle2 };
+    case "already":
+      return { tone: "amber", title: "Ticket Already Used", subtitle: "This ticket has already been checked in.", icon: TriangleAlert };
+    case "invalid":
+      return { tone: "rose", title: "Invalid Ticket", subtitle: "This QR code does not match any valid ticket.", icon: XCircle };
+    case "error":
+      return { tone: "rose", title: "Check-In Error", subtitle: scanError.value || "Something went wrong. Please try again.", icon: XCircle };
+    default:
+      return null;
+  }
+});
+
+const bannerTitle = computed(() => scanBanner.value?.title || "");
+const bannerSubtitle = computed(() => scanBanner.value?.subtitle || "");
+const bannerTone = computed(() => scanBanner.value?.tone || "emerald");
+
+function showResultPanel() {
+  return ["checked", "already", "invalid", "error"].includes(scanStep.value);
 }
 </script>
 
@@ -157,12 +211,12 @@ async function processManualCheckIn() {
             manage_checkins
           </span>
         </div>
-        <p class="mt-1 text-sm text-slate-500">Validate QR barcodes, monitor gate entry staff, and prevent ticket fraud.</p>
+        <p class="mt-1 text-sm text-slate-500">Scan the ticket QR code — check-in is completed automatically.</p>
       </div>
       <div class="flex items-center gap-3">
         <button
           type="button"
-          @click="isScanModalOpen = true; scanFeedback = null;"
+          @click="openScanModal"
           class="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 hover:shadow"
         >
           <QrCode :size="16" :stroke-width="2.5" />
@@ -293,63 +347,147 @@ async function processManualCheckIn() {
       </div>
     </template>
 
-    <!-- QR / Barcode Scanner Modal -->
+    <!-- QR Scan & Check-In Modal -->
     <div
       v-if="isScanModalOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
     >
-      <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-        <div class="mb-5 flex items-center justify-between border-b border-slate-200 pb-4">
+      <div class="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+        <!-- Modal header -->
+        <div class="mb-0 flex items-center justify-between border-b border-slate-200 px-6 py-4">
           <div class="flex items-center gap-2.5">
             <Scan :size="20" class="text-amber-600" />
-            <h3 class="text-base font-bold text-slate-900">Manual Pass Check-In</h3>
+            <h3 class="text-base font-bold text-slate-900">Scan Ticket QR</h3>
           </div>
           <button @click="isScanModalOpen = false" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             <X :size="18" />
           </button>
         </div>
 
-        <div class="space-y-4">
-          <div>
-            <label class="mb-1 block text-xs font-semibold text-slate-700">Booking / QR Code Number</label>
-            <input
-              v-model="scanCode"
-              type="text"
-              placeholder="e.g. BK-984210"
-              @keyup.enter="processManualCheckIn"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 font-mono text-sm text-slate-900 uppercase placeholder:text-slate-400 outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
-            />
-          </div>
+        <div class="flex-1 space-y-4 overflow-y-auto px-6 py-5">
+          <!-- Scanner (auto-starts) or the loading state -->
+          <QRCodeScanner
+            v-if="!showResultPanel()"
+            :key="scanKey"
+            @scan="onScanValue"
+          />
 
-          <div
-            v-if="scanFeedback"
-            class="rounded-xl border p-4 text-xs"
-            :class="scanFeedback.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-              : 'border-rose-200 bg-rose-50 text-rose-800'"
-          >
-            <p class="font-bold text-sm">{{ scanFeedback.title }}</p>
-            <p class="mt-1 text-slate-700">{{ scanFeedback.message }}</p>
-          </div>
-        </div>
+          <!-- Ticket result panel -->
+          <template v-if="showResultPanel()">
+            <!-- Status banner -->
+            <div
+              class="flex items-start gap-3 rounded-xl border p-4"
+              :class="{
+                'border-emerald-200 bg-emerald-50': bannerTone === 'emerald',
+                'border-amber-200 bg-amber-50': bannerTone === 'amber',
+                'border-rose-200 bg-rose-50': bannerTone === 'rose',
+              }"
+            >
+              <component
+                :is="scanBanner?.icon || CheckCircle2"
+                :size="24"
+                class="mt-0.5 shrink-0"
+                :class="{
+                  'text-emerald-600': bannerTone === 'emerald',
+                  'text-amber-600': bannerTone === 'amber',
+                  'text-rose-600': bannerTone === 'rose',
+                }"
+              />
+              <div class="min-w-0">
+                <p class="text-lg font-extrabold" :class="{
+                  'text-emerald-800': bannerTone === 'emerald',
+                  'text-amber-800': bannerTone === 'amber',
+                  'text-rose-800': bannerTone === 'rose',
+                }">{{ bannerTitle }}</p>
+                <p class="mt-0.5 text-sm font-medium" :class="{
+                  'text-emerald-700': bannerTone === 'emerald',
+                  'text-amber-700': bannerTone === 'amber',
+                  'text-rose-700': bannerTone === 'rose',
+                }">{{ bannerSubtitle }}</p>
+                <p v-if="scanStep === 'checked'" class="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                  <span class="inline-flex items-center rounded-full bg-emerald-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                    Status: USED
+                  </span>
+                </p>
+              </div>
+            </div>
 
-        <div class="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            @click="isScanModalOpen = false"
-            class="rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
-          >
-            Close
-          </button>
-          <button
-            type="button"
-            :disabled="scanning || !scanCode.trim()"
-            @click="processManualCheckIn"
-            class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 disabled:opacity-50"
-          >
-            <Loader2 v-if="scanning" :size="13" class="inline animate-spin mr-1" />
-            {{ scanning ? "Verifying..." : "Verify Ticket" }}
-          </button>
+            <!-- Ticket details card (shown on success and already-used) -->
+            <div v-if="ticketData" class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+              <div class="flex items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                  <Ticket :size="13" /> Ticket Details
+                </p>
+                <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase"
+                      :class="{
+                        'border-blue-200 bg-blue-50 text-blue-700': ticketData.status === 'DONE',
+                        'border-emerald-200 bg-emerald-50 text-emerald-700': ticketData.status === 'ACTIVE',
+                        'border-sky-200 bg-sky-50 text-sky-700': ticketData.status === 'USED',
+                        'border-amber-200 bg-amber-50 text-amber-700': ticketData.status === 'EXPIRED',
+                        'border-rose-200 bg-rose-50 text-rose-700': ticketData.status === 'CANCELLED',
+                        'border-violet-200 bg-violet-50 text-violet-700': ticketData.status === 'REFUNDED',
+                      }"
+                >
+                  {{ (ticketData.status || '').toLowerCase() }}
+                </span>
+              </div>
+
+              <dl class="mt-3 space-y-2.5 text-sm">
+                <div class="flex items-start justify-between gap-3">
+                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    <KeyRound :size="12" /> Ticket No.
+                  </dt>
+                  <dd class="font-mono text-xs font-bold text-amber-600">{{ ticketData.ticket_code }}</dd>
+                </div>
+                <div class="flex items-start justify-between gap-3">
+                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    <User :size="12" /> Customer
+                  </dt>
+                  <dd class="text-right">
+                    <p class="font-semibold text-slate-900">{{ ticketData.user?.name || "N/A" }}</p>
+                    <p v-if="ticketData.user?.email" class="text-[11px] text-slate-400">{{ ticketData.user.email }}</p>
+                  </dd>
+                </div>
+                <div class="flex items-start justify-between gap-3">
+                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    <CalendarDays :size="12" /> Event
+                  </dt>
+                  <dd class="text-right">
+                    <p class="max-w-[240px] font-semibold text-slate-900">{{ ticketData.ticket_type?.event?.title || ticketData.event?.title || "N/A" }}</p>
+                    <p class="text-[11px] text-slate-400">{{ ticketData.ticket_type?.name || "" }}</p>
+                  </dd>
+                </div>
+                <div class="flex items-start justify-between gap-3">
+                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    <QrCode :size="12" /> Booking
+                  </dt>
+                  <dd class="font-mono text-xs text-slate-600">
+                    {{ ticketData.booking?.booking_number || `#${ticketData.booking_id || ''}` }}
+                  </dd>
+                </div>
+                <div v-if="checkInRecord" class="flex items-start justify-between gap-3">
+                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    <Clock :size="12" /> Checked In
+                  </dt>
+                  <dd class="text-xs font-medium text-slate-700">
+                    {{ formatDateTime(checkInRecord.checked_in_at) }}
+                    <span v-if="checkInRecord.staff?.name" class="text-slate-400"> by {{ checkInRecord.staff.name }}</span>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <!-- Scan Another button -->
+            <button
+              type="button"
+              @click="resetScan"
+              class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+            >
+              <span class="flex items-center justify-center gap-1.5">
+                <Recycle :size="13" /> Scan Another Ticket
+              </span>
+            </button>
+          </template>
         </div>
       </div>
     </div>

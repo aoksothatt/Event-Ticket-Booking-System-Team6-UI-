@@ -112,6 +112,10 @@ export const adminApi = {
   async deleteTicketType(id) {
     return del(`/ticket-types/${id}`);
   },
+  // Deactivate/activate a ticket type that has issued tickets (can't be deleted).
+  async setTicketTypeStatus(id, status) {
+    return patch(`/ticket-types/${id}/status`, { status });
+  },
 
   // 7. manage_bookings
   async getBookings(params = {}) {
@@ -176,12 +180,39 @@ export const adminApi = {
   async getTicket(id) {
     return get(`/tickets/${id}`);
   },
+  // Step 1: look up a scanned ticket WITHOUT mutating it (valid flag + details).
+  async lookupTicket(qrCode) {
+    return post("/tickets/lookup", { ticket_code: extractQrToken(qrCode) });
+  },
+  // Step 2: perform the check-in atomically.
+  async checkInTicket(qrCode) {
+    return post("/tickets/check-in", { ticket_code: extractQrToken(qrCode) });
+  },
   async verifyTicket(qrToken) {
-    return post("/tickets/verify", { qr_token: qrToken });
+    return post("/tickets/verify", { qr_token: extractQrToken(qrToken) });
   },
   async cancelTicket(id) {
     return post(`/tickets/${id}/cancel`);
   },
 };
+
+/**
+ * Extract the raw token from a scanned QR value. Accepts a plain token
+ * (qr_token or ticket_code), an old-style verify URL (`qr_token=...`), or
+ * the new self check-in URL (`/check-in?ticket=...`).
+ */
+function extractQrToken(value) {
+  let token = (value || "").trim();
+  if (token.includes("ticket=") || token.includes("qr_token=")) {
+    try {
+      const parsed = new URL(token, "http://localhost");
+      token = parsed.searchParams.get("ticket") || parsed.searchParams.get("qr_token") || token;
+    } catch {
+      const match = token.match(/[?&](?:ticket|qr_token)=([^&]+)/);
+      if (match) token = match[1];
+    }
+  }
+  return token;
+}
 
 export default adminApi;
