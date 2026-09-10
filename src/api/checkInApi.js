@@ -51,26 +51,66 @@ export async function updateCheckIn(id, data) {
 }
 
 /**
+ * STEP 1 — Lookup a ticket by its QR token / ticket code WITHOUT checking it
+ * in. Returns the ticket details + a `valid` flag so the frontend can render
+ * the ticket and enable/disable the check-in button.
+ * @param {string} qrCode Raw token or scanner URL
+ */
+export async function lookupTicket(qrCode) {
+  const token = extractToken(qrCode);
+  return post("/tickets/lookup", { ticket_code: token });
+}
+
+/**
+ * STEP 2 — Check in a previously validated ticket. Atomic on the backend
+ * (row lock + transaction), so a ticket is only ever checked in once.
+ * @param {string} qrCode Raw token or scanner URL
+ */
+export async function checkInTicket(qrCode) {
+  const token = extractToken(qrCode);
+  return post("/tickets/check-in", { ticket_code: token });
+}
+
+/**
  * Verify & check in a ticket by its QR token or ticket code.
  * Extracts raw token if a full scanner URL is supplied.
  * Marks ticket status as 'used' and records a CheckIn record automatically.
  * @param {string} qrToken Token or scanner URL
  */
 export async function verifyTicket(qrToken) {
-  let token = (qrToken || "").trim();
-  // If the scanned string is a full URL, extract the token
-  if (token.includes("qr_token=")) {
+  let token = extractToken(qrToken);
+  const response = await post("/tickets/verify", { qr_token: token });
+  return response;
+}
+
+/**
+ * Self-serve check-in for the ticket owner (customer scans their own QR).
+ * Hits POST /my/tickets/self-checkin. Only works for the authenticated
+ * owner's own ACTIVE ticket and inside the event time window.
+ * @param {string} ticketCode Raw token or scanner URL
+ */
+export async function selfCheckIn(ticketCode) {
+  const token = extractToken(ticketCode);
+  const response = await post("/my/tickets/self-checkin", { ticket_code: token });
+  return response;
+}
+
+/**
+ * Pull the raw token out of a QR value. Accepts a plain token (qr_token or
+ * ticket_code) or a full scanner URL containing `?ticket=...`/`?qr_token=...`.
+ */
+function extractToken(value) {
+  let token = (value || "").trim();
+  if (token.includes("ticket=") || token.includes("qr_token=")) {
     try {
-      const parsed = new URL(token, "http://localhost");
-      token = parsed.searchParams.get("qr_token") || token;
+      const parsed = new URL(token, window.location.origin);
+      token = parsed.searchParams.get("ticket") || parsed.searchParams.get("qr_token") || token;
     } catch {
-      const match = token.match(/qr_token=([^&]+)/);
+      const match = token.match(/[?&](?:ticket|qr_token)=([^&]+)/);
       if (match) token = match[1];
     }
   }
-
-  const response = await post("/tickets/verify", { qr_token: token });
-  return response;
+  return token;
 }
 
 /**
@@ -97,7 +137,10 @@ export const checkInApi = {
   getCheckIn,
   createCheckIn,
   updateCheckIn,
+  lookupTicket,
+  checkInTicket,
   verifyTicket,
+  selfCheckIn,
   getTickets,
   cancelTicket,
 };

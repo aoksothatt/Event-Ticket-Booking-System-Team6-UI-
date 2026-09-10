@@ -42,6 +42,15 @@ const routes = [
     meta: { customer: true, requiresAuth: true },
   },
   {
+    // Landing page for QR self check-in. Customers scan the QR from their
+    // ticket; it opens /check-in?ticket=<token>. The auth guard redirects
+    // to login first if needed, then returns here with the token intact.
+    path: "/check-in",
+    name: "check-in",
+    component: () => import("../views/CheckInScanView.vue"),
+    meta: { customer: true, requiresAuth: true },
+  },
+  {
     path: "/favorites",
     name: "favorites",
     component: () => import("../views/FavoritesView.vue"),

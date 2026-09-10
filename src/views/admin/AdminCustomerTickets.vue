@@ -22,25 +22,44 @@ const searchQuery = ref("");
 const selectedStatus = ref("All");
 const verifyToken = ref("");
 const verifyResult = ref(null);
+const verifyTicketData = ref(null);
+const verifyCheckIn = ref(null);
 const verifying = ref(false);
+const checkingIn = ref(false);
 const selectedTicket = ref(null);
 
-const statuses = ["All", "active", "used", "cancelled", "expired"];
+const statuses = ["All", "DONE", "ACTIVE", "USED", "EXPIRED", "CANCELLED", "REFUNDED"];
 
 const statusStyle = {
-  active: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  used: "bg-sky-50 text-sky-700 border-sky-200",
-  cancelled: "bg-rose-50 text-rose-700 border-rose-200",
-  expired: "bg-amber-50 text-amber-700 border-amber-200",
+  DONE: "bg-blue-50 text-blue-700 border-blue-200",
+  ACTIVE: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  USED: "bg-sky-50 text-sky-700 border-sky-200",
+  CANCELLED: "bg-rose-50 text-rose-700 border-rose-200",
+  EXPIRED: "bg-amber-50 text-amber-700 border-amber-200",
+  REFUNDED: "bg-violet-50 text-violet-700 border-violet-200",
 };
+
+function statusLabel(status) {
+  const map = {
+    DONE: "Done",
+    ACTIVE: "Active",
+    USED: "Used",
+    EXPIRED: "Expired",
+    CANCELLED: "Cancelled",
+    REFUNDED: "Refunded",
+  };
+  return map[status] || status;
+}
 
 const stats = computed(() => {
   const total = tickets.value.length;
-  const active = tickets.value.filter((t) => t.status === "active").length;
-  const used = tickets.value.filter((t) => t.status === "used").length;
+  const done = tickets.value.filter((t) => t.status === "DONE").length;
+  const active = tickets.value.filter((t) => t.status === "ACTIVE").length;
+  const used = tickets.value.filter((t) => t.status === "USED").length;
   return [
     { label: "Total Tickets", value: String(total), change: "issued to customers", icon: Ticket, color: "bg-purple-50 text-purple-600" },
-    { label: "Active", value: String(active), change: "not yet scanned", icon: QrCode, color: "bg-emerald-50 text-emerald-600" },
+    { label: "Pending (Done)", value: String(done), change: "awaiting activation", icon: QrCode, color: "bg-blue-50 text-blue-600" },
+    { label: "Active", value: String(active), change: "ready for check-in", icon: QrCode, color: "bg-emerald-50 text-emerald-600" },
     { label: "Checked In", value: String(used), change: "scanned & used", icon: Users, color: "bg-sky-50 text-sky-600" },
   ];
 });
@@ -82,17 +101,64 @@ async function verifyTicket(qrToken) {
   if (!qrToken.trim()) return;
   verifying.value = true;
   verifyResult.value = null;
+  verifyTicketData.value = null;
+  verifyCheckIn.value = null;
   try {
-    verifyResult.value = await adminApi.verifyTicket(qrToken.trim());
+    const res = await adminApi.lookupTicket(qrToken.trim());
+    verifyResult.value = {
+      success: true,
+      valid: res.valid,
+      status: res.status,
+      message: res.message,
+    };
+    verifyTicketData.value = res.data || null;
+    verifyCheckIn.value = res.check_in || null;
   } catch (e) {
     verifyResult.value = {
       success: false,
-      message: e.response?.data?.message || e.message || "Could not verify ticket.",
+      valid: false,
+      status: "not_found",
+      message: e.response?.data?.message || e.message || "Could not load the ticket.",
     };
   } finally {
     verifying.value = false;
     await fetchTickets();
   }
+}
+
+async function confirmCheckIn() {
+  if (!verifyTicketData.value || !verifyToken.value.trim()) return;
+  checkingIn.value = true;
+  try {
+    const res = await adminApi.checkInTicket(verifyToken.value.trim());
+    verifyResult.value = {
+      success: true,
+      valid: false,
+      status: "checked_in",
+      message: res?.message || "Check-in successful. Enjoy the event!",
+    };
+    verifyTicketData.value = res?.data || verifyTicketData.value;
+    verifyCheckIn.value = res?.check_in || null;
+  } catch (e) {
+    const body = e.response?.data;
+    const msg = body?.message || e.message || "Check-in failed. Please try again.";
+    if (body?.already_checked_in) {
+      verifyResult.value = { success: true, valid: false, status: "used", message: msg };
+      verifyCheckIn.value = body?.check_in || null;
+    } else {
+      verifyResult.value = { success: false, valid: false, status: "error", message: msg };
+    }
+  } finally {
+    checkingIn.value = false;
+    await fetchTickets();
+  }
+}
+
+function resetVerify() {
+  verifyResult.value = null;
+  verifyTicketData.value = null;
+  verifyCheckIn.value = null;
+  verifyToken.value = "";
 }
 
 async function cancelTicket(t) {
@@ -180,14 +246,71 @@ async function cancelTicket(t) {
               >
                 <Loader2 v-if="verifying" :size="14" class="animate-spin" />
                 <QrCode v-else :size="14" />
-                Verify
+                Lookup
               </button>
             </div>
           </div>
         </div>
+
+        <!-- Result message -->
         <div v-if="verifyResult" class="mt-3 rounded-lg border px-3 py-2 text-xs font-medium"
-             :class="verifyResult.success ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'">
-          {{ verifyResult.message }}
+             :class="verifyResult.valid
+               ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+               : verifyResult.status === 'used'
+                 ? 'border-amber-200 bg-amber-50 text-amber-700'
+                 : verifyResult.success && verifyResult.status === 'checked_in'
+                   ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                   : 'border-rose-200 bg-rose-50 text-rose-700'">
+          <p class="font-semibold text-sm">
+            {{ verifyResult.valid ? "Valid Ticket — Ready for Check-in"
+               : verifyResult.status === "used" ? "Ticket Already Checked In"
+               : verifyResult.status === "expired" ? "Ticket Expired"
+               : verifyResult.success && verifyResult.status === "checked_in" ? "Check-in Successful"
+               : verifyResult.status === "not_found" ? "Invalid Ticket"
+               : "Check-In Failed" }}
+          </p>
+          <p class="mt-0.5 text-slate-700">{{ verifyResult.message }}</p>
+          <p v-if="verifyCheckIn?.checked_in_at" class="mt-0.5 text-[11px] text-slate-500">
+            Checked in at {{ new Date(verifyCheckIn.checked_in_at).toLocaleString() }}
+          </p>
+        </div>
+
+        <!-- Ticket details -->
+        <div v-if="verifyTicketData" class="mt-3 grid grid-cols-1 gap-x-4 gap-y-1.5 border-t border-slate-100 pt-3 text-sm sm:grid-cols-2">
+          <p class="flex items-center gap-2 text-xs text-slate-600">
+            <Ticket :size="13" class="text-amber-600" />
+            <span class="font-mono font-bold text-slate-900">{{ verifyTicketData.ticket_code }}</span>
+          </p>
+          <p class="flex items-center gap-2 text-xs text-slate-600">
+            <Users :size="13" class="text-slate-400" />
+            {{ verifyTicketData.user?.name || "N/A" }}
+          </p>
+          <p class="flex items-center gap-2 text-xs text-slate-600">
+            <Calendar :size="13" class="text-slate-400" />
+            {{ verifyTicketData.ticket_type?.event?.title || "N/A" }} · {{ verifyTicketData.ticket_type?.name || "" }}
+          </p>
+          <p class="flex items-center gap-2 text-xs text-slate-600">
+            <Building2 :size="13" class="text-slate-400" />
+            Booking {{ verifyTicketData.booking?.booking_number || `#${verifyTicketData.booking_id}` }}
+          </p>
+          <div class="flex items-center justify-between gap-2 pt-1 sm:col-span-2">
+            <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize"
+                  :class="statusStyle[verifyTicketData.status] || 'bg-slate-100 text-slate-700 border-slate-200'">
+              {{ statusLabel(verifyTicketData.status) }}
+            </span>
+            <div class="flex gap-2">
+              <button v-if="verifyResult?.valid" type="button" :disabled="checkingIn"
+                      @click="confirmCheckIn"
+                      class="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60">
+                <Loader2 v-if="checkingIn" :size="13" class="animate-spin" />
+                {{ checkingIn ? "Checking In..." : "Check In" }}
+              </button>
+              <button v-if="verifyResult" type="button" @click="resetVerify"
+                      class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100">
+                Reset
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -254,7 +377,7 @@ async function cancelTicket(t) {
                 <td class="px-6 py-4 text-[11px] font-mono text-slate-500">{{ t.booking?.booking_number || `#${t.booking_id}` }}</td>
                 <td class="px-6 py-4">
                   <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize" :class="statusStyle[t.status] || 'bg-slate-100 text-slate-700 border-slate-200'">
-                    {{ t.status }}
+                    {{ statusLabel(t.status) }}
                   </span>
                 </td>
                 <td class="px-6 py-4 text-xs text-slate-500">{{ formatDate(t.created_at) }}</td>
@@ -269,7 +392,7 @@ async function cancelTicket(t) {
                       <Eye :size="14" />
                     </button>
                     <button
-                      v-if="t.status === 'active'"
+                      v-if="t.status === 'ACTIVE'"
                       type="button"
                       @click="cancelTicket(t)"
                       class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100"

@@ -51,3 +51,22 @@ export async function getMyTicketsData() {
     throw error;
   }
 }
+
+/**
+ * Fetch the authenticated customer's historical tickets from
+ * /my/tickets/history. The backend only returns finished tickets
+ * (EXPIRED / CANCELLED / REFUNDED) scoped to the logged-in user.
+ * @param {Object} params { status, per_page, page }
+ */
+export async function getMyTicketHistory(params = {}) {
+  try {
+    const response = await get("/my/tickets/history", params);
+    const data = response?.data;
+    return Array.isArray(data) ? data : data?.data || [];
+  } catch (error) {
+    if (USE_MOCK_FALLBACK && error.isNetwork) {
+      return [];
+    }
+    throw error;
+  }
+}

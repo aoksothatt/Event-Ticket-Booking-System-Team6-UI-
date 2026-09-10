@@ -20,6 +20,10 @@ import {
 const loading = ref(true);
 const error = ref(null);
 
+// Inline, non-blocking feedback for actions (delete blocked → deactivated, etc.)
+const successNotice = ref("");
+const actionError = ref("");
+
 const searchQuery = ref("");
 const selectedStatus = ref("All");
 
@@ -39,6 +43,8 @@ async function fetchEvents() {
 async function fetchTicketTypes() {
   loading.value = true;
   error.value = null;
+  successNotice.value = "";
+  actionError.value = "";
   try {
     const response = await adminApi.getTicketTypes();
     ticketTypes.value = (response.data || []).map((t) => ({
@@ -170,6 +176,8 @@ async function saveTicket() {
         quantity: Number(form.value.quantity),
         status: form.value.status,
       };
+      // Keep the tied event unless the operator explicitly changes it.
+      if (form.value.event_id) payload.event_id = form.value.event_id;
       await adminApi.updateTicketType(editingTicket.value.id, payload);
     } else {
       const payload = {
@@ -190,12 +198,31 @@ async function saveTicket() {
 }
 
 async function deleteTicket(id) {
-  if (confirm("Are you sure you want to delete this ticket type?")) {
+  if (!confirm("Are you sure you want to delete this ticket type?")) return;
+  actionError.value = "";
+  successNotice.value = "";
+  try {
+    await adminApi.deleteTicketType(id);
+    await fetchTicketTypes();
+  } catch (e) {
+    const isBlocked = e.response?.status === 409;
+    const msg = e.response?.data?.message || e.message || "Failed to delete ticket type.";
+    if (!isBlocked) {
+      actionError.value = msg;
+      return;
+    }
+    // Issued tickets reference this type → offer to deactivate instead.
+    const deactivate = confirm(
+      msg +
+        "\n\nSet it to inactive instead? Inactive ticket types are hidden from new purchases, while tickets already issued stay valid."
+    );
+    if (!deactivate) return;
     try {
-      await adminApi.deleteTicketType(id);
-      ticketTypes.value = ticketTypes.value.filter((t) => t.id !== id);
-    } catch (e) {
-      error.value = e.response?.data?.message || e.message || "Failed to delete ticket type.";
+      const res = await adminApi.setTicketTypeStatus(id, "inactive");
+      successNotice.value = res?.message || "Ticket type set to inactive.";
+      await fetchTicketTypes();
+    } catch (e2) {
+      actionError.value = e2.response?.data?.message || e2.message || "Failed to deactivate ticket type.";
     }
   }
 }
@@ -247,6 +274,26 @@ async function deleteTicket(id) {
 
     <!-- Data Loaded -->
     <template v-else>
+      <!-- Inline action feedback (does not hide the page) -->
+      <div v-if="successNotice" class="mb-6 flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+        <span class="flex items-center gap-2">
+          <CheckCircle2 :size="16" />
+          {{ successNotice }}
+        </span>
+        <button type="button" @click="successNotice = ''" class="text-emerald-600 hover:text-emerald-800">
+          <X :size="16" />
+        </button>
+      </div>
+      <div v-if="actionError" class="mb-6 flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
+        <span class="flex items-center gap-2">
+          <XCircle :size="16" />
+          {{ actionError }}
+        </span>
+        <button type="button" @click="actionError = ''" class="text-rose-600 hover:text-rose-800">
+          <X :size="16" />
+        </button>
+      </div>
+
       <!-- Stat cards -->
       <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div v-for="stat in stats" :key="stat.label" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
