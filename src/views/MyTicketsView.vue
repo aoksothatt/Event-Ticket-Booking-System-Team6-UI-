@@ -33,7 +33,6 @@ function statusClass(status) {
 
 function statusLabel(status) {
   const map = {
-    DONE: "Done",
     ACTIVE: "Active",
     USED: "Used",
     CANCELLED: "Cancelled",
