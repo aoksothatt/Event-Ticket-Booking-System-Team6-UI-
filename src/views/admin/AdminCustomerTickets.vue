@@ -41,7 +41,6 @@ const statusStyle = {
 
 function statusLabel(status) {
   const map = {
-    DONE: "Done",
     ACTIVE: "Active",
     USED: "Used",
     EXPIRED: "Expired",
