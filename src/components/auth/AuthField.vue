@@ -14,7 +14,7 @@ const model = defineModel({ type: String, default: "" });
 
 <template>
   <div class="space-y-1.5">
-    <label :for="id" class="block text-[13px] font-medium text-[#D9D9D9]">
+    <label :for="id" class="block text-[13px] font-medium text-slate-900 dark:text-[#D9D9D9]">
       {{ label }}
     </label>
     <div class="relative">
@@ -24,16 +24,16 @@ const model = defineModel({ type: String, default: "" });
         :type="type"
         :placeholder="placeholder"
         :autocomplete="autocomplete"
-        class="h-11 w-full rounded-[6px] border bg-[#303030] py-2.5 pl-4 pr-11 text-sm text-white outline-none transition placeholder:text-[#6E6E6E] focus:ring-2"
+        class="h-11 w-full rounded-[6px] border bg-white dark:bg-[#303030] py-2.5 pl-4 pr-11 text-sm text-slate-900 dark:text-white outline-none transition placeholder:text-slate-500 dark:placeholder:text-[#6E6E6E] focus:ring-2"
         :class="
           error
             ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/10'
-            : 'border-[#454545] focus:border-[#FFA500] focus:ring-[#FFA500]/20'
+            : 'border-slate-200 dark:border-[#454545] focus:border-[#FFA500] focus:ring-[#FFA500]/20'
         "
       />
       <span
         v-if="icon"
-        class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#8A8A8A]"
+        class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#8A8A8A]"
       >
         <component :is="icon" class="h-[18px] w-[18px]" />
       </span>

@@ -24,6 +24,9 @@ import {
   VideoOff,
 } from "lucide-vue-next";
 import { Html5Qrcode } from "html5-qrcode";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const emit = defineEmits(["scan", "camera-state"]);
 
@@ -63,15 +66,13 @@ function getElement() {
 function cameraSupported() {
   if (typeof window === "undefined") return false;
   if (!("mediaDevices" in navigator) || !("getUserMedia" in navigator.mediaDevices)) {
-    cameraError.value =
-      "Camera access is unavailable in this browser (no getUserMedia support). Use manual entry below.";
+    cameraError.value = t('cameraAccessError');
     status.value = "error";
     emit("camera-state", "error");
     return false;
   }
   if (!isSecureContext) {
-    cameraError.value =
-      "Camera access requires HTTPS (or localhost). Allow camera access or use manual entry below.";
+    cameraError.value = t('cameraHTTPSError');
     status.value = "error";
     emit("camera-state", "error");
     return false;
@@ -193,18 +194,18 @@ function describeCameraError(e) {
   const name = e?.name || "";
   const message = e?.message || "";
   if (name === "NotAllowedError" || message.includes("NotAllowedError")) {
-    return "Camera permission denied. Please allow camera access and try again, or enter the code manually below.";
+    return t('cameraDenied');
   }
   if (name === "NotFoundError" || name === "OverconstrainedError" || message.includes("NotFoundError")) {
-    return "No camera is available on this device. You can enter the ticket code manually below.";
+    return t('noCamera');
   }
   if (name === "NotReadableError" || message.includes("NotReadableError")) {
-    return "Your camera is already in use by another application. Close it and try again, or enter the code manually below.";
+    return t('cameraInUse');
   }
   if (!isSecureContext) {
-    return "Camera access is unavailable. Please allow camera permission (HTTPS required) or use manual entry below.";
+    return t('cameraUnavailable');
   }
-  return "Could not start the camera. Use manual entry below, or try again.";
+  return t('cameraStartError');
 }
 
 onMounted(() => {
@@ -223,7 +224,7 @@ defineExpose({ startCamera, stopCamera: stopScanner, switchCamera });
   <div class="space-y-3">
     <!-- Viewfinder -->
     <div
-      class="relative overflow-hidden rounded-xl border border-slate-200 bg-black"
+      class="relative overflow-hidden rounded-xl border border-slate-200 bg-black dark:border-slate-700"
     >
       <div :id="elementId" class="qr-viewport w-full"></div>
 
@@ -243,7 +244,7 @@ defineExpose({ startCamera, stopCamera: stopScanner, switchCamera });
         </div>
         <span class="absolute bottom-12 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur">
           <Loader2 :size="12" class="animate-spin text-amber-400" />
-          Point your camera at the ticket QR code
+          {{ t('pointCamera') }}
         </span>
       </div>
 
@@ -253,7 +254,7 @@ defineExpose({ startCamera, stopCamera: stopScanner, switchCamera });
         class="flex h-64 flex-col items-center justify-center gap-3 text-slate-400"
       >
         <Loader2 :size="26" class="animate-spin text-amber-500" />
-        <span class="text-xs font-medium">Starting camera…</span>
+        <span class="text-xs font-medium">{{ t('startingCamera') }}</span>
       </div>
 
       <!-- Camera error -->
@@ -273,7 +274,7 @@ defineExpose({ startCamera, stopCamera: stopScanner, switchCamera });
             @click="startCamera"
             class="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3.5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition hover:bg-amber-600"
           >
-            <RefreshCw :size="13" /> Try camera again
+            <RefreshCw :size="13" /> {{ t('tryCamera') }}
           </button>
         </div>
       </div>
@@ -290,7 +291,7 @@ defineExpose({ startCamera, stopCamera: stopScanner, switchCamera });
           <rect x="27" y="15" width="18" height="18" rx="2" stroke="#F59E0B" stroke-width="2" fill="none" />
         </svg>
         <span class="flex items-center gap-1.5 text-xs font-medium">
-          Camera stopped
+          {{ t('cameraStopped') }}
         </span>
       </div>
     </div>
@@ -302,33 +303,33 @@ defineExpose({ startCamera, stopCamera: stopScanner, switchCamera });
         class="flex items-center gap-1.5 text-[11px] font-medium text-slate-500"
       >
         <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500"></span>
-        Live preview — scanning for a QR code
+        {{ t('scanningQR') }}
       </p>
       <p v-else class="text-[11px] font-medium text-slate-400">
-        {{ status === "error" ? "Camera unavailable" : status === "stopped" ? "Scan complete" : "&nbsp;" }}
+        {{ status === "error" ? t('cameraUnavail') : status === "stopped" ? t('scanComplete') : "&nbsp;" }}
       </p>
       <button
         v-if="status === 'scanning' && cameras.length > 1"
         type="button"
         @click="switchCamera"
-        class="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-100"
+        class="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700/50"
       >
-        <SwitchCamera :size="12" /> Switch camera
+        <SwitchCamera :size="12" /> {{ t('switchCamera') }}
       </button>
     </div>
 
     <!-- Manual entry fallback -->
-    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-      <label class="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
-        <Keyboard :size="12" /> Manual entry
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+      <label class="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        <Keyboard :size="12" /> {{ t('manualEntry') }}
       </label>
       <div class="flex gap-2">
         <input
           v-model="manualCode"
           type="text"
-          placeholder="Paste QR token or ticket code…"
+          :placeholder="t('pasteQR')"
           @keyup.enter="submitManual"
-          class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+          class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder:text-slate-400"
         />
         <button
           type="button"
@@ -336,7 +337,7 @@ defineExpose({ startCamera, stopCamera: stopScanner, switchCamera });
           @click="submitManual"
           class="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3.5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition hover:bg-amber-600 disabled:opacity-50"
         >
-          <QrCode :size="14" /> Lookup
+          <QrCode :size="14" /> {{ t('lookup') }}
         </button>
       </div>
     </div>

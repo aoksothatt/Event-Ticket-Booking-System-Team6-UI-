@@ -1,7 +1,9 @@
 <script setup>
 import { CheckCircle2, Info, AlertTriangle, X } from "lucide-vue-next";
 import { useToast } from "../../composables/useToast.js";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const { toasts, remove } = useToast();
 
 const iconMap = {
@@ -46,7 +48,7 @@ function toastStyle(type) {
         <span>{{ entry.message }}</span>
         <button
           type="button"
-          :aria-label="`Dismiss notification: ${entry.message}`"
+          :aria-label="t('dismissNotification', { message: entry.message })"
           class="ml-1 rounded-full p-0.5 text-inherit opacity-60 transition hover:bg-white/10 hover:opacity-100"
           @click="remove(entry.id)"
         >

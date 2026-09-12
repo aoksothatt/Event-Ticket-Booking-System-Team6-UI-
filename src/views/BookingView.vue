@@ -1,12 +1,14 @@
 <script setup>
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { Loader2, Ticket, ChevronLeft, Minus, Plus, Check } from "lucide-vue-next";
 import { getEvent } from "../api/eventApi.js";
 import { post } from "../api/http.js";
 import { useAuthStore } from "../stores/auth.js";
 import { coverImage, formatDate, formatTime, formatPrice } from "../utils/event.js";
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
@@ -68,7 +70,7 @@ async function load(id) {
     event.value = await getEvent(id);
     ensureQuantities();
   } catch (e) {
-    error.value = e.message || "Could not load this event.";
+    error.value = e.message || t('couldNotLoadEvent');
   } finally {
     loading.value = false;
   }
@@ -77,12 +79,12 @@ async function load(id) {
 async function checkout() {
   submitError.value = "";
   if (!hasSelection.value) {
-    submitError.value = "Please select at least one ticket.";
+    submitError.value = t('selectTicket');
     return;
   }
   const user = auth.user;
   if (!user?.id) {
-    submitError.value = "Please sign in to book tickets.";
+    submitError.value = t('signInToBook');
     return;
   }
 
@@ -108,7 +110,7 @@ async function checkout() {
 
     success.value = booking;
   } catch (e) {
-    submitError.value = e.response?.data?.message || e.message || "Could not complete your booking.";
+    submitError.value = e.response?.data?.message || e.message || t('couldNotCompleteBooking');
   } finally {
     submitting.value = false;
   }
@@ -122,16 +124,16 @@ onMounted(() => load(route.params.id));
     <div class="mx-auto w-full max-w-5xl">
       <button
         type="button"
-        class="mb-5 inline-flex items-center gap-1.5 text-sm text-[#9CA3AF] transition hover:text-white"
+        class="mb-5 inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-[#9CA3AF] transition hover:text-slate-900 dark:hover:text-white"
         @click="router.push(`/events/${route.params.id}`)"
       >
         <ChevronLeft :size="16" />
-        Back to event
+        {{ t('backToEvent') }}
       </button>
 
       <div v-if="loading" class="animate-pulse space-y-4">
-        <div class="h-32 rounded-2xl bg-[#14171C]"></div>
-        <div class="h-72 rounded-2xl bg-[#14171C]"></div>
+        <div class="h-32 rounded-2xl bg-white dark:bg-[#14171C]"></div>
+        <div class="h-72 rounded-2xl bg-white dark:bg-[#14171C]"></div>
       </div>
 
       <div
@@ -149,11 +151,9 @@ onMounted(() => load(route.params.id));
         <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
           <Check :size="26" />
         </span>
-        <h2 class="mt-4 text-xl font-bold text-white">Booking Confirmed!</h2>
-        <p class="mt-2 text-sm text-[#9CA3AF]">
-          Your booking reference is
-          <span class="font-semibold text-white">{{ success.booking_number }}</span>
-          for {{ formatPrice(success.total_amount) }}.
+        <h2 class="mt-4 text-xl font-bold text-slate-900 dark:text-white">{{ t('bookingConfirmed') }}</h2>
+        <p class="mt-2 text-sm text-slate-500 dark:text-[#9CA3AF]">
+          {{ t('bookingRefFor', { ref: success.booking_number, price: formatPrice(success.total_amount) }) }}
         </p>
         <div class="mt-6 flex justify-center gap-3">
           <button
@@ -161,14 +161,14 @@ onMounted(() => load(route.params.id));
             class="rounded-full bg-[#FFA500] px-5 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"
             @click="router.push('/my-tickets')"
           >
-            View My Tickets
+            {{ t('viewMyTickets') }}
           </button>
           <button
             type="button"
-            class="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+            class="rounded-full border border-slate-200 dark:border-white/15 bg-slate-100 dark:bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-900 dark:text-white transition hover:bg-slate-200 dark:hover:bg-white/10"
             @click="router.push('/home')"
           >
-            Back Home
+            {{ t('backHome') }}
           </button>
         </div>
       </div>
@@ -176,38 +176,38 @@ onMounted(() => load(route.params.id));
       <template v-else-if="event">
         <div class="grid gap-8 lg:grid-cols-[1fr_340px]">
           <!-- Ticket selection -->
-          <section class="rounded-2xl border border-white/10 bg-[#14171C] p-6">
-            <h1 class="text-xl font-extrabold text-white sm:text-2xl">Book Tickets</h1>
-            <p class="mt-1 text-sm text-[#9CA3AF]">{{ event.title }}</p>
+          <section class="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] p-6">
+            <h1 class="text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">{{ t('bookTickets') }}</h1>
+            <p class="mt-1 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ event.title }}</p>
 
             <div class="mt-6 space-y-3">
               <div
                 v-for="ticket in ticketTypes"
                 :key="ticket.id"
-                class="rounded-xl border border-white/10 bg-[#1D2229] p-4"
+                class="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-200 dark:bg-[#1D2229] p-4"
               >
                 <div class="flex items-center justify-between gap-3">
                   <div>
-                    <p class="text-sm font-semibold text-white">{{ ticket.name }}</p>
+                    <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ ticket.name }}</p>
                     <p class="mt-0.5 text-sm font-bold text-[#FFA500]">{{ formatPrice(ticket.price) }}</p>
                   </div>
 
                   <div class="flex items-center gap-2">
                     <button
                       type="button"
-                      class="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition hover:bg-white/10"
-                      :aria-label="`Decrease ${ticket.name} quantity`"
+                      class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-white/15 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white transition hover:bg-slate-200 dark:hover:bg-white/10"
+                      :aria-label="t('decreaseQuantity', { name: ticket.name })"
                       @click="decrement(ticket)"
                     >
                       <Minus :size="14" />
                     </button>
-                    <span class="w-8 text-center text-sm font-semibold text-white">
+                    <span class="w-8 text-center text-sm font-semibold text-slate-900 dark:text-white">
                       {{ quantities[ticket.id] || 0 }}
                     </span>
                     <button
                       type="button"
-                      class="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition hover:bg-white/10 disabled:opacity-40"
-                      :aria-label="`Increase ${ticket.name} quantity`"
+                      class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-white/15 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white transition hover:bg-slate-200 dark:hover:bg-white/10 disabled:opacity-40"
+                      :aria-label="t('increaseQuantity', { name: ticket.name })"
                       :disabled="Number(quantities[ticket.id] || 0) >= availableFor(ticket)"
                       @click="increment(ticket)"
                     >
@@ -218,18 +218,18 @@ onMounted(() => load(route.params.id));
 
                 <p
                   v-if="ticket.quantity !== undefined"
-                  class="mt-2 text-xs text-[#9CA3AF]"
+                  class="mt-2 text-xs text-slate-500 dark:text-[#9CA3AF]"
                   :class="availableFor(ticket) === 0 ? 'text-red-400' : ''"
                 >
-                  {{ availableFor(ticket) > 0 ? `${availableFor(ticket)} available` : "Sold out" }}
+                  {{ availableFor(ticket) > 0 ? `${availableFor(ticket)} ${t('available')}` : t('soldOut') }}
                 </p>
               </div>
 
               <p
                 v-if="!ticketTypes.length"
-                class="rounded-lg bg-white/5 px-4 py-6 text-center text-sm text-[#9CA3AF]"
+                class="rounded-lg bg-slate-100 dark:bg-white/5 px-4 py-6 text-center text-sm text-slate-500 dark:text-[#9CA3AF]"
               >
-                No ticket options are available for this event yet.
+                {{ t('noTicketsAvailable') }}
               </p>
             </div>
 
@@ -239,9 +239,9 @@ onMounted(() => load(route.params.id));
           </section>
 
           <!-- Summary -->
-          <aside class="h-fit rounded-2xl border border-white/10 bg-[#14171C] p-5 lg:sticky lg:top-24">
+          <aside class="h-fit rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] p-5 lg:sticky lg:top-24">
             <div class="flex gap-3">
-              <span class="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[#1D2229]">
+              <span class="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-200 dark:bg-[#1D2229]">
                 <img
                   v-if="coverImage(event)"
                   :src="coverImage(event)"
@@ -250,16 +250,16 @@ onMounted(() => load(route.params.id));
                 />
               </span>
               <div class="min-w-0">
-                <p class="line-clamp-1 text-sm font-bold text-white">{{ event.title }}</p>
-                <p class="mt-1 text-xs text-[#9CA3AF]">
+                <p class="line-clamp-1 text-sm font-bold text-slate-900 dark:text-white">{{ event.title }}</p>
+                <p class="mt-1 text-xs text-slate-500 dark:text-[#9CA3AF]">
                   {{ formatDate(event.start_date) }} · {{ formatTime(event.start_time) }}
                 </p>
-                <p class="mt-1 text-xs text-[#9CA3AF]">{{ event.venue?.name }}</p>
+                <p class="mt-1 text-xs text-slate-500 dark:text-[#9CA3AF]">{{ event.venue?.name }}</p>
               </div>
             </div>
 
-            <div class="mt-5 flex items-center justify-between border-t border-white/5 pt-4 text-sm">
-              <span class="text-[#9CA3AF]">Total</span>
+            <div class="mt-5 flex items-center justify-between border-t border-slate-200 dark:border-white/5 pt-4 text-sm">
+              <span class="text-slate-500 dark:text-[#9CA3AF]">{{ t('total') }}</span>
               <span class="text-lg font-extrabold text-[#FFA500]">{{ formatPrice(subtotal) }}</span>
             </div>
 
@@ -271,11 +271,11 @@ onMounted(() => load(route.params.id));
             >
               <Loader2 v-if="submitting" :size="17" class="animate-spin" />
               <Ticket v-else :size="17" />
-              {{ submitting ? "Processing..." : "Confirm Booking" }}
+              {{ submitting ? t('processing') : t('confirmBooking') }}
             </button>
 
-            <p class="mt-4 text-center text-xs text-[#9CA3AF]">
-              You'll receive a confirmation with your booking reference.
+            <p class="mt-4 text-center text-xs text-slate-500 dark:text-[#9CA3AF]">
+              {{ t('bookingConfirmation') }}
             </p>
           </aside>
         </div>

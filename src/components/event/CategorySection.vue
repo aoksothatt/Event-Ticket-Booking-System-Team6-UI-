@@ -1,6 +1,9 @@
 <script setup>
 import { computed, watch } from "vue";
 import EventCarousel from "./EventCarousel.vue";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const props = defineProps({
   category: { type: Object, required: true },
@@ -9,7 +12,7 @@ const props = defineProps({
   accent: { type: Boolean, default: false },
 });
 
-const title = computed(() => props.category?.name || "Events");
+const title = computed(() => props.category?.name || t('events'));
 
 // Keep a resolved list so the carousel shows an accurate empty state.
 const list = computed(() => props.events || []);
@@ -17,10 +20,10 @@ const list = computed(() => props.events || []);
 
 <template>
   <EventCarousel
-    :title="`${title} Events`"
+    :title="t('categoryEventsTitle', { category: title })"
     :subtitle="category?.description || ''"
     :events="list"
     :loading="loading"
-    :empty-text="`No events are available in this category yet.`"
+    :empty-text="t('noEventsInCategory')"
   />
 </template>

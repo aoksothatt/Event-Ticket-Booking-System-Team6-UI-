@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import {
   Calendar,
   Clock,
@@ -20,6 +21,7 @@ import { redirectToLogin } from "../composables/useAuthRedirect.js";
 import { createReview } from "../api/reviewApi.js";
 import { getEventReviews } from "../api/reviewApi.js";
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const favorites = useFavorites();
@@ -69,7 +71,7 @@ async function load(id) {
     event.value = await getEvent(id);
     await loadReviews();
   } catch (e) {
-    error.value = e.message || "Could not load this event.";
+    error.value = e.message || t('couldNotLoadEvent');
     event.value = null;
   } finally {
     loading.value = false;
@@ -79,12 +81,12 @@ async function load(id) {
 async function submitReview() {
   if (!auth.isAuthenticated) {
     redirectToLogin(router, {
-      message: "Please sign in before leaving a review.",
+      message: t('signInToReview'),
     });
     return;
   }
   if (!comment.value.trim()) {
-    reviewError.value = "Please write a short comment before submitting.";
+    reviewError.value = t('reviewCommentRequired');
     return;
   }
 
@@ -97,12 +99,12 @@ async function submitReview() {
       rating: Number(rating.value),
       comment: comment.value.trim(),
     });
-    reviewSuccess.value = "Thanks! Your review was saved.";
+    reviewSuccess.value = t('reviewSaved');
     comment.value = "";
     rating.value = 5;
     await loadReviews();
   } catch (e) {
-    reviewError.value = e.response?.data?.message || e.message || "Could not submit your review.";
+    reviewError.value = e.response?.data?.message || e.message || t('couldNotSubmitReview');
   } finally {
     reviewSubmitting.value = false;
   }
@@ -115,7 +117,7 @@ function book() {
   // sending them to login and bring them straight back here afterwards.
   if (!auth.isAuthenticated) {
     redirectToLogin(router, {
-      message: "You must sign in or create an account before purchasing tickets.",
+      message: t('signInToPurchase'),
     });
     return;
   }
@@ -132,18 +134,18 @@ watch(() => route.params.id, (id) => load(id));
     <div class="mx-auto w-full max-w-6xl">
       <button
         type="button"
-        class="mb-5 inline-flex items-center gap-1.5 text-sm text-[#9CA3AF] transition hover:text-white"
+        class="mb-5 inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-[#9CA3AF] transition hover:text-slate-900 dark:hover:text-white"
         @click="router.back()"
       >
         <ChevronLeft :size="16" />
-        Back
+        {{ t('back') }}
       </button>
 
       <!-- Loading -->
       <div v-if="loading" class="animate-pulse space-y-6">
-        <div class="aspect-[16/9] w-full rounded-3xl bg-[#14171C]"></div>
-        <div class="h-9 w-2/3 rounded bg-[#14171C]"></div>
-        <div class="h-4 w-1/2 rounded bg-[#14171C]"></div>
+        <div class="aspect-[16/9] w-full rounded-3xl bg-white dark:bg-[#14171C]"></div>
+        <div class="h-9 w-2/3 rounded bg-white dark:bg-[#14171C]"></div>
+        <div class="h-4 w-1/2 rounded bg-white dark:bg-[#14171C]"></div>
       </div>
 
       <!-- Error -->
@@ -163,8 +165,8 @@ watch(() => route.params.id, (id) => load(id));
             :alt="event.title"
             class="aspect-[16/8] w-full object-cover"
           />
-          <div v-else class="flex aspect-[16/8] w-full items-center justify-center bg-[#14171C]">
-            <span class="text-sm text-white/30">No image available</span>
+          <div v-else class="flex aspect-[16/8] w-full items-center justify-center bg-white dark:bg-[#14171C]">
+            <span class="text-sm text-slate-400 dark:text-white/30">{{ t('noImage') }}</span>
           </div>
           <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
 
@@ -175,7 +177,7 @@ watch(() => route.params.id, (id) => load(id));
                   {{ category }}
                 </span>
                 <span v-if="event.status === 'cancelled'" class="rounded-full bg-red-500 px-3 py-1 text-[11px] font-bold uppercase text-white">
-                  Cancelled
+                  {{ t('cancelled') }}
                 </span>
               </div>
               <h1 class="max-w-2xl text-2xl font-extrabold tracking-tight text-white sm:text-4xl">
@@ -184,7 +186,7 @@ watch(() => route.params.id, (id) => load(id));
             </div>
 
             <div v-if="price !== null" class="text-right">
-              <p class="text-xs text-white/70">Starting from</p>
+              <p class="text-xs text-white/70">{{ t('startingFrom') }}</p>
               <p class="text-2xl font-extrabold text-[#FFA500] sm:text-3xl">{{ formatPrice(price) }}</p>
             </div>
           </div>
@@ -195,27 +197,27 @@ watch(() => route.params.id, (id) => load(id));
           <!-- Left: description & details -->
           <div class="space-y-6">
             <div>
-              <h2 class="mb-2 text-lg font-bold text-white">About this event</h2>
-              <p class="text-sm leading-relaxed text-white/70">
-                {{ event.description || "No description provided yet." }}
+              <h2 class="mb-2 text-lg font-bold text-slate-900 dark:text-white">{{ t('aboutEvent') }}</h2>
+              <p class="text-sm leading-relaxed text-slate-600 dark:text-white/70">
+                {{ event.description || t('noDescription') }}
               </p>
             </div>
 
             <!-- Reviews -->
-            <div class="rounded-2xl bg-[#14171C] p-5">
+            <div class="rounded-2xl bg-white dark:bg-[#14171C] p-5">
               <div class="mb-4 flex items-center justify-between gap-3">
                 <div class="flex items-center gap-2">
                   <Star :size="16" class="text-amber-400" />
-                  <h3 class="text-base font-bold text-white">Reviews</h3>
-                  <span v-if="avgRating" class="rounded-full bg-white/5 px-2.5 py-0.5 text-xs font-semibold text-[#FFA500]">
+                  <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ t('reviewsSection') }}</h3>
+                  <span v-if="avgRating" class="rounded-full bg-slate-100 dark:bg-white/5 px-2.5 py-0.5 text-xs font-semibold text-[#FFA500]">
                     {{ avgRating }} / 5
                   </span>
                 </div>
-                <span class="text-xs text-[#9CA3AF]">{{ reviews.length }} reviews</span>
+                <span class="text-xs text-slate-500 dark:text-[#9CA3AF]">{{ reviews.length }} {{ t('reviewsCount') }}</span>
               </div>
 
               <!-- Review form -->
-              <form class="mb-4 rounded-xl border border-white/10 bg-[#1D2229] p-4" @submit.prevent="submitReview">
+              <form class="mb-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-200 dark:bg-[#1D2229] p-4" @submit.prevent="submitReview">
                 <div class="mb-3 flex items-center gap-1">
                   <button
                     v-for="i in 5"
@@ -226,16 +228,16 @@ watch(() => route.params.id, (id) => load(id));
                   >
                     <Star
                       :size="18"
-                      :class="i <= rating ? 'text-amber-400 fill-amber-400' : 'text-white/20'"
+                      :class="i <= rating ? 'text-amber-400 fill-amber-400' : 'text-slate-400 dark:text-white/20'"
                     />
                   </button>
-                  <span class="ml-2 text-xs text-[#9CA3AF]">{{ rating }} of 5</span>
+                  <span class="ml-2 text-xs text-slate-500 dark:text-[#9CA3AF]">{{ rating }} {{ t('of5') }}</span>
                 </div>
                 <textarea
                   v-model="comment"
                   rows="3"
-                  placeholder="Share your experience at this event..."
-                  class="w-full rounded-lg border border-white/10 bg-[#0B0D10] px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#FFA500]/60"
+                  :placeholder="t('writeReview')"
+                  class="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#0B0D10] px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 outline-none focus:border-[#FFA500]/60"
                 ></textarea>
                 <div class="mt-3 flex items-center justify-between gap-3">
                   <div>
@@ -247,83 +249,83 @@ watch(() => route.params.id, (id) => load(id));
                     :disabled="reviewSubmitting"
                     class="shrink-0 rounded-full bg-[#FFA500] px-5 py-2 text-xs font-bold text-black transition hover:bg-[#FFB52E] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {{ reviewSubmitting ? "Submitting..." : "Submit Review" }}
+                    {{ reviewSubmitting ? t('submitting') : t('submitReview') }}
                   </button>
                 </div>
               </form>
 
               <!-- Review list -->
-              <div v-if="!reviews.length" class="py-6 text-center text-sm text-[#9CA3AF]">
-                No reviews yet — be the first to share your experience.
+              <div v-if="!reviews.length" class="py-6 text-center text-sm text-slate-500 dark:text-[#9CA3AF]">
+                {{ t('noReviews') }}
               </div>
               <ul v-else class="space-y-3">
                 <li
                   v-for="r in reviews"
                   :key="r.id"
-                  class="rounded-xl border border-white/10 bg-[#1D2229] p-4"
+                  class="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-200 dark:bg-[#1D2229] p-4"
                 >
                   <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
                       <span class="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFA500]/15 text-[10px] font-bold text-[#FFA500]">
                         {{ (r.user?.name || "?").split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) }}
                       </span>
-                      <span class="text-sm font-semibold text-white">{{ r.user?.name || "Attendee" }}</span>
+                      <span class="text-sm font-semibold text-slate-900 dark:text-white">{{ r.user?.name || t('attendee') }}</span>
                     </div>
                     <div class="flex gap-0.5">
                       <Star
                         v-for="i in 5"
                         :key="i"
                         :size="12"
-                        :class="i <= r.rating ? 'text-amber-400 fill-amber-400' : 'text-white/15'"
+                        :class="i <= r.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-400 dark:text-white/15'"
                       />
                     </div>
                   </div>
-                  <p v-if="r.comment" class="mt-2 text-sm leading-relaxed text-white/70">{{ r.comment }}</p>
+                  <p v-if="r.comment" class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-white/70">{{ r.comment }}</p>
                 </li>
               </ul>
             </div>
 
             <div class="grid gap-3 sm:grid-cols-2">
-              <div class="rounded-2xl bg-[#14171C] p-4">
+              <div class="rounded-2xl bg-white dark:bg-[#14171C] p-4">
                 <div class="flex items-center gap-2 text-[#FFA500]">
                   <Calendar :size="16" />
-                  <span class="text-xs font-semibold uppercase tracking-wider text-white/50">Date</span>
+                  <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-white/50">{{ t('date') }}</span>
                 </div>
-                <p class="mt-2 text-sm font-semibold text-white">{{ formatDate(event.start_date) }}</p>
+                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{{ formatDate(event.start_date) }}</p>
               </div>
-              <div class="rounded-2xl bg-[#14171C] p-4">
+              <div class="rounded-2xl bg-white dark:bg-[#14171C] p-4">
                 <div class="flex items-center gap-2 text-[#FFA500]">
                   <Clock :size="16" />
-                  <span class="text-xs font-semibold uppercase tracking-wider text-white/50">Time</span>
+                  <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-white/50">{{ t('time') }}</span>
                 </div>
-                <p class="mt-2 text-sm font-semibold text-white">{{ formatTime(event.start_time) }}</p>
+                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{{ formatTime(event.start_time) }}</p>
               </div>
-              <div v-if="venue" class="rounded-2xl bg-[#14171C] p-4 sm:col-span-2">
+              <div v-if="venue" class="rounded-2xl bg-white dark:bg-[#14171C] p-4 sm:col-span-2">
                 <div class="flex items-center gap-2 text-[#FFA500]">
                   <MapPin :size="16" />
-                  <span class="text-xs font-semibold uppercase tracking-wider text-white/50">Venue</span>
+                  <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-white/50">{{ t('venue') }}</span>
                 </div>
-                <p class="mt-2 text-sm font-semibold text-white">{{ venue.name }}</p>
-                <p v-if="venue.address || venue.city" class="mt-1 text-xs text-[#9CA3AF]">
+                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{{ venue.name }}</p>
+                <p v-if="venue.address || venue.city" class="mt-1 text-xs text-slate-500 dark:text-[#9CA3AF]">
                   {{ [venue.address, venue.city, venue.province].filter(Boolean).join(", ") }}
                 </p>
               </div>
             </div>
 
             <!-- Ticket types -->
-            <div v-if="(event.ticketTypes || event.ticket_types || []).length" class="rounded-2xl bg-[#14171C] p-5">
-              <h3 class="mb-3 text-base font-bold text-white">Ticket Options</h3>
+            <div v-if="(event.ticketTypes || event.ticket_types || []).length" class="rounded-2xl bg-white dark:bg-[#14171C] p-5">
+              <h3 class="mb-3 text-base font-bold text-slate-900 dark:text-white">{{ t('ticketOptions') }}</h3>
               <div class="space-y-2">
                 <div
                   v-for="ticket in (event.ticketTypes || event.ticket_types || [])"
                   :key="ticket.id"
-                  class="flex items-center justify-between rounded-xl bg-[#1D2229] px-4 py-3"
+                  class="flex items-center justify-between rounded-xl bg-slate-200 dark:bg-[#1D2229] px-4 py-3"
                 >
                   <div>
-                    <p class="text-sm font-semibold text-white">{{ ticket.name }}</p>
-                    <p v-if="ticket.quantity !== undefined" class="flex items-center gap-1 text-xs text-[#9CA3AF]">
+                    <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ ticket.name }}</p>
+                    <p v-if="ticket.quantity !== undefined" class="flex items-center gap-1 text-xs text-slate-500 dark:text-[#9CA3AF]">
                       <Users :size="12" />
-                      {{ Math.max(0, Number(ticket.quantity || 0) - Number(ticket.sold_quantity || 0)) }} left
+                      {{ Math.max(0, Number(ticket.quantity || 0) - Number(ticket.sold_quantity || 0)) }} {{ t('left') }}
                     </p>
                   </div>
                   <p class="text-sm font-bold text-[#FFA500]">{{ formatPrice(ticket.price) }}</p>
@@ -333,13 +335,13 @@ watch(() => route.params.id, (id) => load(id));
           </div>
 
           <!-- Right: booking CTA -->
-          <aside class="h-fit rounded-2xl border border-white/10 bg-[#14171C] p-5 lg:sticky lg:top-24">
-            <p class="mb-1 text-xs text-[#9CA3AF]">Availability</p>
-            <p v-if="price !== null && price > 0" class="flex items-center gap-2 text-2xl font-extrabold text-white">
+          <aside class="h-fit rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] p-5 lg:sticky lg:top-24">
+            <p class="mb-1 text-xs text-slate-500 dark:text-[#9CA3AF]">{{ t('availability') }}</p>
+            <p v-if="price !== null && price > 0" class="flex items-center gap-2 text-2xl font-extrabold text-slate-900 dark:text-white">
               <Tag :size="20" class="text-[#FFA500]" />
-              From {{ formatPrice(price) }}
+              {{ t('fromPrice') }} {{ formatPrice(price) }}
             </p>
-            <p v-else class="text-2xl font-extrabold text-white">Free Entry</p>
+            <p v-else class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ t('freeEntry') }}</p>
 
             <button
               type="button"
@@ -348,24 +350,24 @@ watch(() => route.params.id, (id) => load(id));
               @click="book"
             >
               <Ticket :size="17" />
-              Book Tickets
+              {{ t('bookTickets') }}
             </button>
 
             <button
               type="button"
               :class="saved
                 ? 'border-[#FFA500]/60 bg-[#FFA500]/10 text-[#FFA500]'
-                : 'border-white/15 bg-white/5 text-white hover:bg-white/10'"
+                : 'border-slate-200 dark:border-white/15 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10'"
               class="mt-3 flex w-full items-center justify-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition hover:border-[#FFA500]/40"
               @click="toggleFavorite"
             >
               <Heart :size="16" :fill="saved ? 'currentColor' : 'none'" />
-              {{ saved ? 'Saved' : 'Save Event' }}
+              {{ saved ? t('eventSaved') : t('saveEvent') }}
             </button>
 
-            <div class="mt-5 border-t border-white/5 pt-4 text-xs text-[#9CA3AF]">
-              <p>Secure checkout</p>
-              <p class="mt-1">Get instant confirmation by email.</p>
+            <div class="mt-5 border-t border-slate-200 dark:border-white/5 pt-4 text-xs text-slate-500 dark:text-[#9CA3AF]">
+              <p>{{ t('secureCheckout') }}</p>
+              <p class="mt-1">{{ t('instantConfirmation') }}</p>
             </div>
           </aside>
         </div>

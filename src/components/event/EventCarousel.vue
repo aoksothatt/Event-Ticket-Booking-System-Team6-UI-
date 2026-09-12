@@ -3,13 +3,16 @@ import { ref } from "vue";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 import EventCard from "./EventCard.vue";
 import EventSkeleton from "./EventSkeleton.vue";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const props = defineProps({
   title: { type: String, default: "" },
   subtitle: { type: String, default: "" },
   events: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
-  emptyText: { type: String, default: "No events are available in this category yet." },
+  emptyText: { type: String, default: "" },
   minCards: { type: Number, default: 4 },
 });
 
@@ -35,11 +38,11 @@ function hasRoomToScroll() {
     <div class="mb-4 flex items-end justify-between gap-4">
       <div class="min-w-0">
         <h2
-          class="truncate text-lg font-bold tracking-tight text-white sm:text-xl"
+          class="truncate text-lg font-bold tracking-tight text-slate-900 dark:text-white sm:text-xl"
         >
           {{ title }}
         </h2>
-        <p v-if="subtitle" class="mt-0.5 truncate text-xs text-[#9CA3AF]">
+        <p v-if="subtitle" class="mt-0.5 truncate text-xs text-slate-500 dark:text-[#9CA3AF]">
           {{ subtitle }}
         </p>
       </div>
@@ -47,16 +50,16 @@ function hasRoomToScroll() {
       <div class="hidden shrink-0 items-center gap-2 sm:flex">
         <button
           type="button"
-          class="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:border-[#FFA500]/50 hover:bg-[#FFA500]/10 hover:text-white"
-          aria-label="Scroll left"
+          class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/70 transition hover:border-[#FFA500]/50 hover:bg-[#FFA500]/10 hover:text-slate-900 dark:hover:text-white"
+          :aria-label="t('scrollLeft')"
           @click="scrollByCards(-1)"
         >
           <ChevronLeft :size="18" />
         </button>
         <button
           type="button"
-          class="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:border-[#FFA500]/50 hover:bg-[#FFA500]/10 hover:text-white"
-          aria-label="Scroll right"
+          class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/70 transition hover:border-[#FFA500]/50 hover:bg-[#FFA500]/10 hover:text-slate-900 dark:hover:text-white"
+          :aria-label="t('scrollRight')"
           @click="scrollByCards(1)"
         >
           <ChevronRight :size="18" />
@@ -70,16 +73,16 @@ function hasRoomToScroll() {
     <!-- Empty state (do not render a broken empty carousel) -->
     <div
       v-else-if="!events.length"
-      class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-[#14171C]/50 px-6 py-12 text-center"
+      class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#14171C]/50 px-6 py-12 text-center"
     >
-      <p class="text-sm text-[#9CA3AF]">{{ emptyText }}</p>
+      <p class="text-sm text-slate-500 dark:text-[#9CA3AF]">{{ emptyText || t('noEventsInCategory') }}</p>
     </div>
 
     <!-- Carousel -->
     <div
       v-else
       ref="track"
-      class="-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:thin] [scrollbar-color:#2a2f37_transparent] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#2a2f37]"
+      class="-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] dark:[scrollbar-color:#2a2f37_transparent] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-[#2a2f37]"
     >
       <EventCard
         v-for="event in events"

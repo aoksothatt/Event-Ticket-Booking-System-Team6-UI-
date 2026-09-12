@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { adminApi } from "@/api/admin.js";
 import { coverImage } from "../../utils/event.js";
 import {
@@ -23,6 +24,7 @@ import {
 } from "lucide-vue-next";
 
 const router = useRouter();
+const { t } = useI18n();
 
 const loading = ref(true);
 const error = ref(null);
@@ -37,11 +39,12 @@ const selectedCategory = ref("All");
 const selectedStatus = ref("All");
 
 const statuses = ["All", "published", "draft", "cancelled"];
+const statusDisplayMap = { All: t("all"), published: t("published"), draft: t("draft"), cancelled: t("cancelled") };
 
 const statusStyle = {
-  published: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  draft: "bg-sky-50 text-sky-700 border-sky-200",
-  cancelled: "bg-rose-50 text-rose-700 border-rose-200",
+  published: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
+  draft: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30",
+  cancelled: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30",
 };
 
 const categories = computed(() => {
@@ -55,28 +58,28 @@ const stats = computed(() => {
   const draft = events.value.filter((e) => e.status === "draft").length;
   return [
     {
-      label: "Total Events",
+      label: t("totalEvents"),
       value: String(total),
-      change: `${published} published`,
+      change: `${published} ${t("published").toLowerCase()}`,
       trend: "up",
       icon: Calendar,
-      color: "bg-blue-50 text-blue-600",
+      color: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
     },
     {
-      label: "Published",
+      label: t("published"),
       value: String(published),
-      change: total ? `${Math.round((published / total) * 100)}% of all events` : "0%",
+      change: total ? `${Math.round((published / total) * 100)}% ${t("ofAllEvents")}` : "0%",
       trend: "up",
       icon: Flame,
-      color: "bg-amber-50 text-amber-600",
+      color: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
     },
     {
-      label: "Drafts",
+      label: t("draft"),
       value: String(draft),
-      change: `${draft} pending review`,
+      change: `${draft} ${t("pendingReviewCount")}`,
       trend: "up",
       icon: Ticket,
-      color: "bg-emerald-50 text-emerald-600",
+      color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
     },
   ];
 });
@@ -107,7 +110,7 @@ async function fetchEvents() {
     const res = await adminApi.getEvents();
     events.value = res.data?.data || [];
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || "Failed to load events.";
+    error.value = e.response?.data?.message || e.message || t("failed");
   } finally {
     loading.value = false;
   }
@@ -258,17 +261,17 @@ async function saveEvent() {
     isModalOpen.value = false;
     fetchEvents();
   } catch (e) {
-    formError.value = e.response?.data?.message || e.message || "Failed to save event.";
+    formError.value = e.response?.data?.message || e.message || t("errorMessage");
   }
 }
 
 async function deleteEvent(id) {
-  if (!confirm("Are you sure you want to delete this event?")) return;
+  if (!confirm(t("deleteConfirm"))) return;
   try {
     await adminApi.deleteEvent(id);
     events.value = events.value.filter((e) => e.id !== id);
   } catch (e) {
-    alert(e.response?.data?.message || e.message || "Failed to delete event.");
+    alert(e.response?.data?.message || e.message || t("errorMessage"));
   }
 }
 
@@ -300,10 +303,10 @@ async function toggleTrending(event) {
     if (idx !== -1 && updated) {
       events.value[idx] = { ...events.value[idx], ...updated };
     }
-    showToast(next ? "Event added to Trending." : "Event removed from Trending.");
+    showToast(next ? t("addToTrending") : t("removeFromTrending"));
   } catch (e) {
     event.is_trending = prev;
-    alert(e.response?.data?.message || e.message || "Failed to update trending status.");
+    alert(e.response?.data?.message || e.message || t("errorMessage"));
   } finally {
     const s = new Set(trendingBusy.value);
     s.delete(id);
@@ -313,17 +316,17 @@ async function toggleTrending(event) {
 </script>
 
 <template>
-  <main class="min-h-screen flex-1 bg-slate-50 px-8 py-8 text-slate-800">
+  <main class="min-h-screen flex-1 bg-slate-50 px-8 py-8 text-slate-800 dark:bg-slate-900 dark:text-white">
     <!-- Header -->
     <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <div class="flex items-center gap-2.5">
-          <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Events Management</h1>
-          <span class="rounded-md bg-amber-100 border border-amber-200 px-2.5 py-0.5 text-xs text-amber-800 font-mono font-medium">
+          <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{{ t("eventsManagement") }}</h1>
+          <span class="rounded-md bg-amber-100 border border-amber-200 px-2.5 py-0.5 text-xs text-amber-800 font-mono font-medium dark:bg-amber-500/15 dark:border-amber-500/30 dark:text-amber-400">
             manage_events
           </span>
         </div>
-        <p class="mt-1 text-sm text-slate-500">Configure platform events, manage dates, schedules, venues, and ticket pricing.</p>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ t("eventsManagement") }}</p>
       </div>
       <div class="flex items-center gap-3">
         <button
@@ -332,7 +335,7 @@ async function toggleTrending(event) {
           class="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 hover:shadow"
         >
           <Plus :size="16" :stroke-width="2.5" />
-          Create Event
+          {{ t("createEvent") }}
         </button>
       </div>
     </div>
@@ -348,7 +351,7 @@ async function toggleTrending(event) {
     >
       <div
         v-if="toast"
-        class="fixed right-4 top-4 z-[60] flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-lg"
+        class="fixed right-4 top-4 z-[60] flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-lg dark:border-amber-500/30 dark:bg-slate-800 dark:text-white"
         role="status"
         aria-live="polite"
       >
@@ -359,17 +362,17 @@ async function toggleTrending(event) {
 
     <!-- Loading State -->
     <div v-if="loading" class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div v-for="n in 3" :key="n" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm animate-pulse">
-        <div class="h-3 w-24 rounded bg-slate-200 mb-4"></div>
-        <div class="h-7 w-16 rounded bg-slate-200 mb-2"></div>
-        <div class="h-3 w-32 rounded bg-slate-100"></div>
+      <div v-for="n in 3" :key="n" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm animate-pulse dark:border-slate-700 dark:bg-slate-800">
+        <div class="h-3 w-24 rounded bg-slate-200 mb-4 dark:bg-slate-600"></div>
+        <div class="h-7 w-16 rounded bg-slate-200 mb-2 dark:bg-slate-600"></div>
+        <div class="h-3 w-32 rounded bg-slate-100 dark:bg-slate-700"></div>
       </div>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="mb-8 rounded-xl border border-rose-200 bg-rose-50 p-6 text-center">
-      <p class="text-sm font-semibold text-rose-700">{{ error }}</p>
-      <button @click="fetchEvents" class="mt-3 text-xs font-semibold text-rose-600 underline hover:text-rose-800">Retry</button>
+    <div v-else-if="error" class="mb-8 rounded-xl border border-rose-200 bg-rose-50 p-6 text-center dark:border-red-500/30 dark:bg-red-500/10">
+      <p class="text-sm font-semibold text-rose-700 dark:text-rose-400">{{ error }}</p>
+      <button @click="fetchEvents" class="mt-3 text-xs font-semibold text-rose-600 underline hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300">{{ t("retry") }}</button>
     </div>
 
     <!-- Stat cards -->
@@ -377,15 +380,15 @@ async function toggleTrending(event) {
       <div
         v-for="stat in stats"
         :key="stat.label"
-        class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+        class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800"
       >
         <div class="mb-4 flex items-start justify-between">
-          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ stat.label }}</p>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider dark:text-slate-400">{{ stat.label }}</p>
           <span class="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm" :class="stat.color">
             <component :is="stat.icon" :size="16" />
           </span>
         </div>
-        <p class="text-2xl font-bold text-slate-900">{{ stat.value }}</p>
+        <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ stat.value }}</p>
         <p class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
           <ArrowUpRight :size="14" />
           {{ stat.change }}
@@ -394,79 +397,79 @@ async function toggleTrending(event) {
     </div>
 
     <!-- Filter & Search Bar -->
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       <div class="relative min-w-[260px] flex-1">
-        <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search by title, venue, organizer..."
-          class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+          :placeholder="t('searchPlaceholder')"
+          class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
         />
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
         <!-- Category Filter -->
         <div class="flex items-center gap-2">
-          <label class="text-xs font-semibold text-slate-500">Category:</label>
+          <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t("eventCategory") }}</label>
           <select
             v-model="selectedCategory"
-            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500"
+            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
-            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat === 'All' ? t('all') : cat }}</option>
           </select>
         </div>
 
         <!-- Status Filter -->
         <div class="flex items-center gap-2">
-          <label class="text-xs font-semibold text-slate-500">Status:</label>
+          <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t("eventStatus") }}</label>
           <select
             v-model="selectedStatus"
-            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize"
+            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
-            <option v-for="st in statuses" :key="st" :value="st">{{ st }}</option>
+            <option v-for="st in statuses" :key="st" :value="st">{{ statusDisplayMap[st] || st }}</option>
           </select>
         </div>
       </div>
     </div>
 
     <!-- Events Table -->
-    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-        <h2 class="text-base font-bold text-slate-900">Events ({{ filteredEvents.length }})</h2>
+    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-700">
+        <h2 class="text-base font-bold text-slate-900 dark:text-white">{{ t('events') }} ({{ filteredEvents.length }})</h2>
       </div>
 
       <!-- Table Loading Skeleton -->
-      <div v-if="loading" class="divide-y divide-slate-100">
+      <div v-if="loading" class="divide-y divide-slate-100 dark:divide-slate-700">
         <div v-for="n in 5" :key="n" class="flex items-center gap-6 px-6 py-4 animate-pulse">
-          <div class="h-4 w-48 rounded bg-slate-200"></div>
-          <div class="h-4 w-28 rounded bg-slate-200"></div>
-          <div class="h-4 w-32 rounded bg-slate-200"></div>
-          <div class="h-4 w-20 rounded bg-slate-200"></div>
+          <div class="h-4 w-48 rounded bg-slate-200 dark:bg-slate-600"></div>
+          <div class="h-4 w-28 rounded bg-slate-200 dark:bg-slate-600"></div>
+          <div class="h-4 w-32 rounded bg-slate-200 dark:bg-slate-600"></div>
+          <div class="h-4 w-20 rounded bg-slate-200 dark:bg-slate-600"></div>
         </div>
       </div>
 
       <div v-else class="overflow-x-auto">
         <table class="w-full text-left text-sm">
-          <thead class="bg-slate-50/70 border-b border-slate-200">
-            <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <th class="px-6 py-3">Event</th>
-              <th class="px-6 py-3">Dates & Timing</th>
-              <th class="px-6 py-3">Venue Location</th>
-              <th class="px-6 py-3">Status</th>
-              <th class="px-6 py-3">Trending</th>
-              <th class="px-6 py-3 text-right">Actions</th>
+          <thead class="bg-slate-50/70 border-b border-slate-200 dark:bg-slate-700/50 dark:border-slate-700">
+            <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">
+              <th class="px-6 py-3">{{ t("eventHeader") }}</th>
+              <th class="px-6 py-3">{{ t("datesTiming") }}</th>
+              <th class="px-6 py-3">{{ t("venueLocation") }}</th>
+              <th class="px-6 py-3">{{ t("status") }}</th>
+              <th class="px-6 py-3">{{ t("trendingHeader") }}</th>
+              <th class="px-6 py-3 text-right">{{ t("actions") }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100">
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
             <tr
               v-for="event in filteredEvents"
               :key="event.id"
-              class="transition-colors hover:bg-slate-50/80"
+              class="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/50"
             >
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                  <div class="h-12 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                  <div class="h-12 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100 dark:bg-slate-700">
                     <img
                       v-if="coverImage(event)"
                       :src="coverImage(event)"
@@ -474,27 +477,27 @@ async function toggleTrending(event) {
                       class="h-full w-full object-cover"
                     />
                     <span v-else class="flex h-full w-full items-center justify-center">
-                      <Calendar :size="16" class="text-slate-300" />
+                      <Calendar :size="16" class="text-slate-300 dark:text-slate-600" />
                     </span>
                   </div>
                   <div class="min-w-0">
-                    <p class="font-semibold text-slate-900">{{ event.title }}</p>
-                    <div class="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                      <span class="rounded bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">{{ event.category?.name || 'N/A' }}</span>
-                      <span class="truncate">by {{ event.organizer?.company_name || 'N/A' }}</span>
+                    <p class="font-semibold text-slate-900 dark:text-white">{{ event.title }}</p>
+                    <div class="mt-1 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <span class="rounded bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-slate-700 dark:border-slate-600 dark:text-amber-400">{{ event.category?.name || t('na') }}</span>
+                      <span class="truncate">{{ t("by") }} {{ event.organizer?.company_name || t("na") }}</span>
                     </div>
                   </div>
                 </div>
               </td>
-              <td class="px-6 py-4 text-slate-700">
-                <div class="text-sm font-semibold text-slate-900">{{ event.start_date }}</div>
-                <div class="text-xs text-slate-400">{{ event.start_time }} - {{ event.end_time }}</div>
-                <div class="text-xs text-slate-500">Ends {{ event.end_date }}</div>
+              <td class="px-6 py-4 text-slate-700 dark:text-slate-300">
+                <div class="text-sm font-semibold text-slate-900 dark:text-white">{{ event.start_date }}</div>
+                <div class="text-xs text-slate-400 dark:text-slate-500">{{ event.start_time }} - {{ event.end_time }}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">{{ t("ends") }} {{ event.end_date }}</div>
               </td>
-              <td class="px-6 py-4 text-slate-700">
+              <td class="px-6 py-4 text-slate-700 dark:text-slate-300">
                 <div class="flex items-center gap-1.5 text-xs font-medium">
                   <MapPin :size="13" class="text-amber-600" />
-                  {{ event.venue?.name || 'N/A' }}
+                  {{ event.venue?.name || t('na') }}
                 </div>
               </td>
               <td class="px-6 py-4">
@@ -502,7 +505,7 @@ async function toggleTrending(event) {
                   class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize"
                   :class="statusStyle[event.status]"
                 >
-                  {{ event.status }}
+                  {{ statusDisplayMap[event.status] || event.status }}
                 </span>
               </td>
               <td class="px-6 py-4">
@@ -514,10 +517,10 @@ async function toggleTrending(event) {
                     type="button"
                     role="switch"
                     :aria-checked="Boolean(event.is_trending)"
-                    :aria-label="`${event.is_trending ? 'Remove' : 'Add'} ${event.title} to Trending`"
-                    :title="event.is_trending ? 'Remove from Trending' : 'Add to Trending'"
+                    :aria-label="`${event.is_trending ? t('removeFromTrending') : t('addToTrending')} ${event.title}`"
+                    :title="event.is_trending ? t('removeFromTrending') : t('addToTrending')"
                     class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-wait"
-                    :class="event.is_trending ? 'bg-amber-500' : 'bg-slate-300'"
+                    :class="event.is_trending ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-600'"
                     :disabled="trendingBusy.has(event.id)"
                     @click="toggleTrending(event)"
                   >
@@ -528,10 +531,10 @@ async function toggleTrending(event) {
                   </button>
                   <span
                     class="flex items-center gap-1 text-xs font-semibold"
-                    :class="event.is_trending ? 'text-amber-600' : 'text-slate-400'"
+                    :class="event.is_trending ? 'text-amber-600' : 'text-slate-400 dark:text-slate-500'"
                   >
                     <Star :size="14" :fill="event.is_trending ? 'currentColor' : 'none'" />
-                    {{ event.is_trending ? 'ON' : 'OFF' }}
+                    {{ event.is_trending ? t("toggleOn") : t("toggleOff") }}
                   </span>
                 </div>
               </td>
@@ -540,24 +543,24 @@ async function toggleTrending(event) {
                   <button
                     type="button"
                     @click="viewEvent(event.id)"
-                    class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
-                    title="View Details"
+                    class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-amber-500/10"
+                    :title="t('viewDetails')"
                   >
                     <Eye :size="14" />
                   </button>
                   <button
                     type="button"
                     @click="openEditModal(event)"
-                    class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
-                    title="Edit Event"
+                    class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-amber-500/10"
+                    :title="t('editEvent')"
                   >
                     <Edit :size="14" />
                   </button>
                   <button
                     type="button"
                     @click="deleteEvent(event.id)"
-                    class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100"
-                    title="Delete Event"
+                      class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
+                      :title="t('delete')"
                   >
                     <Trash2 :size="14" />
                   </button>
@@ -565,8 +568,8 @@ async function toggleTrending(event) {
               </td>
             </tr>
             <tr v-if="filteredEvents.length === 0">
-              <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-400">
-                No events found matching your search.
+              <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
+                {{ t("noEventsFound") }}
               </td>
             </tr>
           </tbody>
@@ -579,48 +582,48 @@ async function toggleTrending(event) {
       v-if="isModalOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
     >
-      <div class="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div class="mb-5 flex items-center justify-between border-b border-slate-200 pb-4">
-          <h3 class="text-lg font-bold text-slate-900">
-            {{ editingEvent ? "Edit Event" : "Create New Event" }}
+      <div class="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto dark:border-slate-700 dark:bg-slate-800">
+        <div class="mb-5 flex items-center justify-between border-b border-slate-200 pb-4 dark:border-slate-700">
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">
+            {{ editingEvent ? t("editEvent") : t("createNewEvent") }}
           </h3>
-          <button @click="isModalOpen = false" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <button @click="isModalOpen = false" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-white">
             <X :size="18" />
           </button>
         </div>
 
         <form @submit.prevent="saveEvent" class="space-y-4">
           <div>
-            <label class="mb-1 block text-xs font-semibold text-slate-700">Event Title *</label>
+            <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t("eventTitle") }} *</label>
             <input
               v-model="form.title"
               type="text"
               required
-              placeholder="e.g. Neon Nights Music Festival"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+              :placeholder="t('eventTitlePlaceholder')"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
             />
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700">Category *</label>
+              <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t("categoryName") }} *</label>
               <select
                 v-model="form.category_id"
                 required
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               >
-                <option value="" disabled>Select category...</option>
+                <option value="" disabled>{{ t("selectCategory") }}</option>
                 <option v-for="c in categoriesList" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
             </div>
             <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700">Organizer *</label>
+              <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t("organizerHeader") }} *</label>
               <select
                 v-model="form.organizer_id"
                 required
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               >
-                <option value="" disabled>Select organizer...</option>
+                <option value="" disabled>{{ t("selectOrganizer") }}</option>
                 <option v-for="o in organizersList" :key="o.id" :value="o.id">
                   {{ o.user?.name || o.company_name || `#${o.id}` }}
                 </option>
@@ -630,77 +633,77 @@ async function toggleTrending(event) {
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700">Venue *</label>
+              <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t("venues") }} *</label>
               <select
                 v-model="form.venue_id"
                 required
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               >
-                <option value="" disabled>Select venue...</option>
+                <option value="" disabled>{{ t("selectVenue") }}</option>
                 <option v-for="v in venuesList" :key="v.id" :value="v.id">{{ v.name }}</option>
               </select>
             </div>
             <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700">Status</label>
+              <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t("status") }}</label>
               <select
                 v-model="form.status"
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 capitalize"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 capitalize dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               >
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="published">{{ t("published") }}</option>
+                <option value="draft">{{ t("draft") }}</option>
+                <option value="cancelled">{{ t("cancelled") }}</option>
               </select>
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700">Start Date *</label>
+              <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t("startDate") }} *</label>
               <input
                 v-model="form.start_date"
                 type="date"
                 required
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               />
             </div>
             <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700">End Date *</label>
+              <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t("endDate") }} *</label>
               <input
                 v-model="form.end_date"
                 type="date"
                 required
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               />
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700">Start Time</label>
+              <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t("startTime") }}</label>
               <input
                 v-model="form.start_time"
                 type="time"
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               />
             </div>
             <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700">End Time</label>
+              <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t("endTime") }}</label>
               <input
                 v-model="form.end_time"
                 type="time"
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               />
             </div>
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-semibold text-slate-700">Banner Image</label>
+            <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t("bannerImage") }}</label>
             <div class="flex items-center gap-4">
               <label
-                class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-4 text-center text-slate-500 transition-colors hover:border-amber-500 hover:bg-amber-50"
+                class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-4 text-center text-slate-500 transition-colors hover:border-amber-500 hover:bg-amber-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-amber-500/10"
               >
                 <Upload :size="20" />
-                <span class="text-xs font-medium">Upload banner</span>
+                <span class="text-xs font-medium">{{ t("uploadBanner") }}</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -711,22 +714,22 @@ async function toggleTrending(event) {
               <img
                 v-if="bannerPreview"
                 :src="bannerPreview"
-                alt="Banner preview"
-                class="h-20 w-40 rounded-lg border border-slate-200 object-cover"
+                :alt="t('bannerImage')"
+                class="h-20 w-40 rounded-lg border border-slate-200 object-cover dark:border-slate-700"
               />
             </div>
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-semibold text-slate-700">Description</label>
+            <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t("description") }}</label>
             <textarea
               v-model="form.description"
               rows="3"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
             />
           </div>
 
-          <div v-if="formError" class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
+          <div v-if="formError" class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
             {{ formError }}
           </div>
 
@@ -734,15 +737,15 @@ async function toggleTrending(event) {
             <button
               type="button"
               @click="isModalOpen = false"
-              class="rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+              class="rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700"
             >
-              Cancel
+              {{ t("cancel") }}
             </button>
             <button
               type="submit"
               class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600"
             >
-              {{ editingEvent ? "Save Changes" : "Create Event" }}
+              {{ editingEvent ? t("saveChanges") : t("createEvent") }}
             </button>
           </div>
         </form>

@@ -19,7 +19,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#0B0D10] text-white">
+  <div class="min-h-screen bg-white dark:bg-[#0B0D10] text-slate-900 dark:text-white">
     <UserNavbar :user="auth.user" />
 
     <main class="relative">

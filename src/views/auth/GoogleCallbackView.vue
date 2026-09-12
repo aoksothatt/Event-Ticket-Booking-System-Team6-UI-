@@ -6,6 +6,7 @@ import BrandLogo from "../../components/auth/BrandLogo.vue";
 import { useAuthStore } from "../../stores/auth.js";
 import { computeDestination } from "../../composables/useAuthRedirect.js";
 import { toast } from "../../composables/useToast.js";
+import { useI18n } from "vue-i18n";
 
 /**
  * Google OAuth callback page.
@@ -26,6 +27,8 @@ import { toast } from "../../composables/useToast.js";
  * a 302 redirect to this SPA route, so this page always runs in Vue Router.
  */
 
+const { t } = useI18n();
+
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
@@ -35,7 +38,7 @@ const errorMessage = ref("");
 
 /** Resume the session-intent destination, or land on the role-based home. */
 function redirectAfterLogin() {
-  toast("Signed in with Google!", "success");
+  toast(t('signedInWithGoogle'), "success");
   const destination = computeDestination({
     fallback: auth.isAdmin ? "/admin/overview" : "/home",
   });
@@ -54,7 +57,7 @@ async function processToken(token) {
     errorMessage.value =
       error?.response?.data?.message ||
       error?.message ||
-      "Google sign-in failed. Please try again.";
+      t('googleSigninFailed');
   }
 }
 
@@ -65,14 +68,14 @@ onMounted(() => {
   if (error) {
     status.value = "error";
     errorMessage.value =
-      "Google sign-in was cancelled or failed. Please try again.";
+      t('googleSigninCancelled');
     return;
   }
 
   if (!token) {
     status.value = "error";
     errorMessage.value =
-      "No authentication token was received from the server. Please sign in again.";
+      t('noAuthToken');
     return;
   }
 
@@ -81,20 +84,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-[#202020] px-5 py-12 text-white">
+  <div class="flex min-h-screen items-center justify-center bg-white dark:bg-[#202020] px-5 py-12 text-slate-900 dark:text-white">
     <section class="flex w-full max-w-md flex-col items-center justify-center">
       <BrandLogo class="mb-10" />
 
       <!-- Loading -->
       <div v-if="status === 'loading'" class="flex flex-col items-center gap-4 text-center">
         <Loader2 class="h-10 w-10 animate-spin text-[#FFA500]" />
-        <p class="text-sm text-[#BDBDBD]">Completing your Google sign-in…</p>
+        <p class="text-sm text-slate-500 dark:text-[#BDBDBD]">{{ t('completingGoogleSignin') }}</p>
       </div>
 
       <!-- Success -->
       <div v-else-if="status === 'success'" class="flex flex-col items-center gap-4 text-center">
-        <p class="text-2xl font-bold text-white">Welcome aboard!</p>
-        <p class="text-sm text-[#BDBDBD]">You are being signed in…</p>
+        <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ t('welcome') }}</p>
+        <p class="text-sm text-slate-500 dark:text-[#BDBDBD]">{{ t('beingSignedIn') }}</p>
       </div>
 
       <!-- Error -->
@@ -103,7 +106,7 @@ onMounted(() => {
         class="flex w-full flex-col items-center gap-4 rounded-2xl border border-red-500/40 bg-red-500/10 p-6 text-center"
       >
         <AlertCircle class="h-10 w-10 text-red-400" />
-        <p class="text-sm font-semibold text-red-300">Sign-in failed</p>
+        <p class="text-sm font-semibold text-red-300">{{ t('signinFailed') }}</p>
         <p class="text-xs text-red-300/80">{{ errorMessage }}</p>
 
         <RouterLink
@@ -111,7 +114,7 @@ onMounted(() => {
           class="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-[#FFA500] text-sm font-bold text-black transition hover:bg-[#FFB52E] active:scale-[0.99]"
         >
           <LogIn class="h-4 w-4" />
-          Back to login
+          {{ t('backToLogin') }}
         </RouterLink>
       </div>
     </section>

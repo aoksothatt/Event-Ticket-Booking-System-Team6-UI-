@@ -8,6 +8,9 @@ import GoogleLoginButton from "../../components/auth/GoogleLoginButton.vue";
 import { useAuthStore } from "../../stores/auth.js";
 import { computeDestination } from "../../composables/useAuthRedirect.js";
 import { toast } from "../../composables/useToast.js";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 // Login calls POST /api/login with email and password via the Pinia auth
 // store. On success it stores the JWT + user and fetches the authoritative
@@ -35,12 +38,12 @@ function validate() {
   errors.email = "";
   errors.password = "";
   if (!form.email.trim()) {
-    errors.email = "Email is required.";
+    errors.email = t('emailRequired');
   } else if (!EMAIL_RE.test(form.email.trim())) {
-    errors.email = "Please enter a valid email address.";
+    errors.email = t('validEmail');
   }
   if (!form.password) {
-    errors.password = "Password is required.";
+    errors.password = t('passwordRequired');
   }
   return !errors.email && !errors.password;
 }
@@ -55,7 +58,7 @@ async function handleSubmit() {
   loading.value = true;
   try {
     await auth.login({ email: form.email.trim(), password: form.password });
-    toast("Welcome back!", "success");
+    toast(t('welcomeBack'), "success");
 
     // `?redirect=` wins (set by the route guard / buy-ticket gate); otherwise
     // use the stored intent, then fall back to the role-based home page.
@@ -65,7 +68,7 @@ async function handleSubmit() {
     });
     router.replace(destination);
   } catch (error) {
-    serverError.value = error.response?.data?.message || error.message || "Unable to sign in. Please try again.";
+    serverError.value = error.response?.data?.message || error.message || t('signInFailed');
   } finally {
     loading.value = false;
   }
@@ -74,7 +77,7 @@ async function handleSubmit() {
 
 <template>
   <div
-    class="flex min-h-screen items-center justify-center bg-[#202020] px-5 py-12 text-white"
+    class="flex min-h-screen items-center justify-center bg-white dark:bg-[#202020] px-5 py-12 text-slate-900 dark:text-white"
   >
     <div
       class="grid w-full max-w-6xl items-stretch gap-8 md:min-h-[540px] md:grid-cols-[1fr_1.35fr]"
@@ -85,28 +88,28 @@ async function handleSubmit() {
       >
         <BrandLogo class="mb-10" />
 
-        <div class="flex items-center gap-3 text-[13px] text-[#BDBDBD]">
-          <span class="h-px flex-1 bg-[#3A3A3A]"></span>
+        <div class="flex items-center gap-3 text-[13px] text-slate-500 dark:text-[#BDBDBD]">
+          <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
           <RouterLink
             to="/register"
             class="whitespace-nowrap font-semibold text-[#FFA500] transition hover:text-[#FFB52E]"
           >
-            Create Account
+            {{ t('createAccount') }}
           </RouterLink>
-          <span class="h-px flex-1 bg-[#3A3A3A]"></span>
+          <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
         </div>
 
-        <h1 class="mb-7 mt-5 text-[28px] font-bold tracking-tight text-white">
-          Sign in
+        <h1 class="mb-7 mt-5 text-[28px] font-bold tracking-tight text-slate-900 dark:text-white">
+          {{ t('signIn') }}
         </h1>
 
         <form class="space-y-4" novalidate @submit.prevent="handleSubmit">
           <AuthField
             id="login-email"
             v-model="form.email"
-            label="Email"
+            :label="t('email')"
             type="email"
-            placeholder="Please enter your email"
+            :placeholder="t('pleaseEnterEmail')"
             autocomplete="email"
             :icon="Mail"
             :error="errors.email"
@@ -115,17 +118,17 @@ async function handleSubmit() {
           <AuthField
             id="login-password"
             v-model="form.password"
-            label="Password"
+            :label="t('password')"
             :type="showPassword ? 'text' : 'password'"
-            placeholder="Please enter your password"
+            :placeholder="t('pleaseEnterPassword')"
             autocomplete="current-password"
             :error="errors.password"
           >
             <template #trailing>
               <button
                 type="button"
-                class="absolute right-4 top-1/2 -translate-y-1/2 text-[#8A8A8A] transition hover:text-white"
-                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#8A8A8A] transition hover:text-slate-900 dark:hover:text-white"
+                :aria-label="showPassword ? t('hidePassword') : t('showPassword')"
                 @click="showPassword = !showPassword"
               >
                 <EyeOff v-if="showPassword" class="h-[18px] w-[18px]" />
@@ -136,20 +139,20 @@ async function handleSubmit() {
 
           <div class="flex items-center justify-between pt-1 text-[13px]">
             <label
-              class="flex cursor-pointer select-none items-center gap-2 text-[#BDBDBD]"
+              class="flex cursor-pointer select-none items-center gap-2 text-slate-500 dark:text-[#BDBDBD]"
             >
               <input
                 v-model="remember"
                 type="checkbox"
                 class="h-4 w-4 cursor-pointer rounded accent-[#FFA500]"
               />
-              Remember Me
+              {{ t('rememberMe') }}
             </label>
             <RouterLink
               to="/forgot-password"
-              class="text-[#E0E0E0] transition hover:text-white"
+              class="text-slate-900 dark:text-[#E0E0E0] transition hover:text-slate-900 dark:hover:text-white"
             >
-              Forgot Password?
+              {{ t('forgotPassword') }}
             </RouterLink>
           </div>
 
@@ -166,13 +169,13 @@ async function handleSubmit() {
             class="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-[#FFA500] text-sm font-bold text-black transition hover:bg-[#FFB52E] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Loader2 v-if="loading" class="h-5 w-5 animate-spin" />
-            <span>{{ loading ? "Signing in..." : "Login" }}</span>
+            <span>{{ loading ? t('signingIn') : t('login') }}</span>
           </button>
 
-          <div class="flex items-center gap-3 pt-1 text-sm text-[#8A8A8A]">
-            <span class="h-px flex-1 bg-[#3A3A3A]"></span>
-            <span class="uppercase text-[11px] tracking-widest">or</span>
-            <span class="h-px flex-1 bg-[#3A3A3A]"></span>
+          <div class="flex items-center gap-3 pt-1 text-sm text-slate-500 dark:text-[#8A8A8A]">
+            <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
+            <span class="uppercase text-[11px] tracking-widest">{{ t('or') }}</span>
+            <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
           </div>
 
           <GoogleLoginButton />
@@ -200,10 +203,10 @@ async function handleSubmit() {
           <p
             class="mb-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#FFA500]"
           >
-            BILIT Presents
+            {{ t('brandPresents') }}
           </p>
           <p class="text-lg font-bold drop-shadow-lg">
-            Live Shows · Cinema · Events
+            {{ t('tagline') }}
           </p>
         </div>
       </section>

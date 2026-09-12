@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { getEvents } from "../api/eventApi.js";
 import { getCategories } from "../api/categoryApi.js";
 import CategoryFilter from "../components/category/CategoryFilter.vue";
@@ -8,6 +9,7 @@ import EventCard from "../components/event/EventCard.vue";
 import EventSkeleton from "../components/event/EventSkeleton.vue";
 import { Search } from "lucide-vue-next";
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 
@@ -32,7 +34,7 @@ async function load() {
     const { events: list } = await getEvents(params);
     events.value = list;
   } catch (e) {
-    error.value = e.message || "Could not load events.";
+    error.value = e.message || t('couldNotLoadEvents');
     events.value = [];
   } finally {
     loading.value = false;
@@ -85,19 +87,19 @@ watch(
   <div class="px-4 pb-20 pt-28 sm:px-6 lg:px-8">
     <div class="mx-auto w-full max-w-7xl">
       <div class="mb-6">
-        <h1 class="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Events</h1>
-        <p class="mt-1 text-sm text-[#9CA3AF]">Browse all events or narrow them down.</p>
+        <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">{{ t('events') }}</h1>
+        <p class="mt-1 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('browseEventsDesc') }}</p>
       </div>
 
       <!-- Toolbar -->
       <div class="mb-8 space-y-4">
-        <div class="flex max-w-md items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 transition focus-within:border-[#FFA500]/60">
+        <div class="flex max-w-md items-center gap-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3.5 py-2 transition focus-within:border-[#FFA500]/60">
           <Search :size="16" class="shrink-0 text-white/50" />
           <input
             v-model="query"
             type="text"
-            placeholder="Search events..."
-            class="w-full bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
+            :placeholder="t('searchEvents')"
+            class="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40 focus:outline-none"
             @keydown.enter="onSearchSubmit"
           />
         </div>
@@ -125,10 +127,10 @@ watch(
       <!-- Empty state -->
       <div
         v-else-if="!events.length"
-        class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-[#14171C]/50 px-6 py-16 text-center"
+        class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#14171C]/50 px-6 py-16 text-center"
       >
-        <p class="text-sm text-[#9CA3AF]">
-          {{ query ? `No events found for "${query}".` : "No events match this filter yet." }}
+        <p class="text-sm text-slate-500 dark:text-[#9CA3AF]">
+          {{ t('noEventsFound') }}
         </p>
         <button
           v-if="query || selectedCategory"
@@ -136,7 +138,7 @@ watch(
           class="mt-4 rounded-full bg-[#FFA500] px-5 py-2 text-sm font-semibold text-black transition hover:bg-[#FFB52E]"
           @click="clearSearch"
         >
-          Clear filters
+          {{ t('clearFilters') }}
         </button>
       </div>
 

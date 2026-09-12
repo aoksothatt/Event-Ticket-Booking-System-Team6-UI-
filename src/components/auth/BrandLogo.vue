@@ -14,6 +14,6 @@ defineProps({
     >
       <Ticket :size="size" stroke-width="1.8" />
     </span>
-    <span class="text-2xl font-extrabold tracking-tight text-white">BILIT</span>
+    <span class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">BILIT</span>
   </RouterLink>
 </template>

@@ -13,6 +13,9 @@ import {
 import { selfCheckIn } from "../api/checkInApi.js";
 import { formatDate, formatTime, coverImage } from "../utils/event.js";
 import QRCodeScanner from "../components/ticket/QRCodeScanner.vue";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const route = useRoute();
 const router = useRouter();
@@ -91,7 +94,7 @@ async function doCheckIn(code = ticketToken.value) {
   const value = String(code || "").trim();
   if (!value) {
     state.value = "error";
-    message.value = "No ticket code found. Scan your QR code again.";
+    message.value = t('noTicketCode');
     return;
   }
 
@@ -102,12 +105,12 @@ async function doCheckIn(code = ticketToken.value) {
     ticket.value = res?.data || null;
     checkIn.value = res?.check_in || null;
     state.value = "success";
-    message.value = res?.message || "Check-in successful. Enjoy the event!";
+    message.value = res?.message || t('checkinSuccess');
     scheduleMyTicketsRedirect();
   } catch (e) {
     state.value = "error";
     ticket.value = null;
-    message.value = e.response?.data?.message || e.message || "Could not complete check-in.";
+    message.value = e.response?.data?.message || e.message || t('couldNotCompleteCheckin');
   }
 }
 
@@ -126,17 +129,17 @@ onBeforeUnmount(clearRedirectTimer);
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#0C0E12] px-4 py-10 text-white">
+  <div class="min-h-screen bg-slate-100 dark:bg-[#0C0E12] px-4 py-10 text-slate-900 dark:text-white">
     <div class="mx-auto w-full max-w-md">
       <!-- Header -->
       <div class="text-center">
         <span
-          class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-[#14171C]"
+          class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C]"
         >
           <ScanLine :size="28" class="text-[#FFA500]" />
         </span>
-        <h1 class="mt-4 text-xl font-extrabold tracking-tight">Self Check-In</h1>
-        <p class="mt-1 text-sm text-[#9CA3AF]">Scan your ticket QR at the venue entrance.</p>
+        <h1 class="mt-4 text-xl font-extrabold tracking-tight">{{ t('selfCheckin') }}</h1>
+        <p class="mt-1 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('selfCheckinScanPrompt') }}</p>
       </div>
 
       <!-- Success -->
@@ -147,11 +150,11 @@ onBeforeUnmount(clearRedirectTimer);
         <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
           <CheckCircle2 :size="30" />
         </span>
-        <h2 class="mt-4 text-xl font-bold text-white">{{ message }}</h2>
+        <h2 class="mt-4 text-xl font-bold text-slate-900 dark:text-white">{{ message }}</h2>
 
-        <div v-if="ticket" class="mt-6 space-y-3 rounded-xl bg-[#14171C] p-4 text-left">
+        <div v-if="ticket" class="mt-6 space-y-3 rounded-xl bg-white dark:bg-[#14171C] p-4 text-left">
           <div class="flex gap-3">
-            <span class="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[#1D2229]">
+            <span class="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-200 dark:bg-[#1D2229]">
               <img
                 v-if="coverImage(ticket.ticket_type?.event)"
                 :src="coverImage(ticket.ticket_type.event)"
@@ -161,18 +164,18 @@ onBeforeUnmount(clearRedirectTimer);
             </span>
             <div class="min-w-0">
               <p class="line-clamp-1 text-sm font-bold">
-                {{ ticket.ticket_type?.event?.title || "Event" }}
+                {{ ticket.ticket_type?.event?.title || t('event') }}
               </p>
               <p class="mt-0.5 text-xs font-semibold text-[#FFA500]">
-                {{ ticket.ticket_type?.name || "Ticket" }}
+                {{ ticket.ticket_type?.name || t('ticket') }}
               </p>
-              <p class="mt-1 truncate font-mono text-[10px] text-[#9CA3AF]">
+              <p class="mt-1 truncate font-mono text-[10px] text-slate-500 dark:text-[#9CA3AF]">
                 {{ ticket.ticket_code }}
               </p>
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#9CA3AF]">
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-[#9CA3AF]">
             <span v-if="ticket.ticket_type?.event?.start_date" class="flex items-center gap-1">
               <Clock :size="12" />
               {{ formatDate(ticket.ticket_type.event.start_date) }} · {{ formatTime(ticket.ticket_type.event.start_time) }}
@@ -183,8 +186,8 @@ onBeforeUnmount(clearRedirectTimer);
             </span>
           </div>
 
-          <p v-if="checkIn" class="border-t border-white/5 pt-3 text-[10px] uppercase tracking-wider text-[#9CA3AF]">
-            Checked in at {{ formatDateTime(checkIn.checked_in_at) }}
+          <p v-if="checkIn" class="border-t border-slate-200 dark:border-white/5 pt-3 text-[10px] uppercase tracking-wider text-slate-500 dark:text-[#9CA3AF]">
+            {{ t('checkedInAt') }} {{ formatDateTime(checkIn.checked_in_at) }}
           </p>
         </div>
 
@@ -193,12 +196,12 @@ onBeforeUnmount(clearRedirectTimer);
           class="mt-6 rounded-full bg-[#FFA500] px-6 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"
           @click="goToMyTickets"
         >
-          View My Tickets
+          {{ t('viewMyTickets') }}
         </button>
 
-        <p class="mt-3 text-xs text-[#9CA3AF]">
+        <p class="mt-3 text-xs text-slate-500 dark:text-[#9CA3AF]">
           <template v-if="redirectCountdown > 0">
-            Closing this page and opening My Tickets in {{ redirectCountdown }}s…
+            {{ t('redirectingToMyTickets', { n: redirectCountdown }) }}
           </template>
         </p>
       </div>
@@ -211,7 +214,7 @@ onBeforeUnmount(clearRedirectTimer);
         <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-500/20 text-red-300">
           <XCircle :size="30" />
         </span>
-        <h2 class="mt-4 text-lg font-bold text-white">Check-In Failed</h2>
+        <h2 class="mt-4 text-lg font-bold text-slate-900 dark:text-white">{{ t('checkinError') }}</h2>
         <p class="mt-2 text-sm text-[#FCA5A5]">{{ message }}</p>
 
         <button
@@ -219,39 +222,39 @@ onBeforeUnmount(clearRedirectTimer);
           class="mt-6 rounded-full bg-[#FFA500] px-6 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"
           @click="checkAgain"
         >
-          Try Camera Again
+          {{ t('tryCamera') }}
         </button>
       </div>
 
       <!-- Loading -->
-      <div v-else-if="state === 'loading'" class="mt-8 rounded-2xl border border-white/10 bg-[#14171C] p-8 text-center">
+      <div v-else-if="state === 'loading'" class="mt-8 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] p-8 text-center">
         <Loader2 :size="28" class="mx-auto animate-spin text-[#FFA500]" />
-        <p class="mt-4 text-sm text-[#9CA3AF]">Checking you in...</p>
+        <p class="mt-4 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('checkingYouIn') }}</p>
       </div>
 
       <!-- Idle / manual entry -->
-      <div v-else class="mt-8 space-y-4 rounded-2xl border border-white/10 bg-[#14171C] p-6">
-        <p class="text-center text-xs text-[#9CA3AF]">
-          Or tap your ticket from the My Tickets page, or scan using your camera below.
+      <div v-else class="mt-8 space-y-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] p-6">
+        <p class="text-center text-xs text-slate-500 dark:text-[#9CA3AF]">
+          {{ t('scanEntryHint') }}
         </p>
 
-        <div class="rounded-xl border border-white/10 bg-[#1D2229] p-3">
+        <div class="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-200 dark:bg-[#1D2229] p-3">
           <QRCodeScanner :key="scanKey" @scan="onScanned" />
         </div>
 
         <div class="flex items-center gap-2">
-          <span class="h-px flex-1 bg-white/10"></span>
-          <span class="text-[10px] uppercase tracking-wider text-[#9CA3AF]">or</span>
-          <span class="h-px flex-1 bg-white/10"></span>
+          <span class="h-px flex-1 bg-slate-200 dark:bg-white/10"></span>
+          <span class="text-[10px] uppercase tracking-wider text-slate-500 dark:text-[#9CA3AF]">{{ t('or') }}</span>
+          <span class="h-px flex-1 bg-slate-200 dark:bg-white/10"></span>
         </div>
 
-        <label class="mb-1 block text-xs font-semibold text-white/80">Ticket Code</label>
+        <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-white/80">{{ t('ticketCode') }}</label>
         <input
           v-model="manualCode"
           type="text"
-          placeholder="Paste ticket code..."
+          :placeholder="t('pasteTicketCode')"
           @keyup.enter="submitManual"
-          class="w-full rounded-xl border border-white/10 bg-[#1D2229] px-3.5 py-2.5 font-mono text-sm text-white outline-none placeholder:text-white/25 focus:border-[#FFA500]/50"
+          class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-200 dark:bg-[#1D2229] px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-white/25 focus:border-[#FFA500]/50"
         />
         <button
           type="button"
@@ -260,7 +263,7 @@ onBeforeUnmount(clearRedirectTimer);
           @click="submitManual"
         >
           <Ticket :size="15" />
-          Complete Check-In
+          {{ t('completeCheckin') }}
         </button>
       </div>
     </div>
