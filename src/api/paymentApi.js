@@ -43,19 +43,20 @@ export async function getPayment(id) {
 }
 
 /**
- * Record a payment for a booking.
- * Required fields: booking_id, payment_method, amount, currency, payment_status
- * Optional: transaction_id
- * @param {Object} data Payment payload
+ * Record a pending payment for a booking.
+ *
+ * NOTE: The backend never marks a payment as "paid" from this endpoint —
+ * payments are only confirmed after it verifies the transaction with Bakong
+ * (see checkoutApi.confirmPayment). This helper only creates a pending
+ * record for legacy/dashboard purposes. To actually pay, use the Bakong
+ * checkout flow instead.
+ *
+ * @param {Object} data Payload with booking_id (+ optional payment_method)
  */
 export async function createPayment(data) {
   const response = await post("/payments", {
     booking_id: data.booking_id,
-    payment_method: data.payment_method || "card",
-    amount: Number(data.amount),
-    currency: data.currency || "USD",
-    payment_status: data.payment_status || "paid",
-    transaction_id: data.transaction_id || undefined,
+    payment_method: data.payment_method || "bakong_khqr",
   });
   return response?.data || response;
 }
