@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { Loader2, Ticket, ChevronLeft, Minus, Plus, Check } from "lucide-vue-next";
 import { getEvent } from "../api/eventApi.js";
 import {
@@ -36,8 +37,24 @@ const gatewayNotice = ref("");
 
 let countdownTimer = null;
 let verifyTimer = null;
+let successTimer = null;
 
 const SESSION_KEY = "bakong_booking";
+
+/**
+ * Only the backend / Bakong may confirm a payment. These are the status
+ * values the backend can report that mean "the transaction is paid" (kept
+ * case-insensitive because gateway responses have been seen in several
+ * spellings). Anything else is treated as non-paid.
+ */
+const PAID_STATUSES = ["paid", "successful", "completed"];
+
+function normalizeStatus(raw) {
+  const s = String(raw || "pending").toLowerCase();
+  if (PAID_STATUSES.includes(s)) return "paid";
+  if (["pending", "failed", "expired", "cancelled"].includes(s)) return s;
+  return "pending";
+}
 
 function getSessionKey() {
   const uid = auth.user?.id || "guest";
@@ -240,7 +257,7 @@ async function doCheckout() {
       qrPayload: data.qr_payload || "",
       deeplink: data.deeplink || data.payment?.deeplink || "",
       expiresAt: data.expires_at || data.payment?.expires_at || "",
-      status: data.payment?.status || "pending",
+      status: normalizeStatus(data.payment?.status || "pending"),
       summary: lines.join(", "),
       pollIntervalMs: Math.max(
         30000,
@@ -291,9 +308,19 @@ async function verifyPayment() {
 
   try {
     const res = await confirmPayment(order.value.paymentId);
-    const newStatus = res.data?.status || order.value.status;
+    // Backend returns the verified status nested under
+    // `data.data.status` (POST /payments/:id/verify); `data.payment.status`
+    // and `data.status` are also read defensively for other endpoints.
+    const rawStatus =
+      res.data?.data?.status ||
+      res.data?.payment?.status ||
+      res.data?.status ||
+      order.value.status;
+    const newStatus = normalizeStatus(rawStatus);
     gatewayNotice.value = "";
-    if (newStatus !== order.value.status) {
+    // Race protection: a terminal state (paid/failed/expired) won in another
+    // poll ticks first, so a stale "pending" response must never overwrite it.
+    if (newStatus !== "pending" && order.value.status === "pending") {
       order.value.status = newStatus;
     }
   } catch (e) {
@@ -349,6 +376,27 @@ function stopPolling() {
   verifyTimer = null;
 }
 
+function stopSuccessTimer() {
+  if (successTimer) {
+    clearTimeout(successTimer);
+    successTimer = null;
+  }
+}
+
+/**
+ * After the backend confirms payment, keep the "Payment Successful" state
+ * visible for a short moment, then leave the modal and send the user to My
+ * Tickets — that page re-fetches bookings/tickets from the backend so the
+ * freshly purchased ticket appears without a duplicate booking/payment.
+ */
+function scheduleSuccessClose() {
+  stopSuccessTimer();
+  successTimer = setTimeout(() => {
+    successTimer = null;
+    viewTickets();
+  }, 2500);
+}
+
 /**
  * Called the moment Bakong confirms the payment. Stops all polling/countdown
  * and flips the order to "paid". The modal immediately swaps the QR for the
@@ -360,9 +408,11 @@ function handlePaid() {
   stopPolling();
   if (order.value) order.value.status = "paid";
   toast("Payment Successful — your ticket is ready!", "success");
+  scheduleSuccessClose();
 }
 
 function viewTickets() {
+  stopSuccessTimer();
   stopPolling();
   if (order.value?.booking_id) {
     clearStoredBooking(event.value.id);
@@ -371,6 +421,7 @@ function viewTickets() {
 }
 
 function closeModal() {
+  stopSuccessTimer();
   stopPolling();
   showModal.value = false;
   if (!order.value) return;
@@ -388,6 +439,7 @@ function closeModal() {
 }
 
 function handleRetry() {
+  stopSuccessTimer();
   showModal.value = false;
   stopPolling();
   order.value = null;
@@ -397,7 +449,10 @@ function handleRetry() {
 }
 
 onMounted(() => load(route.params.id));
-onBeforeUnmount(stopPolling);
+onBeforeUnmount(() => {
+  stopSuccessTimer();
+  stopPolling();
+});
 </script>
 
 <template>

@@ -42,6 +42,23 @@ let countdownTimer = null;
 
 const isOpen = computed(() => props.modelValue);
 
+/**
+ * Normalized payment state — the single source of truth the template renders
+ * from. The backend only ever writes these (lowercase), but Bakong/gateway
+ * responses have been seen as "successful"/"completed". Normalizing keeps the
+ * UI consistent without ever assuming any payment is paid on the client.
+ */
+const paymentStatus = computed(() => {
+  const s = String(props.status || "pending").toLowerCase();
+  if (["paid", "successful", "completed"].includes(s)) return "paid";
+  if (["pending", "failed", "expired", "cancelled"].includes(s)) return s;
+  return "pending";
+});
+
+const isTerminal = computed(() =>
+  ["paid", "failed", "expired", "cancelled"].includes(paymentStatus.value),
+);
+
 const displayAmount = computed(() => {
   const n = Number(props.amount);
   return isNaN(n) ? "0.00" : n.toFixed(2);
@@ -79,7 +96,7 @@ const khqrInfo = computed(() => {
 });
 
 const statusLabel = computed(() => {
-  switch (props.status) {
+  switch (paymentStatus.value) {
     case "paid":
       return "Payment confirmed";
     case "expired":
@@ -92,7 +109,7 @@ const statusLabel = computed(() => {
 });
 
 const statusClasses = computed(() => {
-  switch (props.status) {
+  switch (paymentStatus.value) {
     case "paid":
       return "bg-emerald-500/10 text-emerald-300 border-emerald-500/30";
     case "expired":
@@ -119,7 +136,7 @@ function startCountdown() {
 
   countdownTimer = setInterval(() => {
     countdown.value = formatCountdown(props.expiresAt);
-    if (countdown.value === "00:00" && props.status === "pending") {
+    if (countdown.value === "00:00" && paymentStatus.value === "pending") {
       stopCountdown();
     }
   }, 1000);
@@ -130,6 +147,15 @@ function stopCountdown() {
     clearInterval(countdownTimer);
     countdownTimer = null;
   }
+}
+
+/**
+ * Terminal state (paid/failed/expired/cancelled): the QR is no longer valid.
+ * Drop the rendered QR + countdown immediately so nothing payment-related
+ * keeps running or rendering in the background.
+ */
+function dropQr() {
+  qrDataUrl.value = "";
 }
 
 async function renderQr() {
@@ -181,10 +207,11 @@ watch(
 );
 
 watch(
-  () => props.status,
+  () => paymentStatus.value,
   (s) => {
-    if (s === "paid" || s === "expired" || s === "failed") {
+    if (isTerminal.value) {
       stopCountdown();
+      dropQr();
     }
   },
 );
@@ -239,7 +266,7 @@ onBeforeUnmount(stopCountdown);
             </button>
 
             <!-- ================= STATE 1: PAYMENT SUCCESSFUL (PAID) ================= -->
-            <div v-if="status === 'paid'" class="p-6 text-center">
+            <div v-if="paymentStatus === 'paid'" class="p-6 text-center">
               <!-- Success Green Icon -->
               <div
                 class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/15 border-2 border-emerald-500/30 text-emerald-400 shadow-lg"
@@ -252,20 +279,26 @@ onBeforeUnmount(stopCountdown);
                 Payment Successful
               </h2>
 
+              <!-- Confirmation copy -->
+              <p class="mt-2 text-sm leading-relaxed text-emerald-300/90">
+                Your payment has been confirmed.<br />
+                Your ticket is now ready.
+              </p>
+
               <!-- Payment Amount -->
-              <p class="mt-2 text-3xl font-black text-[#FFA500]">
+              <p class="mt-4 text-3xl font-black text-[#FFA500]">
                 ${{ displayAmount }}
                 <span class="text-sm font-bold text-white/80">{{
                   currency
                 }}</span>
               </p>
 
-              <!-- Payment Confirmed Badge -->
+              <!-- Booking Confirmed Badge -->
               <div
-                class="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-3.5 py-1 text-xs font-bold text-emerald-300"
+                class="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-3.5 py-1 text-xs font-bold text-emerald-300"
               >
                 <Check :size="14" stroke-width="2.5" />
-                Payment Confirmed
+                Booking confirmed
               </div>
 
               <!-- Booking Reference -->
@@ -275,20 +308,6 @@ onBeforeUnmount(stopCountdown);
               >
                 Booking #{{ bookingNumber }}
               </p>
-
-              <!-- QR Disabled / Hidden Container (Strict Requirement #8) -->
-              <div
-                class="mt-4 rounded-xl border border-white/10 bg-white/5 p-3.5 text-center"
-              >
-                <span
-                  class="font-mono text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider block"
-                >
-                  [ QR DISABLED / HIDDEN ]
-                </span>
-                <span class="text-sm font-medium text-emerald-300 mt-1 block">
-                  Your ticket is now available.
-                </span>
-              </div>
 
               <!-- Action Buttons -->
               <div class="mt-6 flex flex-col gap-2.5">
@@ -335,22 +354,22 @@ onBeforeUnmount(stopCountdown);
 
               <div class="my-5 flex justify-center">
                 <div
-                  v-if="status === 'expired' || status === 'failed'"
+                  v-if="paymentStatus === 'expired' || paymentStatus === 'failed'"
                   class="flex h-[260px] w-[260px] flex-col items-center justify-center gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-4"
                 >
                   <AlertTriangle :size="48" class="text-red-400" />
                   <p class="text-sm font-bold text-red-300">
                     {{
-                      status === "expired"
-                        ? "QR Code Expired"
+                      paymentStatus === "expired"
+                        ? "Payment Expired"
                         : "Payment Failed"
                     }}
                   </p>
                   <p class="text-xs text-red-400/80">
                     {{
-                      status === "expired"
-                        ? "This payment window has closed. Please try again."
-                        : "Transaction could not be completed."
+                      paymentStatus === "expired"
+                        ? "This payment QR code has expired. Please start checkout again."
+                        : "We couldn't confirm your payment. Please try again."
                     }}
                   </p>
                 </div>
@@ -472,7 +491,7 @@ onBeforeUnmount(stopCountdown);
               </p>
 
               <!-- <a
-                v-if="deeplink && status === 'pending'"
+                v-if="deeplink && paymentStatus === 'pending'"
                 :href="deeplink"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -483,7 +502,7 @@ onBeforeUnmount(stopCountdown);
               </a> -->
 
               <div
-                v-if="status === 'pending' && expiresAt"
+                v-if="paymentStatus === 'pending' && expiresAt"
                 class="mt-3 flex items-center justify-center gap-1.5 text-sm text-[#9CA3AF]"
               >
                 <Clock :size="14" />
@@ -500,18 +519,18 @@ onBeforeUnmount(stopCountdown);
                 :class="statusClasses"
               >
                 <Loader2
-                  v-if="status === 'pending'"
+                  v-if="paymentStatus === 'pending'"
                   :size="12"
                   class="animate-spin"
                 />
-                <Check v-else-if="status === 'paid'" :size="12" />
+                <Check v-else-if="paymentStatus === 'paid'" :size="12" />
                 <AlertTriangle v-else :size="12" />
                 {{ statusLabel }}
               </span>
 
               <div class="mt-5 flex justify-center gap-3">
                 <button
-                  v-if="status === 'expired' || status === 'failed'"
+                  v-if="paymentStatus === 'expired' || paymentStatus === 'failed'"
                   type="button"
                   class="rounded-full bg-[#FFA500] px-5 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"
                   @click="retry"
