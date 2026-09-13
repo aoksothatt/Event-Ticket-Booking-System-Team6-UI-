@@ -119,7 +119,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
           </button>
 
           <!-- Language Switcher -->
-          <LanguageSwitcher />
+          <LanguageSwitcher class="flex w-fit h-9 items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 text-xs font-semibold text-slate-600 dark:text-white/80 transition hover:border-[#FFA500]/40 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white" />
 
           <!-- Guest: quick sign-in / sign-up actions -->
           <template v-if="!loggedIn">

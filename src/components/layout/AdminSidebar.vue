@@ -84,23 +84,24 @@ async function handleLogout() {
     <div>
       <!-- Brand -->
       <div class="mb-6 flex items-center gap-2 px-0">
-        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 font-bold text-slate-950 shadow-md shadow-amber-500/20">
+        <div class="flex h-10 w-14 items-center justify-center rounded-xl bg-amber-500 font-bold text-slate-950 shadow-md shadow-amber-500/20">
           <Ticket :size="22" :stroke-width="2.5" />
         </div>
         <div class="flex-1">
           <p class="text-sm font-bold leading-tight text-slate-900 dark:text-white">EventHub</p>
-          <p class="text-[11px] font-medium leading-tight text-amber-600">{{ t('adminWorkspace') }}</p>
+          <p class="text-[11px] font-medium leading-tight text-amber-600">{{ t('admin') }}</p>
         </div>
+        <LanguageSwitcher />
         <button
           type="button"
           @click="toggle"
-          class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+          class="flex h-8 w-8 items-center justify-center hover:text-slate-300  text-slate-400 transition-colors"
           :aria-label="isDark ? t('switchToLightMode') : t('switchToDarkMode')"
         >
           <Moon v-if="!isDark" :size="16"    />
           <Sun v-else :size="16" :stroke-width="2" />
         </button>
-        <LanguageSwitcher />
+        
       </div>
 
       <!-- Quick Action -->
