@@ -5,6 +5,9 @@ import { User, Ticket, Heart, Settings, LogOut, ChevronDown, LayoutGrid } from "
 import { useAuthStore } from "../../stores/auth.js";
 import { STORAGE_BASE } from "../../api/http.js";
 import { toast } from "../../composables/useToast.js";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const props = defineProps({
   user: { type: Object, default: null },
@@ -48,7 +51,7 @@ async function handleLogout() {
   } finally {
     // The 401/network edge case still leaves the local session cleared by
     // authApi.logout(); make sure the UI reflects that either way.
-    toast("You've been signed out.", "info");
+    toast(t('signedOut'), "info");
     router.push("/home");
   }
 }
@@ -65,13 +68,13 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutside));
 const items = computed(() => {
   const list = [];
   if (auth.isAdmin) {
-    list.push({ label: "Admin Dashboard", icon: LayoutGrid, to: "/admin/overview" });
+    list.push({ label: t('adminDashboard'), icon: LayoutGrid, to: "/admin/overview" });
   }
   list.push(
-    { label: "My Profile", icon: User, to: "/profile" },
-    { label: "My Tickets", icon: Ticket, to: "/my-tickets" },
-    { label: "Favorites", icon: Heart, to: "/favorites" },
-    { label: "Settings", icon: Settings, to: "/settings" }
+    { label: t('myProfile'), icon: User, to: "/profile" },
+    { label: t('myTickets'), icon: Ticket, to: "/my-tickets" },
+    { label: t('favorites'), icon: Heart, to: "/favorites" },
+    { label: t('settings'), icon: Settings, to: "/settings" }
   );
   return list;
 });
@@ -81,8 +84,8 @@ const items = computed(() => {
   <div v-if="loggedIn" ref="menu" class="relative">
     <button
       type="button"
-      class="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 p-1 transition hover:bg-white/10"
-      :aria-label="`Account menu for ${displayUser?.name || 'user'}`"
+      class="flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 p-1 transition hover:bg-slate-200 dark:hover:bg-white/10"
+      :aria-label="t('accountMenuFor', { name: displayUser?.name || 'user' })"
       aria-haspopup="true"
       :aria-expanded="open"
       @click="toggle"
@@ -91,7 +94,7 @@ const items = computed(() => {
         <img v-if="avatarUrl" :src="avatarUrl" alt="" class="h-full w-full object-cover" />
         <template v-else>{{ initials }}</template>
       </span>
-      <ChevronDown :size="14" class="hidden text-white/60 sm:block" :class="open ? 'rotate-180' : ''" />
+      <ChevronDown :size="14" class="hidden text-slate-500 dark:text-white/60 sm:block" :class="open ? 'rotate-180' : ''" />
     </button>
 
     <transition
@@ -104,12 +107,12 @@ const items = computed(() => {
     >
       <div
         v-if="open"
-        class="absolute right-0 top-11 z-30 w-60 origin-top-right rounded-2xl border border-white/10 bg-[#14171C]/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-xl"
+        class="absolute right-0 top-11 z-30 w-60 origin-top-right rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#14171C]/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-xl"
         role="menu"
       >
-        <div class="border-b border-white/5 px-3 py-2.5">
-          <p class="truncate text-sm font-semibold text-white">{{ displayUser?.name }}</p>
-          <p class="truncate text-xs text-[#9CA3AF]">{{ displayUser?.email }}</p>
+        <div class="border-b border-slate-200 dark:border-white/5 px-3 py-2.5">
+          <p class="truncate text-sm font-semibold text-slate-900 dark:text-white">{{ displayUser?.name }}</p>
+          <p class="truncate text-xs text-slate-500 dark:text-[#9CA3AF]">{{ displayUser?.email }}</p>
         </div>
 
         <button
@@ -117,21 +120,21 @@ const items = computed(() => {
           :key="item.to"
           type="button"
           role="menuitem"
-          class="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/80 transition hover:bg-white/5 hover:text-white"
+          class="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-600 dark:text-white/80 transition hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
           @click="go(item.to)"
         >
-          <component :is="item.icon" :size="16" class="text-[#9CA3AF]" />
+          <component :is="item.icon" :size="16" class="text-slate-500 dark:text-[#9CA3AF]" />
           {{ item.label }}
         </button>
 
         <button
           type="button"
           role="menuitem"
-          class="mt-1 flex w-full items-center gap-3 rounded-lg border-t border-white/5 px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
+          class="mt-1 flex w-full items-center gap-3 rounded-lg border-t border-slate-200 dark:border-white/5 px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
           @click="handleLogout"
         >
           <LogOut :size="16" />
-          Logout
+          {{ t('logout') }}
         </button>
       </div>
     </transition>
@@ -142,6 +145,6 @@ const items = computed(() => {
     to="/login"
     class="rounded-full bg-[#FFA500] px-4 py-1.5 text-xs font-bold text-black shadow-sm transition hover:bg-[#FFB52E]"
   >
-    Sign In
+    {{ t('signIn') }}
   </RouterLink>
 </template>

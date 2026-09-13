@@ -8,6 +8,9 @@ import GoogleLoginButton from "../../components/auth/GoogleLoginButton.vue";
 import { useAuthStore } from "../../stores/auth.js";
 import { computeDestination } from "../../composables/useAuthRedirect.js";
 import { toast } from "../../composables/useToast.js";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 // Register calls POST /api/register with name, email, password, and
 // password_confirmation (required because the backend uses a "confirmed"
@@ -43,22 +46,22 @@ function validate() {
   errors.confirm = "";
 
   if (!form.name.trim()) {
-    errors.name = "Name is required.";
+    errors.name = t('nameRequired');
   }
   if (!form.email.trim()) {
-    errors.email = "Email is required.";
+    errors.email = t('emailRequired');
   } else if (!EMAIL_RE.test(form.email.trim())) {
-    errors.email = "Please enter a valid email address.";
+    errors.email = t('validEmail');
   }
   if (!form.password) {
-    errors.password = "Password is required.";
+    errors.password = t('passwordRequired');
   } else if (form.password.length < 6) {
-    errors.password = "Password must be at least 6 characters.";
+    errors.password = t('passwordMin');
   }
   if (!form.confirm) {
-    errors.confirm = "Please confirm your password.";
+    errors.confirm = t('passwordConfirm');
   } else if (form.password !== form.confirm) {
-    errors.confirm = "Passwords do not match.";
+    errors.confirm = t('passwordsMismatch');
   }
 
   return !errors.name && !errors.email && !errors.password && !errors.confirm;
@@ -79,7 +82,7 @@ async function handleSubmit() {
       password: form.password,
       password_confirmation: form.confirm,
     });
-    toast("Account created — you're signed in!", "success");
+    toast(t('accountCreated'), "success");
 
     const destination = computeDestination({
       queryRedirect: typeof route.query.redirect === "string" ? route.query.redirect : null,
@@ -88,7 +91,7 @@ async function handleSubmit() {
     router.replace(destination);
   } catch (error) {
     serverError.value =
-      error.response?.data?.message || error.message || "Unable to create your account. Please try again.";
+      error.response?.data?.message || error.message || t('accountCreateFailed');
   } finally {
     loading.value = false;
   }
@@ -97,7 +100,7 @@ async function handleSubmit() {
 
 <template>
   <div
-    class="flex min-h-screen items-center justify-center bg-[#202020] px-5 py-12 text-white"
+    class="flex min-h-screen items-center justify-center bg-white dark:bg-[#202020] px-5 py-12 text-slate-900 dark:text-white"
   >
     <div
       class="grid w-full max-w-6xl items-stretch gap-8 md:min-h-[540px] md:grid-cols-[1fr_1.35fr]"
@@ -108,29 +111,29 @@ async function handleSubmit() {
       >
         <BrandLogo class="mb-10" />
 
-        <div class="flex items-center gap-3 text-[13px] text-[#BDBDBD]">
-          <span class="h-px flex-1 bg-[#3A3A3A]"></span>
-          <span class="whitespace-nowrap">Already have an account?</span>
+        <div class="flex items-center gap-3 text-[13px] text-slate-500 dark:text-[#BDBDBD]">
+          <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
+          <span class="whitespace-nowrap">{{ t('alreadyHaveAccount') }}</span>
           <RouterLink
             to="/login"
             class="whitespace-nowrap font-semibold text-[#FFA500] transition hover:text-[#FFB52E]"
           >
-            Sign in
+            {{ t('signIn') }}
           </RouterLink>
-          <span class="h-px flex-1 bg-[#3A3A3A]"></span>
+          <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
         </div>
 
-        <h1 class="mb-7 mt-5 text-[28px] font-bold tracking-tight text-white">
-          Create Account
+        <h1 class="mb-7 mt-5 text-[28px] font-bold tracking-tight text-slate-900 dark:text-white">
+          {{ t('createAccount') }}
         </h1>
 
         <form class="space-y-4" novalidate @submit.prevent="handleSubmit">
           <AuthField
             id="reg-name"
             v-model="form.name"
-            label="Full Name"
+            :label="t('fullName')"
             type="text"
-            placeholder="Please enter your full name"
+            :placeholder="t('pleaseEnterName')"
             autocomplete="name"
             :icon="User"
             :error="errors.name"
@@ -139,9 +142,9 @@ async function handleSubmit() {
           <AuthField
             id="reg-email"
             v-model="form.email"
-            label="Email"
+            :label="t('email')"
             type="email"
-            placeholder="Please enter your email"
+            :placeholder="t('pleaseEnterEmail')"
             autocomplete="email"
             :icon="Mail"
             :error="errors.email"
@@ -150,17 +153,17 @@ async function handleSubmit() {
           <AuthField
             id="reg-password"
             v-model="form.password"
-            label="Password"
+            :label="t('password')"
             :type="showPassword ? 'text' : 'password'"
-            placeholder="Please enter your password"
+            :placeholder="t('pleaseEnterPassword')"
             autocomplete="new-password"
             :error="errors.password"
           >
             <template #trailing>
               <button
                 type="button"
-                class="absolute right-4 top-1/2 -translate-y-1/2 text-[#8A8A8A] transition hover:text-white"
-                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#8A8A8A] transition hover:text-slate-900 dark:hover:text-white"
+                :aria-label="showPassword ? t('hidePassword') : t('showPassword')"
                 @click="showPassword = !showPassword"
               >
                 <EyeOff v-if="showPassword" class="h-[18px] w-[18px]" />
@@ -172,17 +175,17 @@ async function handleSubmit() {
           <AuthField
             id="reg-confirm"
             v-model="form.confirm"
-            label="Confirm Password"
+            :label="t('confirmPassword')"
             :type="showConfirm ? 'text' : 'password'"
-            placeholder="Confirm your password"
+            :placeholder="t('confirmPassword')"
             autocomplete="new-password"
             :error="errors.confirm"
           >
             <template #trailing>
               <button
                 type="button"
-                class="absolute right-4 top-1/2 -translate-y-1/2 text-[#8A8A8A] transition hover:text-white"
-                :aria-label="showConfirm ? 'Hide password' : 'Show password'"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#8A8A8A] transition hover:text-slate-900 dark:hover:text-white"
+                :aria-label="showConfirm ? t('hidePassword') : t('showPassword')"
                 @click="showConfirm = !showConfirm"
               >
                 <EyeOff v-if="showConfirm" class="h-[18px] w-[18px]" />
@@ -205,17 +208,17 @@ async function handleSubmit() {
           >
             <Loader2 v-if="loading" class="h-5 w-5 animate-spin" />
             <span>{{
-              loading ? "Creating account..." : "Create Account"
+              loading ? t('creatingAccount') : t('createAccount')
             }}</span>
           </button>
 
-          <div class="flex items-center gap-3 pt-1 text-sm text-[#8A8A8A]">
-            <span class="h-px flex-1 bg-[#3A3A3A]"></span>
-            <span class="uppercase text-[11px] tracking-widest">or</span>
-            <span class="h-px flex-1 bg-[#3A3A3A]"></span>
+          <div class="flex items-center gap-3 pt-1 text-sm text-slate-500 dark:text-[#8A8A8A]">
+            <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
+            <span class="uppercase text-[11px] tracking-widest">{{ t('or') }}</span>
+            <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
           </div>
 
-          <GoogleLoginButton label="Sign up with Google" />
+          <GoogleLoginButton :label="t('signUpGoogle')" />
         </form>
       </section>
 
@@ -240,10 +243,10 @@ async function handleSubmit() {
           <p
             class="mb-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#FFA500]"
           >
-            BILIT Presents
+            {{ t('brandPresents') }}
           </p>
           <p class="text-lg font-bold drop-shadow-lg">
-            Live Shows · Cinema · Events
+            {{ t('tagline') }}
           </p>
         </div>
       </section>

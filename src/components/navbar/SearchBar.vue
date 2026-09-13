@@ -4,6 +4,9 @@ import { useRouter } from "vue-router";
 import { Search, X, Calendar, MapPin, Loader2 } from "lucide-vue-next";
 import { searchEvents } from "../../api/eventApi.js";
 import { coverImage, formatDate, formatTime, minPrice, formatPrice } from "../../utils/event.js";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const emit = defineEmits(["submit"]);
 
@@ -33,7 +36,7 @@ function debouncedSearch() {
       results.value = await searchEvents(query.value.trim());
       error.value = "";
     } catch (e) {
-      error.value = e.message || "Search failed.";
+      error.value = e.message || t('searchFailed');
       results.value = [];
     } finally {
       loading.value = false;
@@ -76,14 +79,14 @@ onBeforeUnmount(() => {
 <template>
   <div ref="box" class="relative w-full max-w-md">
     <div
-      class="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 transition focus-within:border-[#FFA500]/60 focus-within:bg-white/10"
+      class="flex items-center gap-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3.5 py-2 transition focus-within:border-[#FFA500]/60 focus-within:bg-slate-200 dark:focus-within:bg-white/10"
     >
-      <Search :size="16" class="shrink-0 text-white/50" />
+      <Search :size="16" class="shrink-0 text-slate-500 dark:text-white/50" />
       <input
         v-model="query"
         type="text"
-        placeholder="Search events, categories, venues..."
-        class="w-full bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
+        :placeholder="t('searchEvents')"
+        class="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40 focus:outline-none"
         @input="debouncedSearch"
         @focus="query.trim() && (open = true)"
         @keydown.enter="submit"
@@ -91,8 +94,8 @@ onBeforeUnmount(() => {
       <button
         v-if="query"
         type="button"
-        class="shrink-0 text-white/40 hover:text-white"
-        aria-label="Clear search"
+        class="shrink-0 text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
+        :aria-label="t('clearSearch')"
         @click="clear"
       >
         <X :size="14" />
@@ -109,11 +112,11 @@ onBeforeUnmount(() => {
     >
       <div
         v-if="open"
-        class="absolute left-0 right-0 top-12 z-30 max-h-[60vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#14171C]/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl"
+        class="absolute left-0 right-0 top-12 z-30 max-h-[60vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#14171C]/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl"
       >
         <div v-if="loading" class="flex items-center gap-2 px-4 py-3">
           <Loader2 :size="16" class="animate-spin text-[#FFA500]" />
-          <span class="text-sm text-[#9CA3AF]">Searching...</span>
+          <span class="text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('loading') }}</span>
         </div>
 
         <p v-else-if="error" class="px-4 py-3 text-sm text-red-400">{{ error }}</p>
@@ -123,10 +126,10 @@ onBeforeUnmount(() => {
             v-for="r in results"
             :key="r.id"
             type="button"
-            class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition hover:bg-white/5"
+            class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition hover:bg-slate-100 dark:hover:bg-white/5"
             @click="select(r)"
           >
-            <span class="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[#1D2229]">
+            <span class="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-200 dark:bg-[#1D2229]">
               <img
                 v-if="coverImage(r)"
                 :src="coverImage(r)"
@@ -135,12 +138,12 @@ onBeforeUnmount(() => {
               />
             </span>
             <span class="min-w-0 flex-1">
-              <span class="block truncate text-sm font-semibold text-white">{{ r.title }}</span>
-              <span class="block truncate text-xs text-[#9CA3AF]">
+              <span class="block truncate text-sm font-semibold text-slate-900 dark:text-white">{{ r.title }}</span>
+              <span class="block truncate text-xs text-slate-500 dark:text-[#9CA3AF]">
                 {{ r.category?.name }}
                 <template v-if="r.start_date"> · {{ formatDate(r.start_date) }}</template>
               </span>
-              <span v-if="r.venue?.name" class="flex items-center gap-1 text-xs text-[#9CA3AF]">
+              <span v-if="r.venue?.name" class="flex items-center gap-1 text-xs text-slate-500 dark:text-[#9CA3AF]">
                 <MapPin :size="11" />
                 <span class="truncate">{{ r.venue.name }}</span>
               </span>
@@ -151,8 +154,8 @@ onBeforeUnmount(() => {
           </button>
         </template>
 
-        <p v-else class="px-4 py-3 text-sm text-[#9CA3AF]">
-          No events found{{ query ? ` for "${query}"` : "" }}.
+        <p v-else class="px-4 py-3 text-sm text-slate-500 dark:text-[#9CA3AF]">
+          {{ t('noEventsFound') }}
         </p>
       </div>
     </transition>

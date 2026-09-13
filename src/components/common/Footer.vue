@@ -1,5 +1,8 @@
 <script setup>
 import { Ticket, Facebook, Instagram, Send } from "lucide-vue-next";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 // TikTok isn't part of lucide, so it gets a tiny inline brand glyph to match
 // the same visual weight as the other icons.
@@ -10,7 +13,7 @@ import etecLogo from "../../assets/img/Etec.jpg";
 
 <template>
   <footer
-    class="relative overflow-hidden border-t border-white/5 px-4 pb-10 pt-16 sm:px-6 lg:px-8"
+    class="relative overflow-hidden border-t border-slate-200 dark:border-white/5 px-4 pb-10 pt-16 sm:px-6 lg:px-8"
   >
     <!-- School logo watermark (background reference only) -->
     <div aria-hidden="true" class="pointer-events-none absolute inset-0">
@@ -38,51 +41,50 @@ import etecLogo from "../../assets/img/Etec.jpg";
         >
           <Ticket :size="17" />
         </span>
-        <span class="text-base font-extrabold tracking-tight text-white"
+        <span class="text-base font-extrabold tracking-tight text-slate-900 dark:text-white"
           >BILIT</span
         >
       </RouterLink>
 
       <!-- Short description -->
-      <p class="mt-3 max-w-[42ch] text-[13px] leading-relaxed text-white/50">
-        Discover exciting events, book your tickets, and create unforgettable
-        experiences.
+      <p class="mt-3 max-w-[42ch] text-[13px] leading-relaxed text-slate-500 dark:text-white/50">
+        {{ t('footerDescription') }}
       </p>
 
       <!-- Navigation links -->
       <nav
         class="mt-8 flex flex-wrap items-center justify-center gap-x-7 gap-y-2.5"
-        aria-label="Footer"
+        :aria-label="t('footerNav')"
       >
         <RouterLink
           to="/home"
-          class="text-[13px] font-medium text-white/60 transition-colors hover:text-[#FFA500]"
+          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-[#FFA500]"
         >
-          Home
+          {{ t('home') }}
         </RouterLink>
         <RouterLink
           to="/events"
-          class="text-[13px] font-medium text-white/60 transition-colors hover:text-[#FFA500]"
+          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-[#FFA500]"
         >
-          Events
+          {{ t('events') }}
         </RouterLink>
         <RouterLink
           to="/home"
-          class="text-[13px] font-medium text-white/60 transition-colors hover:text-[#FFA500]"
+          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-[#FFA500]"
         >
-          Trending
+          {{ t('trending') }}
         </RouterLink>
         <RouterLink
           to="/favorites"
-          class="text-[13px] font-medium text-white/60 transition-colors hover:text-[#FFA500]"
+          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-[#FFA500]"
         >
-          Favorites
+          {{ t('favorites') }}
         </RouterLink>
         <RouterLink
           to="/my-tickets"
-          class="text-[13px] font-medium text-white/60 transition-colors hover:text-[#FFA500]"
+          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-[#FFA500]"
         >
-          My Tickets
+          {{ t('myTickets') }}
         </RouterLink>
       </nav>
 
@@ -133,35 +135,35 @@ import etecLogo from "../../assets/img/Etec.jpg";
       </div> -->
 
       <!-- Divider -->
-      <div class="mt-14 w-full border-t border-white/5"></div>
+      <div class="mt-14 w-full border-t border-slate-200 dark:border-white/5"></div>
 
       <!-- Copyright & legal -->
       <div
-        class="flex w-full flex-col items-center gap-3 pt-6 text-xs text-white/40 sm:flex-row sm:justify-between"
+        class="flex w-full flex-col items-center gap-3 pt-6 text-xs text-slate-500 dark:text-white/40 sm:flex-row sm:justify-between"
       >
         <p>© 2026 Event Booking System. Team6.</p>
         <div class="flex items-center gap-5">
           <a
             href="#"
-            class="transition-colors hover:text-white/80"
+            class="transition-colors hover:text-slate-600 dark:hover:text-white/80"
             @click.prevent
           >
-            Privacy Policy
+            {{ t('privacyPolicy') }}
           </a>
           <a
             href="#"
-            class="transition-colors hover:text-white/80"
+            class="transition-colors hover:text-slate-600 dark:hover:text-white/80"
             @click.prevent
           >
-            Terms &amp; Conditions
+            {{ t('termsOfService') }}
           </a>
         </div>
       </div>
     </div>
 
     <!-- School attribution -->
-    <p class="relative mt-4 text-center text-[10px] tracking-wide text-white/25">
-      Developed as a student project at ETEC
+    <p class="relative mt-4 text-center text-[10px] tracking-wide text-slate-400 dark:text-white/25">
+      {{ t('developedAtETEC') }}
     </p>
   </footer>
 </template>

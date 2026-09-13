@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { adminApi } from "@/api/admin.js";
 import QRCodeScanner from "@/components/ticket/QRCodeScanner.vue";
 import { formatDateTime } from "@/utils/event.js";
@@ -22,6 +23,8 @@ import {
   KeyRound,
 } from "lucide-vue-next";
 
+const { t } = useI18n();
+
 const loading = ref(true);
 const error = ref(null);
 
@@ -37,16 +40,16 @@ async function fetchCheckIns() {
     const response = await adminApi.getCheckIns();
     checkIns.value = (response.data || []).map((c) => ({
       id: c.id,
-      booking_number: c.booking?.booking_number || "N/A",
-      attendee: c.booking?.user?.name || "Unknown",
+      booking_number: c.booking?.booking_number || t("na"),
+      attendee: c.booking?.user?.name || t("unknown"),
       email: c.booking?.user?.email || "",
-      event: c.booking?.event?.title || "N/A",
-      checked_by: c.checkedBy?.name || "Unknown",
-      checked_in_at: c.checked_in_at ? new Date(c.checked_in_at).toLocaleString() : "N/A",
+      event: c.booking?.event?.title || t("na"),
+      checked_by: c.checkedBy?.name || t("unknown"),
+      checked_in_at: c.checked_in_at ? new Date(c.checked_in_at).toLocaleString() : t("na"),
       status: c.status,
     }));
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || "Failed to load check-ins.";
+    error.value = e.response?.data?.message || e.message || t("failedToLoadCheckIns");
   } finally {
     loading.value = false;
   }
@@ -68,23 +71,23 @@ const stats = computed(() => {
 
   return [
     {
-      label: "Total Check-Ins",
+      label: t('totalCheckIns'),
       value: total.toLocaleString(),
-      change: `${todays} today`,
+      change: `${todays} ${t('today')}`,
       icon: QrCode,
       color: "bg-indigo-50 text-indigo-600",
     },
     {
-      label: "Verified Entries",
+      label: t('verifiedEntries'),
       value: verified.toLocaleString(),
-      change: total ? `${rate}% acceptance rate` : "based on issued tickets",
+      change: total ? `${rate}% ${t('acceptanceRate')}` : t('basedOnIssuedTickets'),
       icon: UserCheck,
       color: "bg-emerald-50 text-emerald-600",
     },
     {
-      label: "Duplicate Attempts",
+      label: t('duplicateAttempts'),
       value: duplicates.toLocaleString(),
-      change: "flagged & rejected at gates",
+      change: t('flaggedRejected'),
       icon: CheckCircle2,
       color: "bg-blue-50 text-blue-600",
     },
@@ -92,11 +95,22 @@ const stats = computed(() => {
 });
 
 const statusStyle = {
-  checked_in: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  valid: "bg-sky-50 text-sky-700 border-sky-200",
-  duplicate: "bg-rose-50 text-rose-700 border-rose-200",
-  cancelled: "bg-slate-100 text-slate-500 border-slate-200",
+  checked_in: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
+  completed: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
+  valid: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30",
+  duplicate: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30",
+  cancelled: "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600",
+};
+
+const statusLabel = (status) => {
+  const map = {
+    checked_in: t('checkIn'),
+    completed: t('completed'),
+    valid: t('valid'),
+    duplicate: t('duplicate'),
+    cancelled: t('cancelled'),
+  };
+  return map[status] || status;
 };
 
 const filteredCheckIns = computed(() => {
@@ -179,13 +193,13 @@ const checkInRecord = computed(() => lookup.value?.check_in || null);
 const scanBanner = computed(() => {
   switch (scanStep.value) {
     case "checked":
-      return { tone: "emerald", title: "CHECK-IN SUCCESSFUL", subtitle: "Ticket successfully checked in", icon: CheckCircle2 };
+      return { tone: "emerald", title: t("checkinSuccessful"), subtitle: t("checkinMessage"), icon: CheckCircle2 };
     case "already":
-      return { tone: "amber", title: "Ticket Already Used", subtitle: "This ticket has already been checked in.", icon: TriangleAlert };
+      return { tone: "amber", title: t("alreadyCheckedIn"), subtitle: t("ticketAlreadyCheckedIn"), icon: TriangleAlert };
     case "invalid":
-      return { tone: "rose", title: "Invalid Ticket", subtitle: "This QR code does not match any valid ticket.", icon: XCircle };
+      return { tone: "rose", title: t("invalidTicket"), subtitle: t("invalidTicketMessage"), icon: XCircle };
     case "error":
-      return { tone: "rose", title: "Check-In Error", subtitle: scanError.value || "Something went wrong. Please try again.", icon: XCircle };
+      return { tone: "rose", title: t("checkinError"), subtitle: scanError.value || t("checkinErrorMessage"), icon: XCircle };
     default:
       return null;
   }
@@ -201,17 +215,17 @@ function showResultPanel() {
 </script>
 
 <template>
-  <main class="min-h-screen flex-1 bg-slate-50 px-8 py-8 text-slate-800">
+  <main class="min-h-screen flex-1 bg-slate-50 dark:bg-slate-900 px-8 py-8 text-slate-800 dark:text-slate-100">
     <!-- Header -->
     <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <div class="flex items-center gap-2.5">
-          <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Check-Ins Management</h1>
-          <span class="rounded-md bg-indigo-100 border border-indigo-200 px-2.5 py-0.5 text-xs text-indigo-800 font-mono font-medium">
+          <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{{ t('checkInsManagement') }}</h1>
+          <span class="rounded-md bg-indigo-100 border border-indigo-200 px-2.5 py-0.5 text-xs text-indigo-800 font-mono font-medium dark:bg-indigo-500/15 dark:border-indigo-500/30 dark:text-indigo-400">
             manage_checkins
           </span>
         </div>
-        <p class="mt-1 text-sm text-slate-500">Scan the ticket QR code — check-in is completed automatically.</p>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Scan the ticket QR code — check-in is completed automatically.</p>
       </div>
       <div class="flex items-center gap-3">
         <button
@@ -220,26 +234,26 @@ function showResultPanel() {
           class="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 hover:shadow"
         >
           <QrCode :size="16" :stroke-width="2.5" />
-          Verify & Check In
+          {{ t('verifyCheckin') }}
         </button>
       </div>
     </div>
 
     <!-- Loading State -->
     <div v-if="loading" class="flex items-center justify-center py-20">
-      <div class="flex items-center gap-3 text-slate-500">
+      <div class="flex items-center gap-3 text-slate-500 dark:text-slate-400">
         <RefreshCw :size="18" class="animate-spin" />
-        <span class="text-sm font-medium">Loading check-ins...</span>
+        <span class="text-sm font-medium">{{ t('loading') }}</span>
       </div>
     </div>
 
     <!-- Error State -->
     <div v-else-if="error" class="flex items-center justify-center py-20">
-      <div class="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center">
+      <div class="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-500/30 dark:bg-rose-500/10">
         <XCircle :size="24" class="mx-auto mb-2 text-rose-500" />
-        <p class="text-sm font-semibold text-rose-700">{{ error }}</p>
+        <p class="text-sm font-semibold text-rose-700 dark:text-rose-400">{{ error }}</p>
         <button @click="fetchCheckIns" class="mt-3 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-600">
-          Retry
+          {{ t('retry') }}
         </button>
       </div>
     </div>
@@ -251,15 +265,15 @@ function showResultPanel() {
         <div
           v-for="stat in stats"
           :key="stat.label"
-          class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+          class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm"
         >
           <div class="mb-4 flex items-start justify-between">
-            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ stat.label }}</p>
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ stat.label }}</p>
             <span class="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm" :class="stat.color">
               <component :is="stat.icon" :size="16" />
             </span>
           </div>
-          <p class="text-2xl font-bold text-slate-900">{{ stat.value }}</p>
+          <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ stat.value }}</p>
           <p class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
             <ArrowUpRight :size="14" />
             {{ stat.change }}
@@ -268,77 +282,77 @@ function showResultPanel() {
       </div>
 
       <!-- Filter & Search Bar -->
-      <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
         <div class="relative min-w-[260px] flex-1">
-          <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search check-ins by booking #, attendee, event, gate..."
-            class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            :placeholder="t('searchCheckins')"
+            class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
           />
         </div>
 
         <div class="flex items-center gap-2">
-          <label class="text-xs font-semibold text-slate-500">Status:</label>
+          <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('eventStatus') }}</label>
           <select
             v-model="selectedStatus"
-            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize"
+            class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500 capitalize"
           >
-            <option value="All">All Statuses</option>
-            <option value="checked_in">Checked In</option>
-            <option value="completed">Completed</option>
-            <option value="valid">Valid (Unscanned)</option>
-            <option value="duplicate">Duplicate Attempt</option>
+            <option value="All">{{ t('allStatuses') }}</option>
+            <option value="checked_in">{{ t('checkIn') }}</option>
+            <option value="completed">{{ t('completed') }}</option>
+            <option value="valid">{{ t('valid') }}</option>
+            <option value="duplicate">{{ t('duplicate') }}</option>
           </select>
         </div>
       </div>
 
       <!-- Check-Ins Table -->
-      <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-          <h2 class="text-base font-bold text-slate-900">Attendee Check-In Logs ({{ filteredCheckIns.length }})</h2>
+      <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-6 py-4">
+          <h2 class="text-base font-bold text-slate-900 dark:text-white">{{ t('checkInsManagement') }} ({{ filteredCheckIns.length }})</h2>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
-            <thead class="bg-slate-50/70 border-b border-slate-200">
-              <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th class="px-6 py-3">Booking / Pass #</th>
-                <th class="px-6 py-3">Attendee</th>
-                <th class="px-6 py-3">Checked By</th>
-                <th class="px-6 py-3">Check-In Time</th>
-                <th class="px-6 py-3 text-right">Status</th>
+            <thead class="bg-slate-50/70 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+              <tr class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <th class="px-6 py-3">{{ t('bookingNumber') }}</th>
+                <th class="px-6 py-3">{{ t('attendee') }}</th>
+                <th class="px-6 py-3">{{ t('checkedBy') }}</th>
+                <th class="px-6 py-3">{{ t('checkInTime') }}</th>
+                <th class="px-6 py-3 text-right">{{ t('status') }}</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100">
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
               <tr
                 v-for="c in filteredCheckIns"
                 :key="c.id"
-                class="transition-colors hover:bg-slate-50/80"
+                class="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/50"
               >
                 <td class="px-6 py-4 font-mono text-xs font-bold text-amber-600">
                   {{ c.booking_number }}
                 </td>
                 <td class="px-6 py-4">
-                  <p class="font-semibold text-slate-900">{{ c.attendee }}</p>
-                  <p class="text-[10px] text-slate-400">{{ c.email }}</p>
+                  <p class="font-semibold text-slate-900 dark:text-white">{{ c.attendee }}</p>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500">{{ c.email }}</p>
                 </td>
-                <td class="px-6 py-4 text-xs text-slate-500">
+                <td class="px-6 py-4 text-xs text-slate-500 dark:text-slate-400">
                   {{ c.checked_by }}
                 </td>
-                <td class="px-6 py-4 text-xs text-slate-500">
+                <td class="px-6 py-4 text-xs text-slate-500 dark:text-slate-400">
                   {{ c.checked_in_at }}
                 </td>
                 <td class="px-6 py-4 text-right">
-                  <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize" :class="statusStyle[c.status]">
-                    {{ c.status.replace('_', ' ') }}
+                  <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold" :class="statusStyle[c.status]">
+                    {{ statusLabel(c.status) }}
                   </span>
                 </td>
               </tr>
               <tr v-if="filteredCheckIns.length === 0">
-                <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-400">
-                  No check-in records found.
+                <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
+                  {{ t('noCheckinsFound') }}
                 </td>
               </tr>
             </tbody>
@@ -352,14 +366,14 @@ function showResultPanel() {
       v-if="isScanModalOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
     >
-      <div class="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+      <div class="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl">
         <!-- Modal header -->
-        <div class="mb-0 flex items-center justify-between border-b border-slate-200 px-6 py-4">
+        <div class="mb-0 flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-6 py-4">
           <div class="flex items-center gap-2.5">
             <Scan :size="20" class="text-amber-600" />
-            <h3 class="text-base font-bold text-slate-900">Scan Ticket QR</h3>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ t('verifyCheckin') }}</h3>
           </div>
-          <button @click="isScanModalOpen = false" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <button @click="isScanModalOpen = false" class="rounded-lg p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300">
             <X :size="18" />
           </button>
         </div>
@@ -378,9 +392,9 @@ function showResultPanel() {
             <div
               class="flex items-start gap-3 rounded-xl border p-4"
               :class="{
-                'border-emerald-200 bg-emerald-50': bannerTone === 'emerald',
-                'border-amber-200 bg-amber-50': bannerTone === 'amber',
-                'border-rose-200 bg-rose-50': bannerTone === 'rose',
+                'border-emerald-200 bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-500/10': bannerTone === 'emerald',
+                'border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10': bannerTone === 'amber',
+                'border-rose-200 bg-rose-50 dark:border-rose-500/30 dark:bg-rose-500/10': bannerTone === 'rose',
               }"
             >
               <component
@@ -388,24 +402,24 @@ function showResultPanel() {
                 :size="24"
                 class="mt-0.5 shrink-0"
                 :class="{
-                  'text-emerald-600': bannerTone === 'emerald',
-                  'text-amber-600': bannerTone === 'amber',
-                  'text-rose-600': bannerTone === 'rose',
+                  'text-emerald-600 dark:text-emerald-400': bannerTone === 'emerald',
+                  'text-amber-600 dark:text-amber-400': bannerTone === 'amber',
+                  'text-rose-600 dark:text-rose-400': bannerTone === 'rose',
                 }"
               />
               <div class="min-w-0">
                 <p class="text-lg font-extrabold" :class="{
-                  'text-emerald-800': bannerTone === 'emerald',
-                  'text-amber-800': bannerTone === 'amber',
-                  'text-rose-800': bannerTone === 'rose',
+                  'text-emerald-800 dark:text-emerald-400': bannerTone === 'emerald',
+                  'text-amber-800 dark:text-amber-400': bannerTone === 'amber',
+                  'text-rose-800 dark:text-rose-400': bannerTone === 'rose',
                 }">{{ bannerTitle }}</p>
                 <p class="mt-0.5 text-sm font-medium" :class="{
-                  'text-emerald-700': bannerTone === 'emerald',
-                  'text-amber-700': bannerTone === 'amber',
-                  'text-rose-700': bannerTone === 'rose',
+                  'text-emerald-700 dark:text-emerald-400': bannerTone === 'emerald',
+                  'text-amber-700 dark:text-amber-400': bannerTone === 'amber',
+                  'text-rose-700 dark:text-rose-400': bannerTone === 'rose',
                 }">{{ bannerSubtitle }}</p>
-                <p v-if="scanStep === 'checked'" class="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
-                  <span class="inline-flex items-center rounded-full bg-emerald-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                <p v-if="scanStep === 'checked'" class="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  <span class="inline-flex items-center rounded-full bg-emerald-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400">
                     Status: USED
                   </span>
                 </p>
@@ -413,19 +427,19 @@ function showResultPanel() {
             </div>
 
             <!-- Ticket details card (shown on success and already-used) -->
-            <div v-if="ticketData" class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-              <div class="flex items-center justify-between gap-2 border-b border-slate-200 pb-3">
-                <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+            <div v-if="ticketData" class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-700/50 p-4">
+              <div class="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700 pb-3">
+                <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   <Ticket :size="13" /> Ticket Details
                 </p>
                 <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase"
                       :class="{
-                        'border-blue-200 bg-blue-50 text-blue-700': ticketData.status === 'DONE',
-                        'border-emerald-200 bg-emerald-50 text-emerald-700': ticketData.status === 'ACTIVE',
-                        'border-sky-200 bg-sky-50 text-sky-700': ticketData.status === 'USED',
-                        'border-amber-200 bg-amber-50 text-amber-700': ticketData.status === 'EXPIRED',
-                        'border-rose-200 bg-rose-50 text-rose-700': ticketData.status === 'CANCELLED',
-                        'border-violet-200 bg-violet-50 text-violet-700': ticketData.status === 'REFUNDED',
+                        'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400': ticketData.status === 'DONE',
+                        'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400': ticketData.status === 'ACTIVE',
+                        'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-400': ticketData.status === 'USED',
+                        'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400': ticketData.status === 'EXPIRED',
+                        'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400': ticketData.status === 'CANCELLED',
+                        'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-400': ticketData.status === 'REFUNDED',
                       }"
                 >
                   {{ (ticketData.status || '').toLowerCase() }}
@@ -434,44 +448,44 @@ function showResultPanel() {
 
               <dl class="mt-3 space-y-2.5 text-sm">
                 <div class="flex items-start justify-between gap-3">
-                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                     <KeyRound :size="12" /> Ticket No.
                   </dt>
-                  <dd class="font-mono text-xs font-bold text-amber-600">{{ ticketData.ticket_code }}</dd>
+                  <dd class="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">{{ ticketData.ticket_code }}</dd>
                 </div>
                 <div class="flex items-start justify-between gap-3">
-                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                     <User :size="12" /> Customer
                   </dt>
                   <dd class="text-right">
-                    <p class="font-semibold text-slate-900">{{ ticketData.user?.name || "N/A" }}</p>
-                    <p v-if="ticketData.user?.email" class="text-[11px] text-slate-400">{{ ticketData.user.email }}</p>
+                    <p class="font-semibold text-slate-900 dark:text-white">{{ ticketData.user?.name || t("na") }}</p>
+                    <p v-if="ticketData.user?.email" class="text-[11px] text-slate-400 dark:text-slate-500">{{ ticketData.user.email }}</p>
                   </dd>
                 </div>
                 <div class="flex items-start justify-between gap-3">
-                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                     <CalendarDays :size="12" /> Event
                   </dt>
                   <dd class="text-right">
-                    <p class="max-w-[240px] font-semibold text-slate-900">{{ ticketData.ticket_type?.event?.title || ticketData.event?.title || "N/A" }}</p>
-                    <p class="text-[11px] text-slate-400">{{ ticketData.ticket_type?.name || "" }}</p>
+                    <p class="max-w-[240px] font-semibold text-slate-900 dark:text-white">{{ ticketData.ticket_type?.event?.title || ticketData.event?.title || t("na") }}</p>
+                    <p class="text-[11px] text-slate-400 dark:text-slate-500">{{ ticketData.ticket_type?.name || "" }}</p>
                   </dd>
                 </div>
                 <div class="flex items-start justify-between gap-3">
-                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                     <QrCode :size="12" /> Booking
                   </dt>
-                  <dd class="font-mono text-xs text-slate-600">
+                  <dd class="font-mono text-xs text-slate-600 dark:text-slate-400">
                     {{ ticketData.booking?.booking_number || `#${ticketData.booking_id || ''}` }}
                   </dd>
                 </div>
                 <div v-if="checkInRecord" class="flex items-start justify-between gap-3">
-                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                     <Clock :size="12" /> Checked In
                   </dt>
-                  <dd class="text-xs font-medium text-slate-700">
+                  <dd class="text-xs font-medium text-slate-700 dark:text-slate-300">
                     {{ formatDateTime(checkInRecord.checked_in_at) }}
-                    <span v-if="checkInRecord.staff?.name" class="text-slate-400"> by {{ checkInRecord.staff.name }}</span>
+                    <span v-if="checkInRecord.staff?.name" class="text-slate-400 dark:text-slate-500"> by {{ checkInRecord.staff.name }}</span>
                   </dd>
                 </div>
               </dl>
@@ -481,10 +495,10 @@ function showResultPanel() {
             <button
               type="button"
               @click="resetScan"
-              class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
             >
               <span class="flex items-center justify-center gap-1.5">
-                <Recycle :size="13" /> Scan Another Ticket
+                <Recycle :size="13" /> {{ t('scanQR') }}
               </span>
             </button>
           </template>

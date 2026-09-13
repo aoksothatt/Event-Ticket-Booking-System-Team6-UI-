@@ -1,11 +1,13 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { Save, Lock, Loader2, Check, LayoutDashboard } from "lucide-vue-next";
 import { getProfile } from "../api/userApi.js";
 import { patch, put } from "../api/http.js";
 import { isAdmin } from "../api/auth.js";
 
+const { t } = useI18n();
 const router = useRouter();
 
 const loading = ref(true);
@@ -53,9 +55,9 @@ async function updateProfile() {
       email: form.value.email,
       phone: form.value.phone,
     });
-    profileMsg.value = response?.message || "Profile updated.";
+    profileMsg.value = response?.message || t('profileUpdated');
   } catch (e) {
-    profileError.value = e.response?.data?.message || e.message || "Could not update profile.";
+    profileError.value = e.response?.data?.message || e.message || t('couldNotUpdateProfile');
   } finally {
     savingProfile.value = false;
   }
@@ -71,14 +73,14 @@ async function updatePassword() {
       new_password: passwordForm.value.new_password,
       new_password_confirmation: passwordForm.value.new_password_confirmation,
     });
-    passwordMsg.value = response?.message || "Password changed.";
+    passwordMsg.value = response?.message || t('passwordChanged');
     passwordForm.value = {
       current_password: "",
       new_password: "",
       new_password_confirmation: "",
     };
   } catch (e) {
-    passwordError.value = e.response?.data?.message || e.message || "Could not change password.";
+    passwordError.value = e.response?.data?.message || e.message || t('couldNotChangePassword');
   } finally {
     savingPassword.value = false;
   }
@@ -90,14 +92,14 @@ onMounted(load);
 <template>
   <div class="px-4 pb-20 pt-28 sm:px-6 lg:px-8">
     <div class="mx-auto w-full max-w-2xl">
-      <h1 class="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Settings</h1>
-      <p class="mt-1 text-sm text-[#9CA3AF]">Manage your account and security.</p>
+      <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">{{ t('settings') }}</h1>
+      <p class="mt-1 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('manageAccountDesc') }}</p>
 
       <div v-if="isAdmin()" class="mt-6 rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/15 to-transparent p-5">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 class="text-base font-bold text-white">Admin Workspace</h2>
-            <p class="mt-0.5 text-xs text-[#9CA3AF]">You have administrator access. Open the dashboard to manage the platform.</p>
+            <h2 class="text-base font-bold text-slate-900 dark:text-white">{{ t('adminWorkspace') }}</h2>
+            <p class="mt-0.5 text-xs text-slate-500 dark:text-[#9CA3AF]">{{ t('adminAccessDesc') }}</p>
           </div>
           <button
             type="button"
@@ -105,45 +107,45 @@ onMounted(load);
             @click="router.push('/admin/overview')"
           >
             <LayoutDashboard :size="16" />
-            Go to Dashboard
+            {{ t('goToDashboard') }}
           </button>
         </div>
       </div>
 
       <div v-if="loading" class="mt-8 animate-pulse space-y-4">
-        <div class="h-52 rounded-2xl bg-[#14171C]"></div>
-        <div class="h-52 rounded-2xl bg-[#14171C]"></div>
+        <div class="h-52 rounded-2xl bg-white dark:bg-[#14171C]"></div>
+        <div class="h-52 rounded-2xl bg-white dark:bg-[#14171C]"></div>
       </div>
 
       <div v-else class="mt-8 space-y-6">
         <!-- Profile settings -->
-        <section class="rounded-2xl border border-white/10 bg-[#14171C] p-6">
-          <h2 class="mb-1 text-base font-bold text-white">Account Information</h2>
-          <p class="mb-5 text-xs text-[#9CA3AF]">Update your name, email, and phone.</p>
+        <section class="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] p-6">
+          <h2 class="mb-1 text-base font-bold text-slate-900 dark:text-white">{{ t('accountInformation') }}</h2>
+          <p class="mb-5 text-xs text-slate-500 dark:text-[#9CA3AF]">{{ t('updateAccountDesc') }}</p>
 
           <div class="space-y-4">
             <label class="block">
-              <span class="mb-1.5 block text-xs font-medium text-[#9CA3AF]">Name</span>
+              <span class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-[#9CA3AF]">{{ t('name') }}</span>
               <input
                 v-model="form.name"
                 type="text"
-                class="w-full rounded-xl border border-white/10 bg-[#1D2229] px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
+                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
               />
             </label>
             <label class="block">
-              <span class="mb-1.5 block text-xs font-medium text-[#9CA3AF]">Email</span>
+              <span class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-[#9CA3AF]">{{ t('email') }}</span>
               <input
                 v-model="form.email"
                 type="email"
-                class="w-full rounded-xl border border-white/10 bg-[#1D2229] px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
+                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
               />
             </label>
             <label class="block">
-              <span class="mb-1.5 block text-xs font-medium text-[#9CA3AF]">Phone</span>
+              <span class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-[#9CA3AF]">{{ t('phone') }}</span>
               <input
                 v-model="form.phone"
                 type="tel"
-                class="w-full rounded-xl border border-white/10 bg-[#1D2229] px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
+                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
               />
             </label>
 
@@ -162,39 +164,39 @@ onMounted(load);
             >
               <Loader2 v-if="savingProfile" :size="15" class="animate-spin" />
               <Save v-else :size="15" />
-              {{ savingProfile ? "Saving..." : "Save Changes" }}
+              {{ savingProfile ? t('saving') : t('saveChanges') }}
             </button>
           </div>
         </section>
 
         <!-- Password settings -->
-        <section class="rounded-2xl border border-white/10 bg-[#14171C] p-6">
-          <h2 class="mb-1 text-base font-bold text-white">Change Password</h2>
-          <p class="mb-5 text-xs text-[#9CA3AF]">Use at least 8 characters with a strong mix.</p>
+        <section class="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] p-6">
+          <h2 class="mb-1 text-base font-bold text-slate-900 dark:text-white">{{ t('changePassword') }}</h2>
+          <p class="mb-5 text-xs text-slate-500 dark:text-[#9CA3AF]">{{ t('passwordStrengthHint') }}</p>
 
           <div class="space-y-4">
             <label class="block">
-              <span class="mb-1.5 block text-xs font-medium text-[#9CA3AF]">Current password</span>
+              <span class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-[#9CA3AF]">{{ t('currentPassword') }}</span>
               <input
                 v-model="passwordForm.current_password"
                 type="password"
-                class="w-full rounded-xl border border-white/10 bg-[#1D2229] px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
+                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
               />
             </label>
             <label class="block">
-              <span class="mb-1.5 block text-xs font-medium text-[#9CA3AF]">New password</span>
+              <span class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-[#9CA3AF]">{{ t('newPassword') }}</span>
               <input
                 v-model="passwordForm.new_password"
                 type="password"
-                class="w-full rounded-xl border border-white/10 bg-[#1D2229] px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
+                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
               />
             </label>
             <label class="block">
-              <span class="mb-1.5 block text-xs font-medium text-[#9CA3AF]">Confirm new password</span>
+              <span class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-[#9CA3AF]">{{ t('confirmNewPassword') }}</span>
               <input
                 v-model="passwordForm.new_password_confirmation"
                 type="password"
-                class="w-full rounded-xl border border-white/10 bg-[#1D2229] px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
+                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
               />
             </label>
 
@@ -208,12 +210,12 @@ onMounted(load);
             <button
               type="button"
               :disabled="savingPassword"
-              class="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 disabled:opacity-60"
+              class="flex items-center gap-2 rounded-full border border-slate-200 dark:border-white/15 bg-slate-100 dark:bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-900 dark:text-white transition hover:bg-slate-200 dark:hover:bg-white/10 disabled:opacity-60"
               @click="updatePassword"
             >
               <Loader2 v-if="savingPassword" :size="15" class="animate-spin" />
               <Lock v-else :size="15" />
-              {{ savingPassword ? "Updating..." : "Update Password" }}
+              {{ savingPassword ? t('updating') : t('updatePassword') }}
             </button>
           </div>
         </section>

@@ -1,9 +1,12 @@
 <script setup>
 import { computed } from "vue";
 import { useRoute } from "vue-router";
+import { useTheme } from "./composables/useTheme.js";
 import AdminSidebar from "./components/layout/AdminSidebar.vue";
 import CustomerLayout from "./components/layout/CustomerLayout.vue";
 import ToastHost from "./components/common/ToastHost.vue";
+
+useTheme();
 
 const route = useRoute();
 
@@ -16,7 +19,7 @@ const isCustomerPage = computed(() => route.meta.customer === true);
 
   <CustomerLayout v-if="isCustomerPage" />
 
-  <div v-else-if="!isAuthPage" class="flex min-h-screen bg-[#0B0B0C]">
+  <div v-else-if="!isAuthPage" class="flex min-h-screen bg-white dark:bg-[#0B0B0C]">
     <AdminSidebar />
     <div class="flex-1 min-w-0">
       <router-view />

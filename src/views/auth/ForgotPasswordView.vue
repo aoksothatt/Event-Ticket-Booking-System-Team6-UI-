@@ -13,6 +13,9 @@ import {
 import BrandLogo from "../../components/auth/BrandLogo.vue";
 import AuthField from "../../components/auth/AuthField.vue";
 import { sendOtp, verifyOtp, resetPassword } from "../../api/auth.js";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 /**
  * Forgot Password — a 3-step wizard that mirrors the backend flow:
@@ -90,11 +93,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 async function handleSendOtp() {
   serverError.value = "";
   if (!email.value.trim()) {
-    serverError.value = "Please enter your email.";
+    serverError.value = t('pleaseEnterEmail');
     return;
   }
   if (!EMAIL_RE.test(email.value.trim())) {
-    serverError.value = "Please enter a valid email address.";
+    serverError.value = t('validEmail');
     return;
   }
 
@@ -104,7 +107,7 @@ async function handleSendOtp() {
     step.value = 2;
     startOtpCountdown(); // begin the 5-minute expiry countdown
   } catch (error) {
-    serverError.value = apiError(error, "Unable to send the code. Please try again.");
+    serverError.value = apiError(error, t('unableSendCode'));
   } finally {
     loading.value = false;
   }
@@ -114,7 +117,7 @@ async function handleSendOtp() {
 async function handleVerifyOtp() {
   serverError.value = "";
   if (!/^\d{6}$/.test(otp.value.trim())) {
-    serverError.value = "Please enter the 6-digit code.";
+    serverError.value = t('enterSixDigitCode');
     return;
   }
 
@@ -124,7 +127,7 @@ async function handleVerifyOtp() {
     resetToken = data?.data?.reset_token;
     step.value = 3;
   } catch (error) {
-    serverError.value = apiError(error, "Invalid code. Please try again.");
+    serverError.value = apiError(error, t('invalidCodeTryAgain'));
   } finally {
     loading.value = false;
   }
@@ -134,11 +137,11 @@ async function handleVerifyOtp() {
 async function handleResetPassword() {
   serverError.value = "";
   if (passwords.password.length < 8) {
-    serverError.value = "Password must be at least 8 characters.";
+    serverError.value = t('passwordMin8');
     return;
   }
   if (passwords.password !== passwords.confirm) {
-    serverError.value = "Passwords do not match.";
+    serverError.value = t('passwordsMismatch');
     return;
   }
 
@@ -152,7 +155,7 @@ async function handleResetPassword() {
     step.value = 4; // success screen
     stopOtpCountdown(); // no longer need the expiry countdown
   } catch (error) {
-    serverError.value = apiError(error, "Unable to reset your password. Please try again.");
+    serverError.value = apiError(error, t('unableResetPassword'));
   } finally {
     loading.value = false;
   }
@@ -175,7 +178,7 @@ onUnmounted(stopOtpCountdown);
 
 <template>
   <div
-    class="flex min-h-screen items-center justify-center bg-[#202020] px-5 py-12 text-white"
+    class="flex min-h-screen items-center justify-center bg-white dark:bg-[#202020] px-5 py-12 text-slate-900 dark:text-white"
   >
     <div class="w-full max-w-md">
       <BrandLogo class="mb-10" />
@@ -188,18 +191,17 @@ onUnmounted(stopOtpCountdown);
           <Check class="h-8 w-8 text-green-500" />
         </div>
         <h1 class="mb-2 text-[24px] font-bold tracking-tight">
-          Password reset successful
+          {{ t('passwordResetSuccess') }}
         </h1>
-        <p class="mb-8 text-sm text-[#BDBDBD]">
-          Your password has been changed. You can now sign in with your new
-          password.
+        <p class="mb-8 text-sm text-slate-500 dark:text-[#BDBDBD]">
+          {{ t('passwordResetSuccessDesc') }}
         </p>
         <button
           type="button"
           @click="goToLogin"
           class="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#FFA500] text-sm font-bold text-black transition hover:bg-[#FFB52E] active:scale-[0.99]"
         >
-          Back to Sign in
+          {{ t('backToSignIn') }}
         </button>
       </section>
 
@@ -209,34 +211,32 @@ onUnmounted(stopOtpCountdown);
           <button
             type="button"
             @click="goBack"
-            class="inline-flex -ml-1 items-center gap-1.5 rounded px-1 py-1 text-[13px] text-[#BDBDBD] transition hover:text-white"
+            class="inline-flex -ml-1 items-center gap-1.5 rounded px-1 py-1 text-[13px] text-slate-500 transition hover:text-slate-900 dark:text-[#BDBDBD] dark:hover:text-white"
           >
             <ArrowLeft class="h-4 w-4" />
             Back
           </button>
         </div> -->
 
-        <h1 class="mb-7 mt-1 text-[28px] font-bold tracking-tight text-white">
+        <h1 class="mb-7 mt-1 text-[28px] font-bold tracking-tight text-slate-900 dark:text-white">
           {{
             step === 1
-              ? "Forgot Password?"
+              ? t('forgotPassword')
               : step === 2
-                ? "Enter the code"
-                : "Set a new password"
+                ? t('enterTheCode')
+                : t('setNewPassword')
           }}
         </h1>
 
-        <p class="-mt-4 mb-6 text-sm text-[#BDBDBD]">
+        <p class="-mt-4 mb-6 text-sm text-slate-500 dark:text-[#BDBDBD]">
           <template v-if="step === 1">
-            Enter your account email and we'll send you a verification code.
+            {{ t('forgotPasswordInstruction') }}
           </template>
           <template v-else-if="step === 2">
-            We sent a 6-digit code to
-            <span class="font-semibold text-white">{{ email }}</span
-            >. Please enter it below.
+            {{ t('otpToEmail', { email }) }}
           </template>
           <template v-else>
-            Choose a new password (at least 8 characters).
+            {{ t('chooseNewPasswordHint') }}
           </template>
         </p>
 
@@ -252,8 +252,8 @@ onUnmounted(stopOtpCountdown);
         >
           <span>{{
             otpRemaining === 0
-              ? "Code expired. Please request a new one."
-              : "This code expires in"
+              ? t('codeExpired')
+              : t('codeExpiresIn')
           }}</span>
           <span v-if="otpRemaining > 0" class="font-mono font-bold text-base">
             {{ formatTime(otpRemaining) }}
@@ -276,9 +276,9 @@ onUnmounted(stopOtpCountdown);
             v-if="step === 1"
             id="fp-email"
             v-model="email"
-            label="Email"
+            :label="t('email')"
             type="email"
-            placeholder="Please enter your email"
+            :placeholder="t('pleaseEnterEmail')"
             autocomplete="email"
             :icon="Mail"
           />
@@ -288,10 +288,10 @@ onUnmounted(stopOtpCountdown);
             v-else-if="step === 2"
             id="fp-otp"
             v-model="otp"
-            label="Verification Code"
+            :label="t('verificationCode')"
             type="text"
             inputmode="numeric"
-            placeholder="6-digit code"
+            :placeholder="t('sixDigitCode')"
             autocomplete="one-time-code"
             :icon="KeyRound"
           />
@@ -301,16 +301,16 @@ onUnmounted(stopOtpCountdown);
             <AuthField
               id="fp-password"
               v-model="passwords.password"
-              label="New Password"
+              :label="t('newPassword')"
               :type="showPassword ? 'text' : 'password'"
-              placeholder="At least 8 characters"
+              :placeholder="t('passwordMin8Placeholder')"
               autocomplete="new-password"
             >
               <template #trailing>
                 <button
                   type="button"
-                  class="absolute right-4 top-1/2 -translate-y-1/2 text-[#8A8A8A] transition hover:text-white"
-                  :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#8A8A8A] transition hover:text-slate-900 dark:hover:text-white"
+                  :aria-label="showPassword ? t('hidePassword') : t('showPassword')"
                   @click="showPassword = !showPassword"
                 >
                   <EyeOff v-if="showPassword" class="h-[18px] w-[18px]" />
@@ -322,16 +322,16 @@ onUnmounted(stopOtpCountdown);
             <AuthField
               id="fp-confirm"
               v-model="passwords.confirm"
-              label="Confirm New Password"
+              :label="t('confirmNewPassword')"
               :type="showConfirm ? 'text' : 'password'"
-              placeholder="Re-enter your password"
+              :placeholder="t('reenterPassword')"
               autocomplete="new-password"
             >
               <template #trailing>
                 <button
                   type="button"
-                  class="absolute right-4 top-1/2 -translate-y-1/2 text-[#8A8A8A] transition hover:text-white"
-                  :aria-label="showConfirm ? 'Hide password' : 'Show password'"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#8A8A8A] transition hover:text-slate-900 dark:hover:text-white"
+                  :aria-label="showConfirm ? t('hidePassword') : t('showPassword')"
                   @click="showConfirm = !showConfirm"
                 >
                   <EyeOff v-if="showConfirm" class="h-[18px] w-[18px]" />
@@ -357,26 +357,26 @@ onUnmounted(stopOtpCountdown);
             <span>{{
               step === 1
                 ? loading
-                  ? "Sending code..."
-                  : "Send Verification Code"
+                  ? t('sendingCode')
+                  : t('sendVerificationCode')
                 : step === 2
                   ? loading
-                    ? "Verifying..."
-                    : "Verify Code"
+                    ? t('verifying')
+                    : t('verifyCode')
                   : loading
-                    ? "Resetting..."
-                    : "Reset Password"
+                    ? t('resetting')
+                    : t('resetPassword')
             }}</span>
           </button>
         </form>
 
-        <p class="mt-6 text-center text-sm text-[#BDBDBD]">
-          Remembered your password?
+        <p class="mt-6 text-center text-sm text-slate-500 dark:text-[#BDBDBD]">
+          {{ t('rememberedPassword') }}
           <RouterLink
             to="/login"
             class="font-semibold text-[#FFA500] transition hover:text-[#FFB52E]"
           >
-            Sign in
+            {{ t('signIn') }}
           </RouterLink>
         </p>
       </template>

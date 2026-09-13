@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   getTrendingEvents,
   getUpcomingEvents,
@@ -10,6 +11,8 @@ import HeroEvent from "../components/event/HeroEvent.vue";
 import EventCarousel from "../components/event/EventCarousel.vue";
 import CategorySection from "../components/event/CategorySection.vue";
 import CategoryFilter from "../components/category/CategoryFilter.vue";
+
+const { t } = useI18n();
 
 const trendingEvents = ref([]);
 const upcomingEvents = ref([]);
@@ -122,8 +125,8 @@ watch(selectedCategory, loadVisibleCategories);
       <!-- Explore by category -->
       <section class="mx-auto w-full max-w-7xl">
         <div class="mb-4">
-          <h2 class="text-lg font-bold tracking-tight text-white sm:text-xl">Explore by Category</h2>
-          <p class="mt-0.5 text-xs text-[#9CA3AF]">Browse events by what interests you.</p>
+          <h2 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white sm:text-xl">{{ t('exploreByCategory') }}</h2>
+          <p class="mt-0.5 text-xs text-slate-500 dark:text-[#9CA3AF]">{{ t('exploreByCategoryDesc') }}</p>
         </div>
         <CategoryFilter
           :categories="categories"
@@ -135,8 +138,8 @@ watch(selectedCategory, loadVisibleCategories);
       <!-- Trending -->
       <section class="mx-auto w-full max-w-7xl">
         <EventCarousel
-          title="Trending Events"
-          subtitle="What everyone is talking about right now."
+          :title="t('trendingEvents')"
+          :subtitle="t('trendingEventsDesc')"
           :events="selectedCategory
             ? trendingEvents.filter(e => String(e.category_id) === String(selectedCategory))
             : trendingEvents"
@@ -147,8 +150,8 @@ watch(selectedCategory, loadVisibleCategories);
       <!-- Upcoming -->
       <section class="mx-auto w-full max-w-7xl">
         <EventCarousel
-          title="Upcoming Events"
-          subtitle="Mark your calendar — these are coming up soon."
+          :title="t('upcomingEvents')"
+          :subtitle="t('upcomingEventsDesc')"
           :events="selectedCategory
             ? upcomingEvents.filter(e => String(e.category_id) === String(selectedCategory))
             : upcomingEvents"

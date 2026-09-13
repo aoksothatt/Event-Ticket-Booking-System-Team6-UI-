@@ -2,9 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Khmer script renders taller than Latin — use a comfortable line-height
+   and avoid clipping/cramped wrapping whenever Khmer is the active locale. */
+html[lang="km"] body,
+html[lang="km"] p,
+html[lang="km"] li,
+html[lang="km"] span,
+html[lang="km"] a,
+html[lang="km"] h1,
+html[lang="km"] h2,
+html[lang="km"] h3,
+html[lang="km"] h4,
+html[lang="km"] h5,
+html[lang="km"] h6 {
+  line-height: 1.6;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800 antialiased selection:bg-amber-500 selection:text-slate-950;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    @apply bg-white text-slate-800 antialiased selection:bg-amber-500 selection:text-slate-950;
+    font-family: 'Noto Sans Khmer', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
+
+  .dark body,
+  .dark {
+    @apply bg-slate-900 text-slate-100;
+  }
+
+  /* Smooth theme switch: applied only while the theme is toggling so the
+     app never has perpetual color transitions. */
+  html.theme-switching,
+  html.theme-switching *,
+  html.theme-switching *::before,
+  html.theme-switching *::after {
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      color 0.3s ease,
+      fill 0.3s ease,
+      stroke 0.3s ease,
+      box-shadow 0.3s ease !important;
   }
 }

@@ -1,6 +1,7 @@
 import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
+import i18n from "./locales/i18n.js";
 import { pinia } from "./stores";
 import { useAuthStore } from "./stores/auth.js";
 import { setUnauthorizedHandler } from "./api/http.js";
@@ -10,6 +11,7 @@ const app = createApp(App);
 
 app.use(pinia);
 app.use(router);
+app.use(i18n);
 
 const auth = useAuthStore(pinia);
 

@@ -3,16 +3,19 @@ import { ref } from "vue";
 import { Loader2 } from "lucide-vue-next";
 import { GOOGLE_REDIRECT_URL } from "../../config/index.js";
 import { saveIntendedRoute } from "../../composables/useAuthRedirect.js";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const props = defineProps({
   /**
    * Button label. Override per screen, e.g. "Sign up with Google".
    */
-  label: { type: String, default: "Continue with Google" },
+  label: { type: String, default: "" },
   /**
    * Optional label shown while the browser is being redirected.
    */
-  loadingLabel: { type: String, default: "Redirecting to Google…" },
+  loadingLabel: { type: String, default: "" },
   /**
    * Optional override for the destination URL (defaults to the backend's
    * `/auth/google` web route).
@@ -52,12 +55,12 @@ function handleClick() {
   <button
     type="button"
     :disabled="redirecting || loading"
-    class="relative flex h-11 w-full items-center rounded-[6px] border border-[#454545] bg-[#303030] text-sm font-medium text-[#E0E0E0] transition hover:border-[#5A5A5A] hover:bg-[#383838] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+    class="relative flex h-11 w-full items-center rounded-[6px] border border-slate-200 dark:border-[#454545] bg-white dark:bg-[#303030] text-sm font-medium text-slate-900 dark:text-[#E0E0E0] transition hover:border-slate-300 dark:hover:border-[#5A5A5A] hover:bg-slate-100 dark:hover:bg-[#383838] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
     @click="handleClick"
   >
     <!-- Left icon: Google "G" while idle, spinner while redirecting -->
     <span class="absolute left-4 top-1/2 -translate-y-1/2">
-      <Loader2 v-if="redirecting || loading" class="h-5 w-5 animate-spin text-[#E0E0E0]" />
+      <Loader2 v-if="redirecting || loading" class="h-5 w-5 animate-spin text-slate-900 dark:text-[#E0E0E0]" />
       <svg
         v-else
         class="h-5 w-5"
@@ -72,6 +75,6 @@ function handleClick() {
       </svg>
     </span>
 
-    <span class="w-full pl-2 text-center">{{ redirecting || loading ? loadingLabel : label }}</span>
+    <span class="w-full pl-2 text-center">{{ redirecting || loading ? (loadingLabel || t('redirectToGoogle')) : (label || t('continueWithGoogle')) }}</span>
   </button>
 </template>

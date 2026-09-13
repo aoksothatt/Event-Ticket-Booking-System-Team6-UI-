@@ -4,6 +4,9 @@ import { useRouter } from "vue-router";
 import { Calendar, Clock, MapPin, Ticket, Heart, ChevronLeft, ChevronRight, Tag } from "lucide-vue-next";
 import { coverImage, formatDate, formatTime, formatPrice, minPrice } from "../../utils/event.js";
 import { useFavorites } from "../../composables/useFavorites.js";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const props = defineProps({
   events: { type: Array, default: () => [] },
@@ -86,14 +89,14 @@ function viewDetails() {
     @mouseleave="paused = false"
   >
     <!-- Loading state -->
-    <div v-if="loading" class="relative h-[78vh] w-full animate-pulse bg-[#14171C] sm:h-[86vh]">
+    <div v-if="loading" class="relative h-[78vh] w-full animate-pulse bg-white dark:bg-[#14171C] sm:h-[86vh]">
       <div class="flex h-full flex-col justify-end p-6 sm:p-12 lg:p-16">
-        <div class="h-4 w-32 rounded bg-[#1D2229]"></div>
-        <div class="mt-4 h-10 w-full max-w-xl rounded bg-[#1D2229]"></div>
-        <div class="mt-3 h-4 w-64 rounded bg-[#1D2229]"></div>
+        <div class="h-4 w-32 rounded bg-slate-200 dark:bg-[#1D2229]"></div>
+        <div class="mt-4 h-10 w-full max-w-xl rounded bg-slate-200 dark:bg-[#1D2229]"></div>
+        <div class="mt-3 h-4 w-64 rounded bg-slate-200 dark:bg-[#1D2229]"></div>
         <div class="mt-8 flex gap-3">
-          <div class="h-12 w-36 rounded-full bg-[#1D2229]"></div>
-          <div class="h-12 w-32 rounded-full bg-[#1D2229]"></div>
+          <div class="h-12 w-36 rounded-full bg-slate-200 dark:bg-[#1D2229]"></div>
+          <div class="h-12 w-32 rounded-full bg-slate-200 dark:bg-[#1D2229]"></div>
         </div>
       </div>
     </div>
@@ -101,17 +104,17 @@ function viewDetails() {
     <!-- Error state -->
     <div
       v-else-if="error"
-      class="relative flex h-[80vh] w-full items-center justify-center bg-gradient-to-b from-[#14171C] to-[#0B0D10] p-6 text-center"
+      class="relative flex h-[80vh] w-full items-center justify-center bg-gradient-to-b from-slate-100 to-slate-200 dark:from-[#14171C] dark:to-[#0B0D10] p-6 text-center"
     >
       <div>
-        <h2 class="text-xl font-bold text-white">Unable to load trending events</h2>
-        <p class="mt-2 text-sm text-[#9CA3AF]">Something went wrong while fetching trending events.</p>
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ t('unableToLoadTrending') }}</h2>
+        <p class="mt-2 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('trendingLoadError') }}</p>
         <button
           type="button"
           class="mt-5 inline-flex items-center gap-2 rounded-full bg-[#FFA500] px-6 py-3 text-sm font-bold text-black shadow-lg shadow-[#FFA500]/25 transition hover:bg-[#FFB52E] active:scale-[0.98]"
           @click="emit('retry')"
         >
-          Try Again
+          {{ t('retry') }}
         </button>
       </div>
     </div>
@@ -119,11 +122,11 @@ function viewDetails() {
     <!-- Empty state -->
     <div
       v-else-if="!event"
-      class="relative flex h-[80vh] w-full items-center justify-center bg-gradient-to-b from-[#14171C] to-[#0B0D10] p-6 text-center"
+      class="relative flex h-[80vh] w-full items-center justify-center bg-gradient-to-b from-slate-100 to-slate-200 dark:from-[#14171C] dark:to-[#0B0D10] p-6 text-center"
     >
       <div>
-        <h2 class="text-xl font-bold text-white">No trending events available</h2>
-        <p class="mt-2 text-sm text-[#9CA3AF]">Check back soon for highlights.</p>
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ t('noTrendingEvents') }}</h2>
+        <p class="mt-2 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('checkBackSoon') }}</p>
       </div>
     </div>
 
@@ -140,7 +143,7 @@ function viewDetails() {
         <div
           :key="`${event.id}-ph`"
           v-else
-          class="absolute inset-0 bg-gradient-to-br from-[#1D2229] to-[#14171C]"
+          class="absolute inset-0 bg-gradient-to-br from-slate-200 to-white dark:from-[#1D2229] dark:to-[#14171C]"
         ></div>
       </transition>
 
@@ -154,7 +157,7 @@ function viewDetails() {
       ></div>
       <!-- Fade bottom into page background -->
       <div
-        class="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#0B0D10] to-transparent"
+        class="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-slate-100 to-transparent dark:from-[#0B0D10] dark:to-transparent"
       ></div>
 
       <!-- Content -->
@@ -164,7 +167,7 @@ function viewDetails() {
         <div class="max-w-2xl">
           <div class="mb-4 flex items-center gap-2">
             <span class="rounded-full bg-[#FFA500] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.15em] text-black">
-              Trending Event
+              {{ t('trendingEvent') }}
             </span>
             <span
               v-if="category"
@@ -196,18 +199,18 @@ function viewDetails() {
           </div>
 
           <p class="mt-4 line-clamp-2 max-w-xl text-sm leading-relaxed text-white/70 sm:text-base">
-            {{ event.description || 'Experience this unforgettable event.' }}
+            {{ event.description || t('defaultEventDescription') }}
           </p>
 
           <div class="mt-5 flex items-center gap-4">
             <span v-if="price !== null && price > 0" class="flex items-center gap-1.5 text-sm text-white/90">
               <Tag :size="15" class="text-[#FFA500]" />
               <span class="rounded-md bg-[#FFA500]/10 px-2 py-1 font-bold text-[#FFA500]">
-                From {{ formatPrice(price) }}
+                {{ t('fromPrice') }} {{ formatPrice(price) }}
               </span>
             </span>
             <span v-else class="rounded-md bg-white/5 px-2 py-1 text-sm font-semibold text-white/80">
-              Free Entry
+              {{ t('freeEntry') }}
             </span>
           </div>
 
@@ -218,27 +221,27 @@ function viewDetails() {
               @click="bookTicket"
             >
               <Ticket :size="17" />
-              Book Ticket
+              {{ t('bookTickets') }}
             </button>
 
             <button
               type="button"
               :class="saved
                 ? 'bg-white text-black'
-                : 'border border-white/25 bg-white/5 text-white backdrop-blur-sm hover:bg-white/10'"
+                : 'border border-white/25 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white backdrop-blur-sm hover:bg-slate-200 dark:hover:bg-white/10'"
               class="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition active:scale-[0.98]"
               @click="toggleFavorite"
             >
               <Heart :size="16" :fill="saved ? 'currentColor' : 'none'" />
-              {{ saved ? 'Saved' : 'Save' }}
+              {{ saved ? t('eventSaved') : t('saveEvent') }}
             </button>
 
             <button
               type="button"
-              class="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/5 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/10 active:scale-[0.98]"
+              class="inline-flex items-center gap-2 rounded-full border border-white/25 bg-slate-100 dark:bg-white/5 px-5 py-3 text-sm font-semibold text-slate-900 dark:text-white backdrop-blur-sm transition hover:bg-slate-200 dark:hover:bg-white/10 active:scale-[0.98]"
               @click="viewDetails"
             >
-              View Details
+              {{ t('viewDetails') }}
             </button>
           </div>
         </div>
@@ -251,7 +254,7 @@ function viewDetails() {
         <button
           type="button"
           class="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur transition hover:bg-black/60"
-          aria-label="Previous trending event"
+          :aria-label="t('previousTrendingEvent')"
           @click="prev"
         >
           <ChevronLeft :size="20" />
@@ -259,7 +262,7 @@ function viewDetails() {
         <button
           type="button"
           class="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur transition hover:bg-black/60"
-          aria-label="Next trending event"
+          :aria-label="t('nextTrendingEvent')"
           @click="next"
         >
           <ChevronRight :size="20" />
@@ -272,7 +275,7 @@ function viewDetails() {
           v-for="(item, index) in slideCount"
           :key="item.id"
           type="button"
-          :aria-label="`Go to slide ${index + 1}`"
+          :aria-label="t('goToSlide', { number: index + 1 })"
           class="h-1.5 rounded-full transition-all duration-300"
           :class="index === current ? 'w-7 bg-[#FFA500]' : 'w-3 bg-white/40 hover:bg-white/60'"
           @click="go(index)"

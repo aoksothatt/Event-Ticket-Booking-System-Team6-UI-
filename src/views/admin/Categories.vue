@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { adminApi } from "@/api/admin.js";
 import {
   Layers,
@@ -13,6 +14,8 @@ import {
   ArrowUpRight,
   X,
 } from "lucide-vue-next";
+
+const { t } = useI18n();
 
 const categories = ref([]);
 const isLoading = ref(true);
@@ -32,9 +35,9 @@ const stats = computed(() => {
   const active = categories.value.filter((c) => c.status === "active").length;
   const inactive = total - active;
   return [
-    { label: "Total Categories", value: total, change: `${active} active`, icon: Layers, color: "bg-sky-50 text-sky-600" },
-    { label: "Active Categories", value: active, change: `${total ? Math.round((active / total) * 100) : 0}% currently in use`, icon: CheckCircle2, color: "bg-emerald-50 text-emerald-600" },
-    { label: "Inactive Categories", value: inactive, change: `${inactive} currently hidden`, icon: Tag, color: "bg-amber-50 text-amber-600" },
+    { label: t('totalCategories'), value: total, change: `${active} ${t('activeCurrently')}`, icon: Layers, color: "bg-sky-50 text-sky-600" },
+    { label: t('activeCategories'), value: active, change: `${total ? Math.round((active / total) * 100) : 0}${t('inUsePercent')}`, icon: CheckCircle2, color: "bg-emerald-50 text-emerald-600" },
+    { label: t('inactiveCategories'), value: inactive, change: `${inactive} ${t('currentlyHidden')}`, icon: Tag, color: "bg-amber-50 text-amber-600" },
   ];
 });
 
@@ -46,7 +49,7 @@ async function fetchCategories() {
     const payload = response.data;
     categories.value = Array.isArray(payload) ? payload : (payload.data || []);
   } catch (err) {
-    error.value = err.response?.data?.message || err.message || "Failed to load categories.";
+    error.value = err.response?.data?.message || err.message || t("failedToLoadCategories");
   } finally {
     isLoading.value = false;
   }
@@ -55,8 +58,8 @@ async function fetchCategories() {
 onMounted(fetchCategories);
 
 const statusStyle = {
-  active: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  inactive: "bg-slate-100 text-slate-500 border-slate-200",
+  active: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
+  inactive: "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600",
 };
 
 const filteredCategories = computed(() => {
@@ -119,36 +122,36 @@ async function saveCategory() {
     await fetchCategories();
     closeModal();
   } catch (err) {
-    alert(err.response?.data?.message || err.message || "Failed to save category.");
+    alert(err.response?.data?.message || err.message || t('errorOccurred'));
   } finally {
     isSaving.value = false;
   }
 }
 
 async function deleteCategory(id) {
-  if (confirm("Are you sure you want to delete this category?")) {
+  if (confirm(t('deleteConfirm'))) {
     try {
       await adminApi.deleteCategory(id);
       await fetchCategories();
     } catch (err) {
-      alert(err.response?.data?.message || err.message || "Failed to delete category.");
+      alert(err.response?.data?.message || err.message || t('errorOccurred'));
     }
   }
 }
 </script>
 
 <template>
-  <main class="min-h-screen flex-1 bg-slate-50 px-8 py-8 text-slate-800">
+  <main class="min-h-screen flex-1 bg-slate-50 px-8 py-8 text-slate-800 dark:bg-slate-900 dark:text-white">
     <!-- Header -->
     <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <div class="flex items-center gap-2.5">
-          <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Categories Management</h1>
-          <span class="rounded-md bg-sky-100 border border-sky-200 px-2.5 py-0.5 text-xs text-sky-800 font-mono font-medium">
+          <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{{ t('categoriesManagement') }}</h1>
+          <span class="rounded-md bg-sky-100 border border-sky-200 px-2.5 py-0.5 text-xs text-sky-800 font-mono font-medium dark:bg-sky-500/15 dark:border-sky-500/30 dark:text-sky-400">
             manage_categories
           </span>
         </div>
-        <p class="mt-1 text-sm text-slate-500">Manage event genres, classification tags, and catalog taxonomies.</p>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Manage event genres, classification tags, and catalog taxonomies.</p>
       </div>
       <div class="flex items-center gap-3">
         <button
@@ -157,28 +160,28 @@ async function deleteCategory(id) {
           class="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 hover:shadow"
         >
           <Plus :size="16" :stroke-width="2.5" />
-          Add Category
+          {{ t('addCategory') }}
         </button>
       </div>
     </div>
 
     <!-- Loading State -->
     <div v-if="isLoading" class="mb-8 flex items-center justify-center py-12">
-      <div class="flex items-center gap-3 text-slate-500">
+      <div class="flex items-center gap-3 text-slate-500 dark:text-slate-400">
         <svg class="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>
-        <span class="text-sm font-medium">Loading categories...</span>
+        <span class="text-sm font-medium">{{ t('loading') }}</span>
       </div>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="mb-8 rounded-xl border border-rose-200 bg-rose-50 p-6 text-center">
+    <div v-else-if="error" class="mb-8 rounded-xl border border-rose-200 bg-rose-50 p-6 text-center dark:border-red-500/30 dark:bg-red-500/10">
       <XCircle :size="24" class="mx-auto mb-2 text-rose-400" />
-      <p class="text-sm font-semibold text-rose-700">{{ error }}</p>
-      <button @click="fetchCategories" class="mt-3 rounded-lg bg-rose-100 px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-200">
-        Retry
+      <p class="text-sm font-semibold text-rose-700 dark:text-rose-400">{{ error }}</p>
+      <button @click="fetchCategories" class="mt-3 rounded-lg bg-rose-100 px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:hover:bg-rose-500/25">
+        {{ t('retry') }}
       </button>
     </div>
 
@@ -188,15 +191,15 @@ async function deleteCategory(id) {
         <div
           v-for="stat in stats"
           :key="stat.label"
-          class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+          class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800"
         >
           <div class="mb-4 flex items-start justify-between">
-            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ stat.label }}</p>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider dark:text-slate-400">{{ stat.label }}</p>
             <span class="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm" :class="stat.color">
               <component :is="stat.icon" :size="16" />
             </span>
           </div>
-          <p class="text-2xl font-bold text-slate-900">{{ stat.value }}</p>
+          <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ stat.value }}</p>
           <p class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
             <ArrowUpRight :size="14" />
             {{ stat.change }}
@@ -205,73 +208,73 @@ async function deleteCategory(id) {
       </div>
 
       <!-- Search & Filter -->
-      <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div class="relative min-w-[260px] flex-1">
-          <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search categories by name or description..."
-            class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            :placeholder="t('searchCategories')"
+            class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
           />
         </div>
 
         <div class="flex items-center gap-2">
-          <label class="text-xs font-semibold text-slate-500">Status:</label>
+          <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('eventStatus') }}</label>
           <select
             v-model="selectedStatus"
-            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize"
+            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
-            <option value="All">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="All">{{ t('allStatuses') }}</option>
+            <option value="active">{{ t('active') }}</option>
+            <option value="inactive">{{ t('inactive') }}</option>
           </select>
         </div>
       </div>
 
       <!-- Categories Table -->
-      <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-          <h2 class="text-base font-bold text-slate-900">Event Categories ({{ filteredCategories.length }})</h2>
+      <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-700">
+          <h2 class="text-base font-bold text-slate-900 dark:text-white">{{ t('eventCategories') }} ({{ filteredCategories.length }})</h2>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
-            <thead class="bg-slate-50/70 border-b border-slate-200">
-              <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th class="px-6 py-3">Category Name</th>
-                <th class="px-6 py-3">Description</th>
-                <th class="px-6 py-3">Status</th>
-                <th class="px-6 py-3">Created Date</th>
-                <th class="px-6 py-3 text-right">Actions</th>
+            <thead class="bg-slate-50/70 border-b border-slate-200 dark:bg-slate-700/50 dark:border-slate-700">
+              <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">
+                <th class="px-6 py-3">{{ t('categoryHeader') }}</th>
+                <th class="px-6 py-3">{{ t('descriptionHeader') }}</th>
+                <th class="px-6 py-3">{{ t('status') }}</th>
+                <th class="px-6 py-3">{{ t('createdDate') }}</th>
+                <th class="px-6 py-3 text-right">{{ t('actions') }}</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100">
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
               <tr
                 v-for="cat in filteredCategories"
                 :key="cat.id"
-                class="transition-colors hover:bg-slate-50/80"
+                class="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/50"
               >
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600 border border-sky-100 shadow-sm">
+                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600 border border-sky-100 shadow-sm dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20">
                       <Layers :size="16" />
                     </div>
                     <div>
-                      <p class="font-semibold text-slate-900">{{ cat.name }}</p>
-                      <p class="text-[10px] text-slate-400 font-mono">ID: #CAT-{{ cat.id }}</p>
+                      <p class="font-semibold text-slate-900 dark:text-white">{{ cat.name }}</p>
+                      <p class="text-[10px] text-slate-400 font-mono dark:text-slate-500">ID: #CAT-{{ cat.id }}</p>
                     </div>
                   </div>
                 </td>
-                <td class="px-6 py-4 text-xs text-slate-600 max-w-sm">
-                  {{ cat.description || "No description provided." }}
+                <td class="px-6 py-4 text-xs text-slate-600 max-w-sm dark:text-slate-300">
+                  {{ cat.description || t('noDescriptionProvided') }}
                 </td>
                 <td class="px-6 py-4">
                   <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize" :class="statusStyle[cat.status]">
                     {{ cat.status }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-xs text-slate-500">
+                <td class="px-6 py-4 text-xs text-slate-500 dark:text-slate-400">
                   {{ formatDate(cat.created_at) }}
                 </td>
                 <td class="px-6 py-4 text-right">
@@ -279,14 +282,14 @@ async function deleteCategory(id) {
                     <button
                       type="button"
                       @click="openEditModal(cat)"
-                      class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
+                      class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-amber-500/10"
                     >
                       <Edit :size="14" />
                     </button>
                     <button
                       type="button"
                       @click="deleteCategory(cat.id)"
-                      class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100"
+                      class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
                     >
                       <Trash2 :size="14" />
                     </button>
@@ -294,8 +297,8 @@ async function deleteCategory(id) {
                 </td>
               </tr>
               <tr v-if="filteredCategories.length === 0">
-                <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-400">
-                  No categories found matching your query.
+                <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
+                  {{ t('noCategoriesFound') }}
                 </td>
               </tr>
             </tbody>
@@ -309,46 +312,46 @@ async function deleteCategory(id) {
       v-if="isModalOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
     >
-      <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-        <div class="mb-5 flex items-center justify-between border-b border-slate-200 pb-4">
-          <h3 class="text-lg font-bold text-slate-900">
-            {{ editingCategory ? "Edit Category" : "Add New Category" }}
+      <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-800">
+        <div class="mb-5 flex items-center justify-between border-b border-slate-200 pb-4 dark:border-slate-700">
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">
+            {{ editingCategory ? t('editCategory') : t('addNewCategory') }}
           </h3>
-          <button @click="closeModal" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <button @click="closeModal" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-white">
             <X :size="18" />
           </button>
         </div>
 
         <form @submit.prevent="saveCategory" class="space-y-4">
           <div>
-            <label class="mb-1 block text-xs font-semibold text-slate-700">Category Name *</label>
+            <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('categoryName') }} *</label>
             <input
               v-model="form.name"
               type="text"
               required
               placeholder="e.g. Electronic Music & Festivals"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
             />
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-semibold text-slate-700">Description</label>
+            <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('description') }}</label>
             <textarea
               v-model="form.description"
               rows="3"
               placeholder="Brief summary of events included in this category..."
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
             />
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-semibold text-slate-700">Status</label>
+            <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('status') }}</label>
             <select
               v-model="form.status"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
             >
-              <option value="active">Active (Visible on platform)</option>
-              <option value="inactive">Inactive (Hidden)</option>
+              <option value="active">{{ t('active') }}</option>
+              <option value="inactive">{{ t('inactive') }}</option>
             </select>
           </div>
 
@@ -356,16 +359,16 @@ async function deleteCategory(id) {
             <button
               type="button"
               @click="closeModal"
-              class="rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+              class="rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700"
             >
-              Cancel
+              {{ t('cancel') }}
             </button>
             <button
               type="submit"
               :disabled="isSaving"
               class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 disabled:opacity-50"
             >
-              {{ isSaving ? "Saving..." : (editingCategory ? "Save Changes" : "Create Category") }}
+              {{ isSaving ? t('saving') : (editingCategory ? t('saveChanges') : t('createCategory')) }}
             </button>
           </div>
         </form>
