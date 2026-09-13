@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { adminApi } from "@/api/admin.js";
 import {
   CreditCard,
@@ -25,8 +25,8 @@ const selectedMethod = ref("All");
 
 const payments = ref([]);
 
-async function fetchPayments() {
-  loading.value = true;
+async function fetchPayments(silent = false) {
+  if (!silent) loading.value = true;
   error.value = null;
   try {
     const response = await adminApi.getPayments();
@@ -37,6 +37,7 @@ async function fetchPayments() {
       customer: p.booking?.user?.name || "Unknown",
       email: p.booking?.user?.email || "",
       event: p.booking?.event?.title || "N/A",
+      gateway: p.payment_method || "Bakong (KHQR)",
       payment_method: p.payment_method,
       amount: parseFloat(p.amount) || 0,
       currency: p.currency,
@@ -50,7 +51,14 @@ async function fetchPayments() {
   }
 }
 
-onMounted(fetchPayments);
+let refreshTimer = null;
+onMounted(() => {
+  fetchPayments();
+  refreshTimer = setInterval(() => fetchPayments(true), 15000);
+});
+onBeforeUnmount(() => {
+  if (refreshTimer) clearInterval(refreshTimer);
+});
 
 const money = (n) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -89,31 +97,35 @@ const stats = computed(() => {
 });
 
 const methods = computed(() => {
-  const values = new Set(payments.value.map((p) => p.payment_method).filter(Boolean));
+  const values = new Set(payments.value.map((p) => p.gateway).filter(Boolean));
   return ["All", ...Array.from(values)];
 });
-const statuses = ["All", "paid", "pending", "refunded", "failed"];
+const statuses = ["All", "paid", "pending", "refunded", "failed", "expired"];
 
 const statusStyle = {
   paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
   pending: "bg-amber-50 text-amber-700 border-amber-200",
   refunded: "bg-purple-50 text-purple-700 border-purple-200",
   failed: "bg-rose-50 text-rose-700 border-rose-200",
+  expired: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
 const filteredPayments = computed(() => {
   return payments.value.filter((p) => {
+    const q = searchQuery.value.toLowerCase();
     const matchesSearch =
-      (p.transaction_id || "").toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      (p.booking_number || "").toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      (p.payment_method || "").toLowerCase().includes(searchQuery.value.toLowerCase());
+      (p.transaction_id || "").toLowerCase().includes(q) ||
+      (p.booking_number || "").toLowerCase().includes(q) ||
+      (p.gateway || "").toLowerCase().includes(q) ||
+      (p.customer || "").toLowerCase().includes(q) ||
+      (p.email || "").toLowerCase().includes(q);
 
     const matchesStatus =
       selectedStatus.value === "All" || p.payment_status === selectedStatus.value;
 
     const matchesMethod =
       selectedMethod.value === "All" ||
-      (p.payment_method || "").toLowerCase().includes(selectedMethod.value.toLowerCase());
+      (p.gateway || "").toLowerCase().includes(selectedMethod.value.toLowerCase());
 
     return matchesSearch && matchesStatus && matchesMethod;
   });
@@ -225,6 +237,17 @@ function viewPayment(payment) {
       <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
           <h2 class="text-base font-bold text-slate-900">Payment Records ({{ filteredPayments.length }})</h2>
+          <div class="flex items-center gap-3">
+            <span class="text-[11px] text-slate-400">Auto-refreshes every 15s</span>
+            <button
+              type="button"
+              @click="fetchPayments(true)"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
+            >
+              <RefreshCw :size="13" />
+              Refresh
+            </button>
+          </div>
         </div>
 
         <div class="overflow-x-auto">
@@ -233,6 +256,7 @@ function viewPayment(payment) {
               <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 <th class="px-6 py-3">Transaction ID</th>
                 <th class="px-6 py-3">Booking #</th>
+                <th class="px-6 py-3">Customer</th>
                 <th class="px-6 py-3">Payment Gateway</th>
                 <th class="px-6 py-3">Amount</th>
                 <th class="px-6 py-3">Status</th>
@@ -252,9 +276,13 @@ function viewPayment(payment) {
                 <td class="px-6 py-4 font-mono text-xs text-slate-600">
                   {{ p.booking_number }}
                 </td>
+                <td class="px-6 py-4">
+                  <div class="text-xs font-semibold text-slate-800">{{ p.customer }}</div>
+                  <div class="text-[11px] text-slate-400">{{ p.email }}</div>
+                </td>
                 <td class="px-6 py-4 text-xs font-medium text-slate-700">
                   <span class="rounded-md bg-slate-100 border border-slate-200 px-2.5 py-1 text-xs text-slate-800">
-                    {{ p.payment_method }}
+                    {{ p.gateway }}
                   </span>
                 </td>
                 <td class="px-6 py-4 font-mono font-bold text-slate-900">
@@ -280,7 +308,7 @@ function viewPayment(payment) {
                 </td>
               </tr>
               <tr v-if="filteredPayments.length === 0">
-                <td colspan="7" class="px-6 py-8 text-center text-sm text-slate-400">
+                <td colspan="8" class="px-6 py-8 text-center text-sm text-slate-400">
                   No payment transactions found.
                 </td>
               </tr>
@@ -317,7 +345,7 @@ function viewPayment(payment) {
           </div>
           <div class="flex justify-between py-1 border-b border-slate-100">
             <span class="text-slate-500">Payment Gateway</span>
-            <span class="text-slate-800 font-medium">{{ selectedPayment.payment_method }}</span>
+            <span class="text-slate-800 font-medium">{{ selectedPayment.gateway }}</span>
           </div>
           <div class="flex justify-between py-1 border-b border-slate-100">
             <span class="text-slate-500">Status</span>
