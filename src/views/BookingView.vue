@@ -37,7 +37,11 @@ const gatewayNotice = ref("");
 
 let countdownTimer = null;
 let verifyTimer = null;
+let recoveryTimer = null;
+let recoveryAttempts = 0;
 let successTimer = null;
+
+const MAX_RECOVERY_ATTEMPTS = 2;
 
 const SESSION_KEY = "bakong_booking";
 
@@ -260,7 +264,7 @@ async function doCheckout() {
       status: normalizeStatus(data.payment?.status || "pending"),
       summary: lines.join(", "),
       pollIntervalMs: Math.max(
-        30000,
+        15000,
         Number(data.poll_interval_seconds ?? 30) * 1000,
       ),
     };
@@ -283,6 +287,7 @@ async function doCheckout() {
 
 function startPolling() {
   stopPolling();
+  recoveryAttempts = 0;
 
   // Local countdown + expiry detection.
   countdownTimer = setInterval(() => {
@@ -335,7 +340,10 @@ async function verifyPayment() {
       gatewayNotice.value =
         e.response?.data?.message ||
         "We can't reach the payment gateway right now. If you already paid, do NOT pay again — tap “Check again” in a moment.";
-      stopPolling();
+      // Only pause gateway checks — the QR countdown must keep running so
+      // the payment visibly expires instead of freezing in place.
+      stopVerifyTimer();
+      scheduleRecoveryCheck();
       if (firstTime) {
         toast(
           "Payment gateway is busy. Auto-checking paused to protect the daily limit.",
@@ -370,10 +378,46 @@ async function checkNow() {
 }
 
 function stopPolling() {
+  stopVerifyTimer();
+  stopRecoveryTimer();
   if (countdownTimer) clearInterval(countdownTimer);
-  if (verifyTimer) clearInterval(verifyTimer);
   countdownTimer = null;
+}
+
+/**
+ * Stop only the gateway verification timer. The countdown keeps ticking so
+ * the QR still expires correctly when the gateway is temporarily down.
+ */
+function stopVerifyTimer() {
+  if (verifyTimer) clearInterval(verifyTimer);
   verifyTimer = null;
+}
+
+/**
+ * Auto-retry the gateway a limited number of times when it was temporarily
+ * down (e.g. a connection reset), resuming normal polling on recovery. Kept
+ * at a slow cadence so the Bakong daily check quota is not hammered; a hard
+ * daily-limit failure simply declines again and, after the cap, stays manual
+ * via the "Check again" button.
+ */
+function scheduleRecoveryCheck() {
+  if (recoveryAttempts >= MAX_RECOVERY_ATTEMPTS || recoveryTimer) return;
+  recoveryAttempts++;
+  recoveryTimer = setTimeout(async () => {
+    recoveryTimer = null;
+    if (!showModal.value || order.value?.status !== "pending") return;
+    await verifyPayment();
+    if (showModal.value && order.value?.status === "pending" && !gatewayNotice.value) {
+      startPolling();
+    }
+  }, 90000);
+}
+
+function stopRecoveryTimer() {
+  if (recoveryTimer) {
+    clearTimeout(recoveryTimer);
+    recoveryTimer = null;
+  }
 }
 
 function stopSuccessTimer() {
@@ -394,7 +438,7 @@ function scheduleSuccessClose() {
   successTimer = setTimeout(() => {
     successTimer = null;
     viewTickets();
-  }, 2500);
+  }, 800);
 }
 
 /**

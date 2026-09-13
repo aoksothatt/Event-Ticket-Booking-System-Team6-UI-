@@ -530,6 +530,15 @@ onBeforeUnmount(stopCountdown);
 
               <div class="mt-5 flex justify-center gap-3">
                 <button
+                  v-if="paymentStatus === 'pending' && notice"
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-full bg-[#FFA500] px-5 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"
+                  @click="emit('check')"
+                >
+                  <Check :size="14" stroke-width="3" />
+                  Check again
+                </button>
+                <button
                   v-if="paymentStatus === 'expired' || paymentStatus === 'failed'"
                   type="button"
                   class="rounded-full bg-[#FFA500] px-5 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"

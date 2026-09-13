@@ -69,11 +69,20 @@ async function load() {
   loading.value = true;
   error.value = "";
   try {
-    const [current, history] = await Promise.all([getMyTicketsData(), getMyTicketHistory()]);
-    tickets.value = current;
-    historyTickets.value = history;
-  } catch (e) {
-    error.value = e.response?.data?.message || e.message || t('couldNotLoadTickets');
+    // Current tickets are the important payment handoff. Do not hide a
+    // newly-issued ticket just because the optional history request fails.
+    const [currentResult, historyResult] = await Promise.allSettled([
+      getMyTicketsData(),
+      getMyTicketHistory(),
+    ]);
+
+    tickets.value = currentResult.status === "fulfilled" ? currentResult.value : [];
+    historyTickets.value = historyResult.status === "fulfilled" ? historyResult.value : [];
+
+    if (currentResult.status === "rejected") {
+      const e = currentResult.reason;
+      error.value = e.response?.data?.message || e.message || t('couldNotLoadTickets');
+    }
   } finally {
     loading.value = false;
   }
@@ -159,6 +168,12 @@ onMounted(load);
             <div class="mb-3 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-[#9CA3AF]">
               <TicketCheck :size="14" class="text-[#FFA500]" />
               {{ t('bookingLabel') }} {{ group[0].booking?.booking_number || `#${group[0].booking_id}` }}
+              <span
+                v-if="group[0].booking?.payments?.some((payment) => payment.status === 'paid' || payment.payment_status === 'paid')"
+                class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400"
+              >
+                Payment paid
+              </span>
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
@@ -209,6 +224,13 @@ onMounted(load);
                       <span class="truncate">{{ ticket.ticket_type.event.venue.name }}</span>
                     </span>
                   </div>
+
+                  <p class="mt-2 text-[11px] text-slate-500 dark:text-[#9CA3AF]">
+                    {{ t('bookingLabel') }} {{ ticket.booking?.booking_number || `#${ticket.booking_id}` }}
+                    <span v-if="ticket.booking?.payments?.[0]?.transaction_reference" class="font-mono">
+                      · {{ ticket.booking.payments[0].transaction_reference }}
+                    </span>
+                  </p>
 
                   <div class="mt-3 flex items-center justify-between gap-2 border-t border-slate-200 dark:border-white/5 pt-3">
                     <div class="min-w-0">

@@ -156,13 +156,21 @@ function resetScan() {
  * backend validates + checks in atomically → display result.
  */
 async function onScanValue(raw) {
-  scannedRaw.value = raw;
+  // The camera and manual-entry fallback can both emit while a request is
+  // pending. Accept exactly one value, so a valid ticket cannot race into an
+  // unnecessary second request and be reported as already checked in.
+  if (scanStep.value === "loading") return;
+
+  const value = String(raw || "").trim();
+  if (!value) return;
+
+  scannedRaw.value = value;
   scanStep.value = "loading";
   scanError.value = "";
   lookup.value = null;
 
   try {
-    const res = await adminApi.checkInTicket(raw);
+    const res = await adminApi.checkInTicket(value);
     lookup.value = res;
 
     if (res.already_checked_in) {
@@ -381,10 +389,21 @@ function showResultPanel() {
         <div class="flex-1 space-y-4 overflow-y-auto px-6 py-5">
           <!-- Scanner (auto-starts) or the loading state -->
           <QRCodeScanner
-            v-if="!showResultPanel()"
+            v-if="scanStep === 'idle'"
             :key="scanKey"
             @scan="onScanValue"
           />
+
+          <!-- The scanner stops as soon as it detects a QR. Show explicit
+               server-verification feedback instead of a frozen camera frame. -->
+          <div
+            v-else-if="scanStep === 'loading'"
+            class="flex min-h-56 flex-col items-center justify-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-6 text-center dark:border-amber-500/30 dark:bg-amber-500/10"
+          >
+            <Loader2 :size="28" class="animate-spin text-amber-600 dark:text-amber-400" />
+            <p class="text-sm font-bold text-amber-800 dark:text-amber-300">{{ t('checkingIn') }}</p>
+            <p class="text-xs text-amber-700 dark:text-amber-400">Checking the ticket and recording entry…</p>
+          </div>
 
           <!-- Ticket result panel -->
           <template v-if="showResultPanel()">
