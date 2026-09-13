@@ -64,7 +64,7 @@ const statusStyle = {
   cancelled: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30",
 };
 
-const statusDisplayMap = { confirmed: t("confirmed"), completed: t("completed"), pending: t("pending"), cancelled: t("cancelled"), paid: t("paid") };
+const statusDisplayMap = { confirmed: t("confirmed"), completed: t("completed"), pending: t("pending"), cancelled: t("cancelled"), paid: t("paid"), held: t("held") };
 
 function formatDate(value) {
   if (!value) return "N/A";

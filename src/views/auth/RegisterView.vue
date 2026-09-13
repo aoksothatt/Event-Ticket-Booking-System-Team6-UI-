@@ -46,22 +46,22 @@ function validate() {
   errors.confirm = "";
 
   if (!form.name.trim()) {
-    errors.name = t('nameRequired');
+    errors.name = t("nameRequired");
   }
   if (!form.email.trim()) {
-    errors.email = t('emailRequired');
+    errors.email = t("emailRequired");
   } else if (!EMAIL_RE.test(form.email.trim())) {
-    errors.email = t('validEmail');
+    errors.email = t("validEmail");
   }
   if (!form.password) {
-    errors.password = t('passwordRequired');
+    errors.password = t("passwordRequired");
   } else if (form.password.length < 6) {
-    errors.password = t('passwordMin');
+    errors.password = t("passwordMin");
   }
   if (!form.confirm) {
-    errors.confirm = t('passwordConfirm');
+    errors.confirm = t("passwordConfirm");
   } else if (form.password !== form.confirm) {
-    errors.confirm = t('passwordsMismatch');
+    errors.confirm = t("passwordsMismatch");
   }
 
   return !errors.name && !errors.email && !errors.password && !errors.confirm;
@@ -82,16 +82,19 @@ async function handleSubmit() {
       password: form.password,
       password_confirmation: form.confirm,
     });
-    toast(t('accountCreated'), "success");
+    toast(t("accountCreated"), "success");
 
     const destination = computeDestination({
-      queryRedirect: typeof route.query.redirect === "string" ? route.query.redirect : null,
+      queryRedirect:
+        typeof route.query.redirect === "string" ? route.query.redirect : null,
       fallback: auth.isAdmin ? "/admin/overview" : "/home",
     });
     router.replace(destination);
   } catch (error) {
     serverError.value =
-      error.response?.data?.message || error.message || t('accountCreateFailed');
+      error.response?.data?.message ||
+      error.message ||
+      t("accountCreateFailed");
   } finally {
     loading.value = false;
   }
@@ -111,20 +114,24 @@ async function handleSubmit() {
       >
         <BrandLogo class="mb-10" />
 
-        <div class="flex items-center gap-3 text-[13px] text-slate-500 dark:text-[#BDBDBD]">
+        <div
+          class="flex items-center gap-3 text-[13px] text-slate-500 dark:text-[#BDBDBD]"
+        >
           <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
-          <span class="whitespace-nowrap">{{ t('alreadyHaveAccount') }}</span>
+          <span class="whitespace-nowrap">{{ t("alreadyHaveAccount") }}</span>
           <RouterLink
             to="/login"
             class="whitespace-nowrap font-semibold text-[#FFA500] transition hover:text-[#FFB52E]"
           >
-            {{ t('signIn') }}
+            {{ t("signIn") }}
           </RouterLink>
           <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
         </div>
 
-        <h1 class="mb-7 mt-5 text-[28px] font-bold tracking-tight text-slate-900 dark:text-white">
-          {{ t('createAccount') }}
+        <h1
+          class="mb-7 mt-5 text-[28px] font-bold tracking-tight text-slate-900 dark:text-white"
+        >
+          {{ t("createAccount") }}
         </h1>
 
         <form class="space-y-4" novalidate @submit.prevent="handleSubmit">
@@ -163,7 +170,9 @@ async function handleSubmit() {
               <button
                 type="button"
                 class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#8A8A8A] transition hover:text-slate-900 dark:hover:text-white"
-                :aria-label="showPassword ? t('hidePassword') : t('showPassword')"
+                :aria-label="
+                  showPassword ? t('hidePassword') : t('showPassword')
+                "
                 @click="showPassword = !showPassword"
               >
                 <EyeOff v-if="showPassword" class="h-[18px] w-[18px]" />
@@ -185,7 +194,9 @@ async function handleSubmit() {
               <button
                 type="button"
                 class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#8A8A8A] transition hover:text-slate-900 dark:hover:text-white"
-                :aria-label="showConfirm ? t('hidePassword') : t('showPassword')"
+                :aria-label="
+                  showConfirm ? t('hidePassword') : t('showPassword')
+                "
                 @click="showConfirm = !showConfirm"
               >
                 <EyeOff v-if="showConfirm" class="h-[18px] w-[18px]" />
@@ -208,13 +219,17 @@ async function handleSubmit() {
           >
             <Loader2 v-if="loading" class="h-5 w-5 animate-spin" />
             <span>{{
-              loading ? t('creatingAccount') : t('createAccount')
+              loading ? t("creatingAccount") : t("createAccount")
             }}</span>
           </button>
 
-          <div class="flex items-center gap-3 pt-1 text-sm text-slate-500 dark:text-[#8A8A8A]">
+          <div
+            class="flex items-center gap-3 pt-1 text-sm text-slate-500 dark:text-[#8A8A8A]"
+          >
             <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
-            <span class="uppercase text-[11px] tracking-widest">{{ t('or') }}</span>
+            <span class="uppercase text-[11px] tracking-widest">{{
+              t("or")
+            }}</span>
             <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
           </div>
 
@@ -243,10 +258,10 @@ async function handleSubmit() {
           <p
             class="mb-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#FFA500]"
           >
-            {{ t('brandPresents') }}
+            {{ t("brandPresents") }}
           </p>
           <p class="text-lg font-bold drop-shadow-lg">
-            {{ t('tagline') }}
+            {{ t("Live show - Event") }}
           </p>
         </div>
       </section>

@@ -2,7 +2,14 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { Loader2, Ticket, ChevronLeft, Minus, Plus, Check } from "lucide-vue-next";
+import {
+  Loader2,
+  Ticket,
+  ChevronLeft,
+  Minus,
+  Plus,
+  Check,
+} from "lucide-vue-next";
 import { getEvent } from "../api/eventApi.js";
 import {
   checkout,
@@ -29,7 +36,6 @@ const loading = ref(true);
 const error = ref("");
 const submitting = ref(false);
 const submitError = ref("");
-const success = ref(null);
 
 const showModal = ref(false);
 const order = ref(null);
@@ -37,7 +43,7 @@ const gatewayNotice = ref("");
 
 let countdownTimer = null;
 let verifyTimer = null;
-let successTimer = null;
+let paidRedirectTimer = null;
 
 const SESSION_KEY = "bakong_booking";
 
@@ -52,7 +58,8 @@ const PAID_STATUSES = ["paid", "successful", "completed"];
 function normalizeStatus(raw) {
   const s = String(raw || "pending").toLowerCase();
   if (PAID_STATUSES.includes(s)) return "paid";
-  if (["pending", "failed", "expired", "cancelled"].includes(s)) return s;
+  if (["pending", "failed", "expired", "cancelled", "held"].includes(s))
+    return s;
   return "pending";
 }
 
@@ -196,7 +203,7 @@ async function load(id) {
     event.value = await getEvent(id);
     ensureQuantities();
   } catch (e) {
-    error.value = e.message || t('couldNotLoadEvent');
+    error.value = e.message || t("couldNotLoadEvent");
   } finally {
     loading.value = false;
   }
@@ -211,12 +218,12 @@ async function load(id) {
 async function doCheckout() {
   submitError.value = "";
   if (!hasSelection.value) {
-    submitError.value = t('selectTicket');
+    submitError.value = t("selectTicket");
     return;
   }
   const user = auth.user;
   if (!user?.id) {
-    submitError.value = t('signInToBook');
+    submitError.value = t("signInToBook");
     return;
   }
 
@@ -275,7 +282,10 @@ async function doCheckout() {
       startPolling();
     }
   } catch (e) {
-    submitError.value = e.response?.data?.message || e.message || "Could not complete your booking.";
+    submitError.value =
+      e.response?.data?.message ||
+      e.message ||
+      "Could not complete your booking.";
   } finally {
     submitting.value = false;
   }
@@ -304,7 +314,7 @@ function startPolling() {
 }
 
 async function verifyPayment() {
-  if (!order.value || order.value.status !== "pending") return;
+  if (!order.value || !["pending", "held"].includes(order.value.status)) return;
 
   try {
     const res = await confirmPayment(order.value.paymentId);
@@ -320,7 +330,11 @@ async function verifyPayment() {
     gatewayNotice.value = "";
     // Race protection: a terminal state (paid/failed/expired) won in another
     // poll ticks first, so a stale "pending" response must never overwrite it.
-    if (newStatus !== "pending" && order.value.status === "pending") {
+    // "paid" always takes priority (a held payment can resolve to paid once an
+    // admin confirms it).
+    if (newStatus === "paid") {
+      order.value.status = "paid";
+    } else if (newStatus !== "pending" && order.value.status === "pending") {
       order.value.status = newStatus;
     }
   } catch (e) {
@@ -355,6 +369,20 @@ async function verifyPayment() {
     if (order.value.status === "expired" || order.value.status === "failed") {
       toast(`Payment ${order.value.status}. You can try again.`, "info");
     }
+  } else if (order.value.status === "held") {
+    // Bakong cannot auto-verify this QR (static-type). The money may still
+    // have arrived; the booking is held for manual confirmation. Stop polling
+    // — re-checking against Bakong can never change this outcome, and we must
+    // never tell the customer the gateway is merely "temporarily unavailable".
+    stopPolling();
+    gatewayNotice.value =
+      "Your payment was received but the bank's gateway can't auto-verify this QR type. " +
+      "Your booking is held for manual confirmation — do NOT pay again. " +
+      "Our team checks these regularly, or an administrator can confirm it.";
+    toast(
+      "Payment received — held for manual confirmation. Do not pay again.",
+      "info",
+    );
   }
 }
 
@@ -376,72 +404,68 @@ function stopPolling() {
   verifyTimer = null;
 }
 
-function stopSuccessTimer() {
-  if (successTimer) {
-    clearTimeout(successTimer);
-    successTimer = null;
-  }
-}
-
 /**
- * After the backend confirms payment, keep the "Payment Successful" state
- * visible for a short moment, then leave the modal and send the user to My
- * Tickets — that page re-fetches bookings/tickets from the backend so the
- * freshly purchased ticket appears without a duplicate booking/payment.
- */
-function scheduleSuccessClose() {
-  stopSuccessTimer();
-  successTimer = setTimeout(() => {
-    successTimer = null;
-    viewTickets();
-  }, 2500);
-}
-
-/**
- * Called the moment Bakong confirms the payment. Stops all polling/countdown
- * and flips the order to "paid". The modal immediately swaps the QR for the
- * "Payment Successful" screen. The booking stays in sessionStorage so a later
- * refresh + re-click returns the same PAID payment (no duplicate payment,
- * tickets or QR).
+ * After the backend confirms payment, let the modal show its paid state
+ * with navigation buttons. The modal emits viewEvent/viewTickets events
+ * which we handle to navigate. We only close the modal when user clicks Done.
  */
 function handlePaid() {
   stopPolling();
+  clearPaidRedirect();
   if (order.value) order.value.status = "paid";
+  clearStoredBooking(event.value?.id || route.params.id);
   toast("Payment Successful — your ticket is ready!", "success");
-  scheduleSuccessClose();
+  // Show the success state briefly, then close the QR panel and open the
+  // customer's ticket list so the newly issued ticket is loaded immediately.
+  paidRedirectTimer = setTimeout(() => {
+    showModal.value = false;
+    router.push("/my-tickets");
+  }, 2000);
+}
+
+function clearPaidRedirect() {
+  if (paidRedirectTimer) {
+    clearTimeout(paidRedirectTimer);
+    paidRedirectTimer = null;
+  }
 }
 
 function viewTickets() {
-  stopSuccessTimer();
   stopPolling();
+  clearPaidRedirect();
   if (order.value?.booking_id) {
-    clearStoredBooking(event.value.id);
+    clearStoredBooking(event.value?.id || route.params.id);
   }
   router.push("/my-tickets");
 }
 
-function closeModal() {
-  stopSuccessTimer();
+function viewEvent() {
   stopPolling();
+  clearPaidRedirect();
+  const id = event.value?.id || route.params.id;
+  if (id) {
+    router.push(`/events/${id}`);
+  }
+}
+
+function closeModal() {
+  stopPolling();
+  clearPaidRedirect();
   showModal.value = false;
   if (!order.value) return;
 
   if (order.value.status === "paid") {
-    // Payment already confirmed — show the inline success block on the page
-    // instead of the booking form. The QR is never re-shown for this booking.
-    success.value = {
-      booking_number: order.value.bookingNumber || "",
-      total_amount: order.value.amount || 0,
-    };
+    // Payment already confirmed — modal showed paid state, just close
+    return;
   } else if (order.value.status === "pending") {
     toast("Payment cancelled. You can retry from this page.", "info");
   }
 }
 
 function handleRetry() {
-  stopSuccessTimer();
-  showModal.value = false;
   stopPolling();
+  clearPaidRedirect();
+  showModal.value = false;
   order.value = null;
   // Reuses the same pending booking_id via sessionStorage — the backend
   // issues a new payment (and new QR) only when the previous one expired.
@@ -450,8 +474,8 @@ function handleRetry() {
 
 onMounted(() => load(route.params.id));
 onBeforeUnmount(() => {
-  stopSuccessTimer();
   stopPolling();
+  clearPaidRedirect();
 });
 </script>
 
@@ -464,7 +488,7 @@ onBeforeUnmount(() => {
         @click="router.push(`/events/${route.params.id}`)"
       >
         <ChevronLeft :size="16" />
-        {{ t('backToEvent') }}
+        {{ t("backToEvent") }}
       </button>
 
       <div v-if="loading" class="animate-pulse space-y-4">
@@ -479,44 +503,13 @@ onBeforeUnmount(() => {
         {{ error }}
       </div>
 
-      <div
-        v-else-if="success"
-        class="mx-auto mt-6 max-w-lg rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center"
-      >
-        <span
-          class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300"
-        >
-          <Check :size="26" />
-        </span>
-        <h2 class="mt-4 text-xl font-bold text-white">Booking Confirmed!</h2>
-        <p class="mt-2 text-sm text-[#9CA3AF]">
-          Your booking reference is
-          <span class="font-semibold text-white">{{ success.booking_number }}</span>
-          for {{ formatPrice(success.total_amount) }}.
-        </p>
-        <div class="mt-6 flex justify-center gap-3">
-          <button
-            type="button"
-            class="rounded-full bg-[#FFA500] px-5 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"
-            @click="router.push('/my-tickets')"
-          >
-            {{ t('viewMyTickets') }}
-          </button>
-          <button
-            type="button"
-            class="rounded-full border border-slate-200 dark:border-white/15 bg-slate-100 dark:bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-900 dark:text-white transition hover:bg-slate-200 dark:hover:bg-white/10"
-            @click="router.push('/home')"
-          >
-            {{ t('backHome') }}
-          </button>
-        </div>
-      </div>
-
       <template v-else-if="event">
         <div class="grid gap-8 lg:grid-cols-[1fr_340px]">
           <!-- Ticket selection -->
           <section class="rounded-2xl border border-white/10 bg-[#14171C] p-6">
-            <h1 class="text-xl font-extrabold text-white sm:text-2xl">Book Tickets</h1>
+            <h1 class="text-xl font-extrabold text-white sm:text-2xl">
+              Book Tickets
+            </h1>
             <p class="mt-1 text-sm text-[#9CA3AF]">{{ event.title }}</p>
 
             <div class="mt-6 space-y-3">
@@ -527,8 +520,12 @@ onBeforeUnmount(() => {
               >
                 <div class="flex items-center justify-between gap-3">
                   <div>
-                    <p class="text-sm font-semibold text-white">{{ ticket.name }}</p>
-                    <p class="mt-0.5 text-sm font-bold text-[#FFA500]">{{ formatPrice(ticket.price) }}</p>
+                    <p class="text-sm font-semibold text-white">
+                      {{ ticket.name }}
+                    </p>
+                    <p class="mt-0.5 text-sm font-bold text-[#FFA500]">
+                      {{ formatPrice(ticket.price) }}
+                    </p>
                   </div>
 
                   <div class="flex items-center gap-2">
@@ -540,14 +537,19 @@ onBeforeUnmount(() => {
                     >
                       <Minus :size="14" />
                     </button>
-                    <span class="w-8 text-center text-sm font-semibold text-white">
+                    <span
+                      class="w-8 text-center text-sm font-semibold text-white"
+                    >
                       {{ quantities[ticket.id] || 0 }}
                     </span>
                     <button
                       type="button"
                       class="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition hover:bg-white/10 disabled:opacity-40"
                       :aria-label="`Increase ${ticket.name} quantity`"
-                      :disabled="Number(quantities[ticket.id] || 0) >= availableFor(ticket)"
+                      :disabled="
+                        Number(quantities[ticket.id] || 0) >=
+                        availableFor(ticket)
+                      "
                       @click="increment(ticket)"
                     >
                       <Plus :size="14" />
@@ -560,7 +562,11 @@ onBeforeUnmount(() => {
                   class="mt-2 text-xs text-slate-500 dark:text-[#9CA3AF]"
                   :class="availableFor(ticket) === 0 ? 'text-red-400' : ''"
                 >
-                  {{ availableFor(ticket) > 0 ? `${availableFor(ticket)} available` : "Sold out" }}
+                  {{
+                    availableFor(ticket) > 0
+                      ? `${availableFor(ticket)} available`
+                      : "Sold out"
+                  }}
                 </p>
               </div>
 
@@ -568,7 +574,7 @@ onBeforeUnmount(() => {
                 v-if="!ticketTypes.length"
                 class="rounded-lg bg-slate-100 dark:bg-white/5 px-4 py-6 text-center text-sm text-slate-500 dark:text-[#9CA3AF]"
               >
-                {{ t('noTicketsAvailable') }}
+                {{ t("noTicketsAvailable") }}
               </p>
             </div>
 
@@ -581,9 +587,13 @@ onBeforeUnmount(() => {
           </section>
 
           <!-- Summary -->
-          <aside class="h-fit rounded-2xl border border-white/10 bg-[#14171C] p-5 lg:sticky lg:top-24">
+          <aside
+            class="h-fit rounded-2xl border border-white/10 bg-[#14171C] p-5 lg:sticky lg:top-24"
+          >
             <div class="flex gap-3">
-              <span class="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[#1D2229]">
+              <span
+                class="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[#1D2229]"
+              >
                 <img
                   v-if="coverImage(event)"
                   :src="coverImage(event)"
@@ -592,17 +602,26 @@ onBeforeUnmount(() => {
                 />
               </span>
               <div class="min-w-0">
-                <p class="line-clamp-1 text-sm font-bold text-white">{{ event.title }}</p>
-                <p class="mt-1 text-xs text-[#9CA3AF]">
-                  {{ formatDate(event.start_date) }} · {{ formatTime(event.start_time) }}
+                <p class="line-clamp-1 text-sm font-bold text-white">
+                  {{ event.title }}
                 </p>
-                <p class="mt-1 text-xs text-[#9CA3AF]">{{ event.venue?.name }}</p>
+                <p class="mt-1 text-xs text-[#9CA3AF]">
+                  {{ formatDate(event.start_date) }} ·
+                  {{ formatTime(event.start_time) }}
+                </p>
+                <p class="mt-1 text-xs text-[#9CA3AF]">
+                  {{ event.venue?.name }}
+                </p>
               </div>
             </div>
 
-            <div class="mt-5 flex items-center justify-between border-t border-white/5 pt-4 text-sm">
+            <div
+              class="mt-5 flex items-center justify-between border-t border-white/5 pt-4 text-sm"
+            >
               <span class="text-[#9CA3AF]">Total</span>
-              <span class="text-lg font-extrabold text-[#FFA500]">{{ formatPrice(subtotal) }}</span>
+              <span class="text-lg font-extrabold text-[#FFA500]">{{
+                formatPrice(subtotal)
+              }}</span>
             </div>
 
             <button
@@ -613,11 +632,13 @@ onBeforeUnmount(() => {
             >
               <Loader2 v-if="submitting" :size="17" class="animate-spin" />
               <Ticket v-else :size="17" />
-              {{ submitting ? t('processing') : t('confirmBooking') }}
+              {{ submitting ? t("processing") : t("confirmBooking") }}
             </button>
 
-            <p class="mt-4 text-center text-xs text-slate-500 dark:text-[#9CA3AF]">
-              {{ t('bookingConfirmation') }}
+            <p
+              class="mt-4 text-center text-xs text-slate-500 dark:text-[#9CA3AF]"
+            >
+              {{ t("bookingConfirmation") }}
             </p>
           </aside>
         </div>
@@ -632,12 +653,16 @@ onBeforeUnmount(() => {
       :currency="order?.currency || 'USD'"
       :expires-at="order?.expiresAt || ''"
       :summary="order?.summary || ''"
+      :booking-number="order?.bookingNumber || ''"
+      :event-id="event?.id || route.params.id"
+      :event-name="event?.title || ''"
       :status="order?.status || 'pending'"
-      :notice="gatewayNotice"
+      :error="gatewayNotice"
       @cancel="closeModal"
       @retry="handleRetry"
       @check="checkNow"
       @view-tickets="viewTickets"
+      @view-event="viewEvent"
     />
   </div>
 </template>

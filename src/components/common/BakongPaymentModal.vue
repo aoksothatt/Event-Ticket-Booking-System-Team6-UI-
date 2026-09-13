@@ -6,8 +6,9 @@ import {
   Check,
   AlertTriangle,
   Clock,
-  Smartphone,
+  CalendarDays,
   Ticket,
+  Smartphone,
 } from "lucide-vue-next";
 import QRCode from "qrcode";
 import { formatCountdown } from "../../api/bakongApi.js";
@@ -26,6 +27,9 @@ const props = defineProps({
   status: { type: String, default: "pending" },
   notice: { type: String, default: "" },
   bookingNumber: { type: String, default: "" },
+  eventId: { type: [Number, String], default: "" },
+  eventName: { type: String, default: "" },
+  error: { type: String, default: "" },
 });
 
 const emit = defineEmits([
@@ -34,6 +38,7 @@ const emit = defineEmits([
   "retry",
   "check",
   "viewTickets",
+  "viewEvent",
 ]);
 
 const qrDataUrl = ref("");
@@ -51,18 +56,25 @@ const isOpen = computed(() => props.modelValue);
 const paymentStatus = computed(() => {
   const s = String(props.status || "pending").toLowerCase();
   if (["paid", "successful", "completed"].includes(s)) return "paid";
-  if (["pending", "failed", "expired", "cancelled"].includes(s)) return s;
+  if (["pending", "held", "failed", "expired", "cancelled"].includes(s))
+    return s;
   return "pending";
 });
 
 const isTerminal = computed(() =>
-  ["paid", "failed", "expired", "cancelled"].includes(paymentStatus.value),
+  ["paid", "held", "failed", "expired", "cancelled"].includes(
+    paymentStatus.value,
+  ),
 );
 
 const displayAmount = computed(() => {
   const n = Number(props.amount);
   return isNaN(n) ? "0.00" : n.toFixed(2);
 });
+
+const currencySymbol = computed(() =>
+  String(props.currency || "USD").toUpperCase() === "KHR" ? "៛" : "$",
+);
 
 function parseKhqrTlv(payload) {
   const segs = {};
@@ -99,12 +111,16 @@ const statusLabel = computed(() => {
   switch (paymentStatus.value) {
     case "paid":
       return "Payment confirmed";
+    case "held":
+      return "Payment received — awaiting confirmation";
     case "expired":
       return "Payment expired";
     case "failed":
       return "Payment failed";
     default:
-      return "Waiting for payment\u2026";
+      return isError.value
+        ? "Couldn't confirm payment"
+        : "Waiting for payment\u2026";
   }
 });
 
@@ -112,13 +128,27 @@ const statusClasses = computed(() => {
   switch (paymentStatus.value) {
     case "paid":
       return "bg-emerald-500/10 text-emerald-300 border-emerald-500/30";
+    case "held":
+      return "bg-amber-500/10 text-amber-300 border-amber-500/30";
     case "expired":
     case "failed":
       return "bg-red-500/10 text-red-300 border-red-500/30";
     default:
-      return "bg-amber-500/10 text-amber-300 border-amber-500/30";
+      return isError.value
+        ? "bg-red-500/10 text-red-300 border-red-500/30"
+        : "bg-amber-500/10 text-amber-300 border-amber-500/30";
   }
 });
+
+/**
+ * Error state — shown when the gateway is unreachable or verification cannot
+ * be completed. The QR stays visible (the customer may have already paid and
+ * we must never make them pay twice) but we clearly explain the situation and
+ * offer a manual re-check instead of silently "waiting".
+ */
+const isError = computed(
+  () => paymentStatus.value === "pending" && !!props.error,
+);
 
 function close() {
   emit("update:modelValue", false);
@@ -127,6 +157,10 @@ function close() {
 
 function retry() {
   emit("retry");
+}
+
+function viewEvent() {
+  emit("viewEvent");
 }
 
 function startCountdown() {
@@ -276,13 +310,13 @@ onBeforeUnmount(stopCountdown);
 
               <!-- Main Title -->
               <h2 class="text-2xl font-black tracking-tight text-white">
-                Payment Successful
+                Payment Successful!
               </h2>
 
               <!-- Confirmation copy -->
               <p class="mt-2 text-sm leading-relaxed text-emerald-300/90">
                 Your payment has been confirmed.<br />
-                Your ticket is now ready.
+                Your ticket is ready.
               </p>
 
               <!-- Payment Amount -->
@@ -291,6 +325,14 @@ onBeforeUnmount(stopCountdown);
                 <span class="text-sm font-bold text-white/80">{{
                   currency
                 }}</span>
+              </p>
+
+              <!-- Event name -->
+              <p
+                v-if="eventName"
+                class="mt-2 text-sm font-semibold text-neutral-200"
+              >
+                {{ eventName }}
               </p>
 
               <!-- Booking Confirmed Badge -->
@@ -313,11 +355,19 @@ onBeforeUnmount(stopCountdown);
               <div class="mt-6 flex flex-col gap-2.5">
                 <button
                   type="button"
-                  @click="emit('viewTickets')"
+                  @click="viewEvent"
                   class="w-full rounded-xl bg-gradient-to-r from-[#FFA500] to-[#FF8C00] py-3 text-sm font-bold text-slate-950 shadow-md hover:brightness-110 active:scale-98 transition flex items-center justify-center gap-2"
                 >
+                  <CalendarDays :size="16" />
+                  View Event
+                </button>
+                <button
+                  type="button"
+                  @click="emit('viewTickets')"
+                  class="w-full rounded-xl border border-white/15 bg-white/10 py-3 text-sm font-bold text-white shadow-md transition hover:bg-white/20 active:scale-98 flex items-center justify-center gap-2"
+                >
                   <Ticket :size="16" />
-                  View My Tickets
+                  See My Ticket
                 </button>
                 <button
                   type="button"
@@ -354,7 +404,9 @@ onBeforeUnmount(stopCountdown);
 
               <div class="my-5 flex justify-center">
                 <div
-                  v-if="paymentStatus === 'expired' || paymentStatus === 'failed'"
+                  v-if="
+                    paymentStatus === 'expired' || paymentStatus === 'failed'
+                  "
                   class="flex h-[260px] w-[260px] flex-col items-center justify-center gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-4"
                 >
                   <AlertTriangle :size="48" class="text-red-400" />
@@ -374,104 +426,132 @@ onBeforeUnmount(stopCountdown);
                   </p>
                 </div>
 
-                <!-- Clean KHQR Payment Card with Target Corners & Center Logo -->
+                <!-- Held for manual review: the bank's gateway cannot
+                     auto-verify this QR type. The money may already have been
+                     received — the QR is hidden so nobody is told to pay again. -->
+                <div
+                  v-else-if="paymentStatus === 'held'"
+                  class="flex min-h-[260px] w-[300px] flex-col items-center justify-center gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 text-center"
+                >
+                  <Clock :size="44" class="text-amber-300" />
+                  <p class="text-sm font-bold text-amber-200">
+                    Payment received — awaiting confirmation
+                  </p>
+                  <p class="text-xs leading-relaxed text-amber-200/80">
+                    The bank's gateway can't auto-verify this QR type. Your
+                    booking is held while we confirm your payment manually — do
+                    NOT pay again. We'll update your tickets as soon as it's
+                    confirmed.
+                  </p>
+                  <p
+                    v-if="error"
+                    class="mt-1 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-200/90"
+                  >
+                    {{ error }}
+                  </p>
+                  <button
+                    type="button"
+                    @click="emit('check')"
+                    class="mt-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-bold text-amber-200 transition hover:bg-white/20"
+                  >
+                    Check again
+                  </button>
+                </div>
+
+                <!-- Bakong-style KHQR Payment Card (matches img/qrcode.png) -->
                 <div
                   v-else-if="qrDataUrl"
-                  class="relative w-[300px] rounded-2xl bg-white p-5 shadow-2xl border border-gray-100"
+                  class="w-[300px] overflow-hidden rounded-2xl bg-white shadow-2xl"
                 >
-                  <!-- Viewfinder Target Corners -->
-                  <div
-                    class="absolute -top-1 -left-1 w-5 h-5 border-t-[3px] border-l-[3px] border-[#94A3B8] rounded-tl-lg pointer-events-none"
-                  ></div>
-                  <div
-                    class="absolute -top-1 -right-1 w-5 h-5 border-t-[3px] border-r-[3px] border-[#94A3B8] rounded-tr-lg pointer-events-none"
-                  ></div>
-                  <div
-                    class="absolute -bottom-1 -left-1 w-5 h-5 border-b-[3px] border-l-[3px] border-[#94A3B8] rounded-bl-lg pointer-events-none"
-                  ></div>
-                  <div
-                    class="absolute -bottom-1 -right-1 w-5 h-5 border-b-[3px] border-r-[3px] border-[#94A3B8] rounded-br-lg pointer-events-none"
-                  ></div>
-
-                  <!-- Card Header -->
-                  <div class="flex items-center justify-between">
-                    <span
-                      class="text-2xl font-black tracking-tight text-[#1B2A5B]"
-                    >
-                      KH<span class="text-[#E1251B]">QR</span>
-                    </span>
-                    <span
-                      class="text-[10px] font-bold uppercase tracking-wider text-neutral-400"
+                  <!-- Red Header Banner -->
+                  <div class="bg-[#E1251B] px-5 pb-3.5 pt-4 text-center">
+                    <p
+                      class="text-[10px] font-bold uppercase tracking-[0.22em] text-white/80"
                     >
                       Scan to pay
-                    </span>
-                  </div>
-
-                  <p
-                    class="mt-2 text-base font-extrabold leading-tight text-neutral-900 truncate"
-                  >
-                    {{ khqrInfo.merchant || "SOTHAT OUK" }}
-                  </p>
-                  <hr class="my-3 border-t border-neutral-200" />
-                  <!-- QR Matrix with Center Red Emblem -->
-                  <div
-                    class="relative mt-3 flex items-center justify-center bg-white"
-                  >
-                    <img
-                      :src="qrDataUrl"
-                      alt="KHQR payment code"
-                      class="h-[200px] w-[200px] rounded-md object-contain"
-                      width="200"
-                      height="200"
-                    />
-
-                    <!-- Red Bakong Emblem Overlay -->
-                    <div
-                      class="absolute inset-0 m-auto w-11 h-11 rounded-full bg-[#E1251B] border-[3px] border-white shadow-md flex items-center justify-center pointer-events-none"
+                    </p>
+                    <p
+                      class="mt-1 truncate text-2xl font-black leading-tight tracking-tight text-white"
                     >
-                      <svg
-                        class="w-5 h-5 text-white"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <!-- Main Angkor Wat Towers Silhouette -->
-                        <path
-                          d="M1 19h22v1H1v-1zm1-1h20v-2h-1v-2h-1v-2h-1v-1h-1v2h-1v-2h-1v-3h-1v-1h-1v-2h-1v-1h-2v1h-1v2h-1v1h-1v3h-1v2h-1v-2h-1v1h-1v2h-1v2h-1v2H2v2z"
-                        />
-                        <!-- Optional inner detail dots or accents -->
-                        <circle cx="12" cy="7" r="1" fill="#FFFFFF" />
-                        <circle cx="12" cy="7" r="0.5" fill="#E1251B" />
-                      </svg>
-                    </div>
+                      {{ khqrInfo.merchant || "SOTHAT OUK" }}
+                    </p>
                   </div>
 
-                  <!-- Amount / City Footer -->
-                  <div
-                    class="mt-3 flex items-end justify-between border-t border-neutral-200 pt-3"
-                  >
-                    <div class="text-left">
-                      <p
-                        class="text-[10px] font-semibold uppercase tracking-wide text-neutral-400"
+                  <!-- White Card Body -->
+                  <div class="px-6 pb-5 pt-4">
+                    <!-- Amount -->
+                    <div class="flex items-baseline justify-center gap-1.5">
+                      <span
+                        class="text-2xl font-black tracking-tight text-neutral-900"
                       >
-                        Amount
-                      </p>
-                      <p class="text-lg font-black text-neutral-900">
-                        ${{ displayAmount }}
-                        <span class="text-xs font-bold text-neutral-500">
-                          {{ currency }}
-                        </span>
-                      </p>
+                        {{ currencySymbol }}{{ displayAmount }}
+                      </span>
+                      <span class="text-sm font-bold text-neutral-500">
+                        {{ currency }}
+                      </span>
                     </div>
-                    <div class="text-right">
-                      <p
-                        class="text-[10px] font-semibold uppercase tracking-wide text-neutral-400"
+
+                    <!-- QR Matrix with Center Red Emblem -->
+                    <div class="relative mt-4 flex items-center justify-center">
+                      <img
+                        :src="qrDataUrl"
+                        alt="KHQR payment code"
+                        class="h-[210px] w-[210px] rounded-lg object-contain"
+                        width="210"
+                        height="210"
+                      />
+
+                      <!-- Red Bakong Emblem Overlay -->
+                      <div
+                        class="absolute inset-0 m-auto w-10 h-10 rounded-full bg-[#E1251B] border-[3px] border-white shadow-md flex items-center justify-center pointer-events-none"
                       >
-                        City
-                      </p>
-                      <p class="text-xs font-bold text-neutral-700">
-                        {{ khqrInfo.city || "Phnom Penh" }}
-                      </p>
+                        <svg
+                          class="w-5 h-5 text-white"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <!-- Main Angkor Wat Towers Silhouette -->
+                          <path
+                            d="M1 19h22v1H1v-1zm1-1h20v-2h-1v-2h-1v-2h-1v-1h-1v2h-1v-2h-1v-3h-1v-1h-1v-2h-1v-1h-2v1h-1v2h-1v1h-1v3h-1v2h-1v-2h-1v1h-1v2h-1v2h-1v2H2v2z"
+                          />
+                          <!-- Optional inner detail dots or accents -->
+                          <circle cx="12" cy="7" r="1" fill="#FFFFFF" />
+                          <circle cx="12" cy="7" r="0.5" fill="#E1251B" />
+                        </svg>
+                      </div>
                     </div>
+
+                    <!-- City / Booking Footer -->
+                    <div
+                      class="mt-4 flex items-center justify-between border-t border-neutral-100 pt-3"
+                    >
+                      <!-- <div class="text-left">
+                        <p
+                          class="text-[10px] font-semibold uppercase tracking-wide text-neutral-400"
+                        >
+                          City
+                        </p>
+                        <p class="text-xs font-bold text-neutral-700">
+                          {{ khqrInfo.city || "Phnom Penh" }}
+                        </p>
+                      </div> -->
+                      <!-- <div v-if="bookingNumber" class="text-right">
+                        <p
+                          class="text-[10px] font-semibold uppercase tracking-wide text-neutral-400"
+                        >
+                          Booking
+                        </p>
+                        <p class="text-xs font-bold text-neutral-700">
+                          {{ bookingNumber }}
+                        </p>
+                      </div> -->
+                    </div>
+
+                    <!-- <p
+                      class="mt-3 rounded-full bg-[#F5F5F5] px-3 py-2 text-center text-[11px] font-semibold text-neutral-500"
+                    >
+                      Use the Bakong / KHQR app to scan this code
+                    </p> -->
                   </div>
                 </div>
 
@@ -483,6 +563,37 @@ onBeforeUnmount(stopCountdown);
                 </div>
               </div>
 
+              <div
+                v-if="isError"
+                class="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-3 text-left"
+              >
+                <div class="flex items-start gap-2">
+                  <AlertTriangle
+                    :size="15"
+                    class="mt-0.5 shrink-0 text-red-400"
+                  />
+                  <div class="min-w-0">
+                    <p class="text-xs font-bold text-red-300">
+                      We couldn't confirm your payment
+                    </p>
+                    <p class="mt-0.5 text-xs leading-relaxed text-red-300/80">
+                      {{ error }}
+                    </p>
+                    <p class="mt-1 text-xs leading-relaxed text-red-300/80">
+                      If you already paid, do NOT pay again — we'll check once
+                      the gateway recovers.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  @click="emit('check')"
+                  class="mt-2.5 rounded-full bg-red-500/20 px-4 py-1.5 text-xs font-bold text-red-200 transition hover:bg-red-500/30"
+                >
+                  Check again
+                </button>
+              </div>
+
               <p
                 v-if="notice"
                 class="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-200"
@@ -490,7 +601,7 @@ onBeforeUnmount(stopCountdown);
                 {{ notice }}
               </p>
 
-              <!-- <a
+              <a
                 v-if="deeplink && paymentStatus === 'pending'"
                 :href="deeplink"
                 target="_blank"
@@ -499,7 +610,7 @@ onBeforeUnmount(stopCountdown);
               >
                 <Smartphone :size="16" class="text-[#FFA500]" />
                 Pay with the Bakong app
-              </a> -->
+              </a>
 
               <div
                 v-if="paymentStatus === 'pending' && expiresAt"
@@ -519,18 +630,19 @@ onBeforeUnmount(stopCountdown);
                 :class="statusClasses"
               >
                 <Loader2
-                  v-if="paymentStatus === 'pending'"
+                  v-if="paymentStatus === 'pending' && !isError"
                   :size="12"
                   class="animate-spin"
                 />
-                <Check v-else-if="paymentStatus === 'paid'" :size="12" />
                 <AlertTriangle v-else :size="12" />
                 {{ statusLabel }}
               </span>
 
               <div class="mt-5 flex justify-center gap-3">
                 <button
-                  v-if="paymentStatus === 'expired' || paymentStatus === 'failed'"
+                  v-if="
+                    paymentStatus === 'expired' || paymentStatus === 'failed'
+                  "
                   type="button"
                   class="rounded-full bg-[#FFA500] px-5 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"
                   @click="retry"
