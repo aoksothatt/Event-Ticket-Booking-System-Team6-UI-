@@ -73,7 +73,7 @@ const money = (n) =>
 
 function formatGateway(method) {
   const map = {
-    bakong_khqr: "Bakong (KHQR)",
+    bakong_khqr: "Bakong ",
     aba_pay: "ABA Pay",
     wing: "Wing",
     credit_card: "Credit Card",
