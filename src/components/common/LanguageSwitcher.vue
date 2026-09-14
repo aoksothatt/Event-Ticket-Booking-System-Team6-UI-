@@ -41,7 +41,7 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutside));
   <div ref="rootEl" class="relative">
     <button
       type="button"
-      class="flex h-9 items-center gap-1.5 border-slate-200 dark:border-white/10  text-xs font-semibold text-slate-600 dark:text-white/80 transition hover:border-[#FFA500]/40   hover:text-slate-900 dark:hover:text-white"
+      class="flex h-9 items-center gap-1.5 border-slate-200 dark:border-white/10  text-xs font-semibold text-slate-600 dark:text-white/80 transition hover:border-[#FFA500]/40 n  hover:text-slate-900 dark:hover:text-white"
       :aria-label="locale === 'en' ? 'Language: English' : 'ភាសា: ខ្មែរ'"
       aria-haspopup="listbox"
       :aria-expanded="open"

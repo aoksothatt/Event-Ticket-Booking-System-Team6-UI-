@@ -38,12 +38,12 @@ function validate() {
   errors.email = "";
   errors.password = "";
   if (!form.email.trim()) {
-    errors.email = t('emailRequired');
+    errors.email = t("emailRequired");
   } else if (!EMAIL_RE.test(form.email.trim())) {
-    errors.email = t('validEmail');
+    errors.email = t("validEmail");
   }
   if (!form.password) {
-    errors.password = t('passwordRequired');
+    errors.password = t("passwordRequired");
   }
   return !errors.email && !errors.password;
 }
@@ -58,17 +58,19 @@ async function handleSubmit() {
   loading.value = true;
   try {
     await auth.login({ email: form.email.trim(), password: form.password });
-    toast(t('welcomeBack'), "success");
+    toast(t("welcomeBack"), "success");
 
     // `?redirect=` wins (set by the route guard / buy-ticket gate); otherwise
     // use the stored intent, then fall back to the role-based home page.
     const destination = computeDestination({
-      queryRedirect: typeof route.query.redirect === "string" ? route.query.redirect : null,
+      queryRedirect:
+        typeof route.query.redirect === "string" ? route.query.redirect : null,
       fallback: auth.isAdmin ? "/admin/overview" : "/home",
     });
     router.replace(destination);
   } catch (error) {
-    serverError.value = error.response?.data?.message || error.message || t('signInFailed');
+    serverError.value =
+      error.response?.data?.message || error.message || t("signInFailed");
   } finally {
     loading.value = false;
   }
@@ -88,19 +90,23 @@ async function handleSubmit() {
       >
         <BrandLogo class="mb-10" />
 
-        <div class="flex items-center gap-3 text-[13px] text-slate-500 dark:text-[#BDBDBD]">
+        <div
+          class="flex items-center gap-3 text-[13px] text-slate-500 dark:text-[#BDBDBD]"
+        >
           <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
           <RouterLink
             to="/register"
             class="whitespace-nowrap font-semibold text-[#FFA500] transition hover:text-[#FFB52E]"
           >
-            {{ t('createAccount') }}
+            {{ t("createAccount") }}
           </RouterLink>
           <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
         </div>
 
-        <h1 class="mb-7 mt-5 text-[28px] font-bold tracking-tight text-slate-900 dark:text-white">
-          {{ t('signIn') }}
+        <h1
+          class="mb-7 mt-5 text-[28px] font-bold tracking-tight text-slate-900 dark:text-white"
+        >
+          {{ t("signIn") }}
         </h1>
 
         <form class="space-y-4" novalidate @submit.prevent="handleSubmit">
@@ -128,7 +134,9 @@ async function handleSubmit() {
               <button
                 type="button"
                 class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#8A8A8A] transition hover:text-slate-900 dark:hover:text-white"
-                :aria-label="showPassword ? t('hidePassword') : t('showPassword')"
+                :aria-label="
+                  showPassword ? t('hidePassword') : t('showPassword')
+                "
                 @click="showPassword = !showPassword"
               >
                 <EyeOff v-if="showPassword" class="h-[18px] w-[18px]" />
@@ -146,13 +154,13 @@ async function handleSubmit() {
                 type="checkbox"
                 class="h-4 w-4 cursor-pointer rounded accent-[#FFA500]"
               />
-              {{ t('rememberMe') }}
+              {{ t("rememberMe") }}
             </label>
             <RouterLink
               to="/forgot-password"
               class="text-slate-900 dark:text-[#E0E0E0] transition hover:text-slate-900 dark:hover:text-white"
             >
-              {{ t('forgotPassword') }}
+              {{ t("forgotPassword") }}
             </RouterLink>
           </div>
 
@@ -169,12 +177,16 @@ async function handleSubmit() {
             class="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-[#FFA500] text-sm font-bold text-black transition hover:bg-[#FFB52E] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Loader2 v-if="loading" class="h-5 w-5 animate-spin" />
-            <span>{{ loading ? t('signingIn') : t('login') }}</span>
+            <span>{{ loading ? t("signingIn") : t("login") }}</span>
           </button>
 
-          <div class="flex items-center gap-3 pt-1 text-sm text-slate-500 dark:text-[#8A8A8A]">
+          <div
+            class="flex items-center gap-3 pt-1 text-sm text-slate-500 dark:text-[#8A8A8A]"
+          >
             <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
-            <span class="uppercase text-[11px] tracking-widest">{{ t('or') }}</span>
+            <span class="uppercase text-[11px] tracking-widest">{{
+              t("or")
+            }}</span>
             <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
           </div>
 
@@ -203,10 +215,10 @@ async function handleSubmit() {
           <p
             class="mb-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#FFA500]"
           >
-            {{ t('brandPresents') }}
+            {{ t("brandPresents") }}
           </p>
           <p class="text-lg font-bold drop-shadow-lg">
-            {{ t('tagline') }}
+            {{ t("Live show - Event") }}
           </p>
         </div>
       </section>

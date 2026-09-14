@@ -141,6 +141,11 @@ export const adminApi = {
   async createPayment(data) {
     return post("/payments", data);
   },
+  // Confirm a pending/held payment as received (merchant verified funds in
+  // their Bakong account). Confirms the booking and issues the tickets.
+  async confirmPayment(id, data) {
+    return post(`/payments/${id}/confirm`, data);
+  },
 
   // 9. manage_reviews
   async getReviews() {

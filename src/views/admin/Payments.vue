@@ -15,6 +15,7 @@ import {
   X,
   Receipt,
   FileCheck,
+  Loader2,
 } from "lucide-vue-next";
 
 const { t } = useI18n();
@@ -109,7 +110,7 @@ const methods = computed(() => {
   const values = new Set(payments.value.map((p) => p.gateway).filter(Boolean));
   return ["All", ...Array.from(values)];
 });
-const statuses = ["All", "paid", "pending", "refunded", "failed", "expired"];
+const statuses = ["All", "paid", "pending", "held", "refunded", "failed", "expired"];
 
 // Keep the status filter safe after the request completes. The template uses
 // this map for its labels; without it Vue throws during the first render of
@@ -118,6 +119,7 @@ const statusDisplayMap = {
   All: "All",
   paid: "Paid",
   pending: "Pending",
+  held: "Held",
   refunded: "Refunded",
   failed: "Failed",
   expired: "Expired",
@@ -126,6 +128,7 @@ const statusDisplayMap = {
 const statusStyle = {
   paid: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
   pending: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30",
+  held: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/15 dark:text-orange-400 dark:border-orange-500/30",
   refunded: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30",
   failed: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30",
   expired: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600",
@@ -163,6 +166,41 @@ function viewPayment(payment) {
   selectedPayment.value = payment;
   isModalOpen.value = true;
 }
+
+// Manual confirmation — used when Bakong cannot auto-verify a payment
+// ("static QR not supported"). The merchant confirms the funds arrived in
+// their Bakong account, then this confirms the booking + issues the tickets.
+const confirmingId = ref(null);
+const actionMessage = ref("");
+
+async function confirmPayment(payment) {
+  if (
+    !confirm(
+      t("confirmPaymentFunds", { booking: payment.booking_number }),
+    )
+  )
+    return;
+
+  confirmingId.value = payment.id;
+  actionMessage.value = "";
+  try {
+    await adminApi.confirmPayment(payment.id, {
+      transaction_reference: payment.transaction_id || null,
+      note: t("manuallyConfirmed"),
+    });
+    actionMessage.value = t("paymentConfirmedAction");
+    await fetchPayments(true);
+  } catch (e) {
+    actionMessage.value =
+      e.response?.data?.message ||
+      e.message ||
+      t("confirmPaymentFailed");
+  } finally {
+    confirmingId.value = null;
+  }
+}
+
+const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
 </script>
 
 <template>
@@ -328,6 +366,13 @@ function viewPayment(payment) {
           </div>
         </div>
 
+        <p
+          v-if="actionMessage"
+          class="border-b border-emerald-200 bg-emerald-50 px-6 py-2.5 text-xs font-semibold text-emerald-700"
+        >
+          {{ actionMessage }}
+        </p>
+
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
             <thead class="bg-slate-50/70 border-b border-slate-200 dark:border-slate-700 dark:bg-slate-700/50">
@@ -396,14 +441,31 @@ function viewPayment(payment) {
                   {{ p.paid_at }}
                 </td>
                 <td class="px-6 py-4 text-right">
-                  <button
-                    type="button"
-                    @click="viewPayment(p)"
-                    class="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-500/10"
-                  >
-                    <Eye :size="13" />
-                    {{ t("viewSlip") }}
-                  </button>
+                  <div class="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      @click="viewPayment(p)"
+                      class="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-500/10"
+                    >
+                      <Eye :size="13" />
+                      {{ t("viewSlip") }}
+                    </button>
+                    <button
+                      v-if="canConfirm(p)"
+                      type="button"
+                      :disabled="confirmingId === p.id"
+                      @click="confirmPayment(p)"
+                      class="inline-flex items-center gap-1 rounded-lg border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:border-emerald-400 hover:bg-emerald-100 disabled:opacity-50"
+                    >
+                      <Loader2
+                        v-if="confirmingId === p.id"
+                        :size="13"
+                        class="animate-spin"
+                      />
+                      <CheckCircle2 v-else :size="13" />
+                      {{ t("confirmPayment") }}
+                    </button>
+                  </div>
                 </td>
               </tr>
               <tr v-if="filteredPayments.length === 0">
@@ -503,7 +565,22 @@ function viewPayment(payment) {
           </div>
         </div>
 
-        <div class="mt-6 flex justify-end">
+        <div class="mt-6 flex justify-end gap-3">
+          <button
+            v-if="canConfirm(selectedPayment)"
+            type="button"
+            :disabled="confirmingId === selectedPayment.id"
+            @click="confirmPayment(selectedPayment)"
+            class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-5 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-600 disabled:opacity-50"
+          >
+            <Loader2
+              v-if="confirmingId === selectedPayment.id"
+              :size="13"
+              class="animate-spin"
+            />
+            <CheckCircle2 v-else :size="13" />
+            {{ t("confirmPayment") }}
+          </button>
           <button
             type="button"
             @click="isModalOpen = false"
