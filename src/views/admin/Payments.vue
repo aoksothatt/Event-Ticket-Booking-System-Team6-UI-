@@ -41,7 +41,7 @@ async function fetchPayments(silent = false) {
       customer: p.booking?.user?.name || t("unknown"),
       email: p.booking?.user?.email || "",
       event: p.booking?.event?.title || "N/A",
-      gateway: p.payment_method || "Bakong (KHQR)",
+      gateway: formatGateway(p.payment_method),
       payment_method: p.payment_method,
       amount: parseFloat(p.amount) || 0,
       currency: p.currency,
@@ -70,6 +70,19 @@ const money = (n) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+
+function formatGateway(method) {
+  const map = {
+    bakong_khqr: "Bakong (KHQR)",
+    aba_pay: "ABA Pay",
+    wing: "Wing",
+    credit_card: "Credit Card",
+    debit_card: "Debit Card",
+    bank_transfer: "Bank Transfer",
+  };
+  if (!method) return "Bakong";
+  return map[method] || method;
+}
 
 const stats = computed(() => {
   const settled = payments.value
