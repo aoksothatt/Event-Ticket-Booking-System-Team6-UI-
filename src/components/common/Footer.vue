@@ -8,7 +8,7 @@ const { t } = useI18n();
 // the same visual weight as the other icons.
 
 // School logo used purely as a subtle background/watermark reference.
-import etecLogo from "../../assets/img/Etec.jpg";
+import etecLogo from "../../assets/img/etec.jpg";
 </script>
 
 <template>
