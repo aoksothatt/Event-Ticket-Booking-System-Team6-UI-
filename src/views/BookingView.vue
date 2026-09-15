@@ -43,7 +43,12 @@ const gatewayNotice = ref("");
 
 let countdownTimer = null;
 let verifyTimer = null;
+let recoveryTimer = null;
+let recoveryAttempts = 0;
+let successTimer = null;
 let paidRedirectTimer = null;
+
+const MAX_RECOVERY_ATTEMPTS = 2;
 
 const SESSION_KEY = "bakong_booking";
 
@@ -267,7 +272,7 @@ async function doCheckout() {
       status: normalizeStatus(data.payment?.status || "pending"),
       summary: lines.join(", "),
       pollIntervalMs: Math.max(
-        30000,
+        15000,
         Number(data.poll_interval_seconds ?? 30) * 1000,
       ),
     };
@@ -293,6 +298,7 @@ async function doCheckout() {
 
 function startPolling() {
   stopPolling();
+  recoveryAttempts = 0;
 
   // Local countdown + expiry detection.
   countdownTimer = setInterval(() => {
@@ -349,7 +355,10 @@ async function verifyPayment() {
       gatewayNotice.value =
         e.response?.data?.message ||
         "We can't reach the payment gateway right now. If you already paid, do NOT pay again — tap “Check again” in a moment.";
-      stopPolling();
+      // Only pause gateway checks — the QR countdown must keep running so
+      // the payment visibly expires instead of freezing in place.
+      stopVerifyTimer();
+      scheduleRecoveryCheck();
       if (firstTime) {
         toast(
           "Payment gateway is busy. Auto-checking paused to protect the daily limit.",
@@ -398,16 +407,75 @@ async function checkNow() {
 }
 
 function stopPolling() {
+  stopVerifyTimer();
+  stopRecoveryTimer();
   if (countdownTimer) clearInterval(countdownTimer);
-  if (verifyTimer) clearInterval(verifyTimer);
   countdownTimer = null;
+}
+
+/**
+ * Stop only the gateway verification timer. The countdown keeps ticking so
+ * the QR still expires correctly when the gateway is temporarily down.
+ */
+function stopVerifyTimer() {
+  if (verifyTimer) clearInterval(verifyTimer);
   verifyTimer = null;
 }
 
 /**
- * After the backend confirms payment, let the modal show its paid state
- * with navigation buttons. The modal emits viewEvent/viewTickets events
- * which we handle to navigate. We only close the modal when user clicks Done.
+ * Auto-retry the gateway a limited number of times when it was temporarily
+ * down (e.g. a connection reset), resuming normal polling on recovery. Kept
+ * at a slow cadence so the Bakong daily check quota is not hammered; a hard
+ * daily-limit failure simply declines again and, after the cap, stays manual
+ * via the "Check again" button.
+ */
+function scheduleRecoveryCheck() {
+  if (recoveryAttempts >= MAX_RECOVERY_ATTEMPTS || recoveryTimer) return;
+  recoveryAttempts++;
+  recoveryTimer = setTimeout(async () => {
+    recoveryTimer = null;
+    if (!showModal.value || order.value?.status !== "pending") return;
+    await verifyPayment();
+    if (showModal.value && order.value?.status === "pending" && !gatewayNotice.value) {
+      startPolling();
+    }
+  }, 90000);
+}
+
+function stopRecoveryTimer() {
+  if (recoveryTimer) {
+    clearTimeout(recoveryTimer);
+    recoveryTimer = null;
+  }
+}
+
+function stopSuccessTimer() {
+  if (successTimer) {
+    clearTimeout(successTimer);
+    successTimer = null;
+  }
+}
+
+/**
+ * After the backend confirms payment, keep the "Payment Successful" state
+ * visible for a short moment, then leave the modal and send the user to My
+ * Tickets — that page re-fetches bookings/tickets from the backend so the
+ * freshly purchased ticket appears without a duplicate booking/payment.
+ */
+function scheduleSuccessClose() {
+  stopSuccessTimer();
+  successTimer = setTimeout(() => {
+    successTimer = null;
+    viewTickets();
+  }, 800);
+}
+
+/**
+ * Called the moment Bakong confirms the payment. Stops all polling/countdown
+ * and flips the order to "paid". The modal immediately swaps the QR for the
+ * "Payment Successful" screen. The booking stays in sessionStorage so a later
+ * refresh + re-click returns the same PAID payment (no duplicate payment,
+ * tickets or QR).
  */
 function handlePaid() {
   stopPolling();

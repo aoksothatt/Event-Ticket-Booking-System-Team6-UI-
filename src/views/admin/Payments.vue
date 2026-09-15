@@ -41,7 +41,7 @@ async function fetchPayments(silent = false) {
       customer: p.booking?.user?.name || t("unknown"),
       email: p.booking?.user?.email || "",
       event: p.booking?.event?.title || "N/A",
-      gateway: p.payment_method || "Bakong (KHQR)",
+      gateway: formatGateway(p.payment_method),
       payment_method: p.payment_method,
       amount: parseFloat(p.amount) || 0,
       currency: p.currency,
@@ -70,6 +70,19 @@ const money = (n) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+
+function formatGateway(method) {
+  const map = {
+    bakong_khqr: "Bakong ",
+    aba_pay: "ABA Pay",
+    wing: "Wing",
+    credit_card: "Credit Card",
+    debit_card: "Debit Card",
+    bank_transfer: "Bank Transfer",
+  };
+  if (!method) return "Bakong";
+  return map[method] || method;
+}
 
 const stats = computed(() => {
   const settled = payments.value
@@ -112,13 +125,26 @@ const methods = computed(() => {
 });
 const statuses = ["All", "paid", "pending", "held", "refunded", "failed", "expired"];
 
+// Keep the status filter safe after the request completes. The template uses
+// this map for its labels; without it Vue throws during the first render of
+// the loaded payments table.
+const statusDisplayMap = {
+  All: "All",
+  paid: "Paid",
+  pending: "Pending",
+  held: "Held",
+  refunded: "Refunded",
+  failed: "Failed",
+  expired: "Expired",
+};
+
 const statusStyle = {
-  paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  pending: "bg-amber-50 text-amber-700 border-amber-200",
-  held: "bg-orange-50 text-orange-700 border-orange-200",
-  refunded: "bg-purple-50 text-purple-700 border-purple-200",
-  failed: "bg-rose-50 text-rose-700 border-rose-200",
-  expired: "bg-slate-100 text-slate-600 border-slate-200",
+  paid: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
+  pending: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30",
+  held: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/15 dark:text-orange-400 dark:border-orange-500/30",
+  refunded: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30",
+  failed: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30",
+  expired: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600",
 };
 
 const filteredPayments = computed(() => {
@@ -329,42 +355,42 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
       </div>
 
       <!-- Payments Table -->
-<div
-          class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+      <div
+        class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800"
+      >
+        <div
+          class="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-700"
         >
-          <div
-            class="flex items-center justify-between border-b border-slate-200 px-6 py-4"
-          >
-            <h2 class="text-base font-bold text-slate-900">
-              Payment Records ({{ filteredPayments.length }})
-            </h2>
-            <div class="flex items-center gap-3">
-              <span class="text-[11px] text-slate-400"
-                >Auto-refreshes every 15s</span
-              >
-              <button
-                type="button"
-                @click="fetchPayments(true)"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
-              >
-                <RefreshCw :size="13" />
-                Refresh
-              </button>
-            </div>
+          <h2 class="text-base font-bold text-slate-900 dark:text-white">
+            Payment Records ({{ filteredPayments.length }})
+          </h2>
+          <div class="flex items-center gap-3">
+            <span class="text-[11px] text-slate-400"
+              >Auto-refreshes every 15s</span
+            >
+            <button
+              type="button"
+              @click="fetchPayments(true)"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-amber-500/10 dark:hover:text-amber-400"
+            >
+              <RefreshCw :size="13" />
+              Refresh
+            </button>
           </div>
+        </div>
 
-          <p
-            v-if="actionMessage"
-            class="border-b border-emerald-200 bg-emerald-50 px-6 py-2.5 text-xs font-semibold text-emerald-700"
-          >
-            {{ actionMessage }}
-          </p>
+        <p
+          v-if="actionMessage"
+          class="border-b border-emerald-200 bg-emerald-50 px-6 py-2.5 text-xs font-semibold text-emerald-700"
+        >
+          {{ actionMessage }}
+        </p>
 
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
-            <thead class="bg-slate-50/70 border-b border-slate-200">
+            <thead class="bg-slate-50/70 border-b border-slate-200 dark:border-slate-700 dark:bg-slate-700/50">
               <tr
-                class="text-[11px] font-bold text-slate-500 uppercase tracking-wider"
+                class="text-[11px] font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400"
               >
                 <th class="px-6 py-3">Transaction ID</th>
                 <th class="px-6 py-3">Booking #</th>
@@ -393,14 +419,14 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
                   {{ p.booking_number }}
                 </td>
                 <td class="px-6 py-4">
-                  <div class="text-xs font-semibold text-slate-800">
+                  <div class="text-xs font-semibold text-slate-800 dark:text-slate-200">
                     {{ p.customer }}
                   </div>
                   <div class="text-[11px] text-slate-400">{{ p.email }}</div>
                 </td>
-                <td class="px-6 py-4 text-xs font-medium text-slate-700">
+                <td class="px-6 py-4 text-xs font-medium text-slate-700 dark:text-slate-300">
                   <span
-                    class="rounded-md bg-slate-100 border border-slate-200 px-2.5 py-1 text-xs text-slate-800"
+                    class="rounded-md bg-slate-100 border border-slate-200 px-2.5 py-1 text-xs text-slate-800 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
                   >
                     {{ p.gateway }}
                   </span>
@@ -458,7 +484,7 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
               <tr v-if="filteredPayments.length === 0">
                 <td
                   colspan="8"
-                  class="px-6 py-8 text-center text-sm text-slate-400"
+                  class="px-6 py-8 text-center text-sm text-slate-400 dark:text-slate-500"
                 >
                   No payment transactions found.
                 </td>
@@ -517,8 +543,8 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
             >
           </div>
           <div class="flex justify-between py-1 border-b border-slate-100">
-            <span class="text-slate-500">Payment Gateway</span>
-            <span class="text-slate-800 font-medium">{{
+            <span class="text-slate-500 dark:text-slate-400">Payment Gateway</span>
+            <span class="text-slate-800 font-medium dark:text-slate-100">{{
               selectedPayment.gateway
             }}</span>
           </div>

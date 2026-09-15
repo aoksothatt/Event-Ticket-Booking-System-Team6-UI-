@@ -1,10 +1,10 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { Save, Lock, Loader2, Check, LayoutDashboard } from "lucide-vue-next";
+import { Save, Lock, Loader2, Check, LayoutDashboard, Camera } from "lucide-vue-next";
 import { getProfile } from "../api/userApi.js";
-import { patch, put } from "../api/http.js";
+import { patch, put, postFormData, STORAGE_BASE } from "../api/http.js";
 import { isAdmin } from "../api/auth.js";
 
 const { t } = useI18n();
@@ -18,13 +18,39 @@ const passwordForm = ref({ current_password: "", new_password: "", new_password_
 
 const savingProfile = ref(false);
 const profileMsg = ref("");
+
 const profileError = ref("");
 
 const savingPassword = ref(false);
 const passwordMsg = ref("");
 const passwordError = ref("");
 
+const avatarInput = ref(null);
+const avatarFile = ref(null);
+const avatarPreview = ref("");
+
 const user = () => profile.value?.user || null;
+
+const initials = computed(() => {
+  const name = String(form.value.name || "U");
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] || "") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+});
+
+const avatarUrl = computed(() => {
+  if (avatarPreview.value) return avatarPreview.value;
+  const avatar = user()?.avatar;
+  if (!avatar) return null;
+  return avatar.startsWith("http") || avatar.startsWith("/") ? avatar : `${STORAGE_BASE}/${avatar}`;
+});
+
+function onAvatarSelect(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  avatarFile.value = file;
+  avatarPreview.value = URL.createObjectURL(file);
+  profileError.value = "";
+}
 
 async function load() {
   loading.value = true;
@@ -38,6 +64,8 @@ async function load() {
         phone: u.phone || profile.value?.profile?.phone || "",
       };
     }
+    avatarFile.value = null;
+    avatarPreview.value = "";
   } catch {
     /* handled by view-level fallback to stored user */
   } finally {
@@ -50,11 +78,23 @@ async function updateProfile() {
   profileMsg.value = "";
   profileError.value = "";
   try {
+    if (avatarFile.value) {
+      const fd = new FormData();
+      fd.append("avatar", avatarFile.value);
+      const upload = await postFormData("/profile/avatar", fd);
+      if (profile.value) {
+        profile.value.user.avatar = upload?.data?.avatar_path;
+      }
+      avatarFile.value = null;
+    }
     const response = await patch("/profile", {
       name: form.value.name,
       email: form.value.email,
       phone: form.value.phone,
     });
+    if (profile.value && response?.data?.user) {
+      profile.value.user = response.data.user;
+    }
     profileMsg.value = response?.message || t('profileUpdated');
   } catch (e) {
     profileError.value = e.response?.data?.message || e.message || t('couldNotUpdateProfile');
@@ -124,6 +164,33 @@ onMounted(load);
           <p class="mb-5 text-xs text-slate-500 dark:text-[#9CA3AF]">{{ t('updateAccountDesc') }}</p>
 
           <div class="space-y-4">
+            <div class="flex flex-col items-center gap-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] p-5 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                class="group relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FFA500] text-2xl font-extrabold text-black transition hover:opacity-90"
+                @click="avatarInput?.click()"
+              >
+                <img v-if="avatarUrl" :src="avatarUrl" :alt="t('avatar')" class="h-full w-full object-cover" />
+                <template v-else>{{ initials }}</template>
+                <span class="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition group-hover:opacity-100">
+                  <Camera :size="20" />
+                </span>
+              </button>
+              <input ref="avatarInput" type="file" accept="image/*" class="hidden" @change="onAvatarSelect" />
+              <div class="flex flex-1 flex-col items-center gap-1 text-center sm:items-start sm:text-left">
+                <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ t('avatar') }}</p>
+                <p class="text-xs text-slate-500 dark:text-[#9CA3AF]">JPEG, PNG or WebP — max 2MB</p>
+                <button
+                  type="button"
+                  class="mt-1 inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/15 bg-white dark:bg-white/5 px-4 py-1.5 text-xs font-semibold text-slate-900 dark:text-white transition hover:bg-slate-200 dark:hover:bg-white/10"
+                  @click="avatarInput?.click()"
+                >
+                  <Camera :size="13" />
+                  {{ avatarFile ? "Choose another photo" : "Choose photo" }}
+                </button>
+              </div>
+            </div>
+
             <label class="block">
               <span class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-[#9CA3AF]">{{ t('name') }}</span>
               <input

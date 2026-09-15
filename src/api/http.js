@@ -28,6 +28,10 @@ export * as mockData from "./mockData.js";
  */
 const http = axios.create({
   baseURL: API_BASE,
+  // A disconnected Laravel server otherwise leaves views that await an API
+  // request (such as Payments Management) on their loading spinner forever.
+  // Callers already display normalized request errors, so fail predictably.
+  timeout: 15000,
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
