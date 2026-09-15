@@ -2,18 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-<<<<<<< HEAD
-import {
-  Ticket,
-  QrCode,
-  Calendar,
-  MapPin,
-  TicketCheck,
-  History,
-} from "lucide-vue-next";
-=======
 import { Ticket, Calendar, MapPin, TicketCheck, History } from "lucide-vue-next";
->>>>>>> 60812b5620fe980790f5f0b64e7a07d6694374fb
 import { getMyTicketsData, getMyTicketHistory } from "../api/bookingApi.js";
 import { coverImage, formatDate, formatTime } from "../utils/event.js";
 import TicketQR from "../components/ticket/TicketQR.vue";
@@ -127,20 +116,12 @@ onMounted(load);
             :key="tab.key"
             type="button"
             class="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition"
-<<<<<<< HEAD
             :class="
               activeTab === tab.key
                 ? 'bg-[#FFA500] text-black'
                 : 'text-slate-500 dark:text-[#9CA3AF] hover:text-slate-900 dark:hover:text-white'
             "
-            @click="
-              activeTab = tab.key;
-              selected = null;
-            "
-=======
-            :class="activeTab === tab.key ? 'bg-[#FFA500] text-black' : 'text-slate-500 dark:text-[#9CA3AF] hover:text-slate-900 dark:hover:text-white'"
             @click="activeTab = tab.key"
->>>>>>> 60812b5620fe980790f5f0b64e7a07d6694374fb
           >
             <component :is="tab.icon" :size="13" />
             {{ tab.label }}
@@ -292,69 +273,7 @@ onMounted(load);
                     </span>
                   </div>
 
-<<<<<<< HEAD
-                  <div
-                    class="mt-3 flex items-center justify-between gap-2 border-t border-slate-200 dark:border-white/5 pt-3"
-                  >
-                    <div class="min-w-0">
-                      <p
-                        class="text-[10px] uppercase tracking-wider text-slate-500 dark:text-[#9CA3AF]"
-                      >
-                        {{ t("ticketCode") }}
-                      </p>
-                      <p
-                        class="truncate font-mono text-sm font-bold text-slate-900 dark:text-white"
-                      >
-                        {{ ticket.ticket_code }}
-                      </p>
-                    </div>
-                    <!-- <button
-                      v-if="statusLabel(ticket.status) === 'Active' || statusLabel(ticket.status) === 'Done'"
-                      type="button"
-                      class="flex shrink-0 items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-white/5 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-white/80 transition hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
-                      @click="selected = selected?.id === ticket.id ? null : ticket"
-                    >
-                      <QrCode :size="14" />
-                      {{ selected?.id === ticket.id ? t('hideQR') : t('showQR') }}
-                    </button> -->
-                  </div>
-
-                  <transition
-                    enter-active-class="transition duration-150 ease-out"
-                    enter-from-class="opacity-0 -translate-y-1"
-                    enter-to-class="opacity-100 translate-y-0"
-                    leave-active-class="transition duration-100 ease-in"
-                    leave-from-class="opacity-100"
-                    leave-to-class="opacity-0"
-                  >
-                    <div
-                      v-if="selected?.id === ticket.id"
-                      class="mt-3 flex items-center gap-3 rounded-xl bg-slate-200 dark:bg-[#1D2229] p-3"
-                    >
-                      <div
-                        class="shrink-0 overflow-hidden rounded-lg bg-white p-1"
-                      >
-                        <img
-                          :src="qrImageUrl(ticket)"
-                          :alt="t('ticketQRCode')"
-                          class="h-24 w-24 object-contain"
-                        />
-                      </div>
-                      <div
-                        class="min-w-0 text-xs text-slate-500 dark:text-[#9CA3AF]"
-                      >
-                        <p class="font-semibold text-slate-900 dark:text-white">
-                          {{ t("scanQR") }}
-                        </p>
-                        <p class="mt-1 break-all font-mono text-[10px]">
-                          {{ ticket.ticket_code }}
-                        </p>
-                        <p class="mt-1">{{ t("selfCheckinDesc") }}</p>
-                      </div>
-                    </div>
-                  </transition>
-=======
-                  <p class="mt-2 text-[11px] text-slate-500 dark:text-[#9CA3AF]">
+<p class="mt-2 text-[11px] text-slate-500 dark:text-[#9CA3AF]">
                     {{ t('bookingLabel') }} {{ ticket.booking?.booking_number || `#${ticket.booking_id}` }}
                     <span v-if="ticket.booking?.payments?.[0]?.transaction_reference" class="font-mono">
                       · {{ ticket.booking.payments[0].transaction_reference }}
@@ -372,7 +291,6 @@ onMounted(load);
                       <p class="mt-1">{{ t('selfCheckinDesc') }}</p>
                     </div>
                   </div>
->>>>>>> 60812b5620fe980790f5f0b64e7a07d6694374fb
                 </div>
               </article>
             </div>
