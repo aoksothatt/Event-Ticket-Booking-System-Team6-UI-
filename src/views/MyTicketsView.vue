@@ -2,7 +2,14 @@
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { Ticket, QrCode, Calendar, MapPin, TicketCheck, History } from "lucide-vue-next";
+import {
+  Ticket,
+  QrCode,
+  Calendar,
+  MapPin,
+  TicketCheck,
+  History,
+} from "lucide-vue-next";
 import { getMyTicketsData, getMyTicketHistory } from "../api/bookingApi.js";
 import { coverImage, formatDate, formatTime } from "../utils/event.js";
 
@@ -16,8 +23,8 @@ const selected = ref(null);
 const activeTab = ref("current");
 
 const tabs = [
-  { key: "current", label: computed(() => t('current')), icon: Ticket },
-  { key: "history", label: computed(() => t('history')), icon: History },
+  { key: "current", label: computed(() => t("current")), icon: Ticket },
+  { key: "history", label: computed(() => t("history")), icon: History },
 ];
 
 const statusStyles = {
@@ -30,18 +37,21 @@ const statusStyles = {
 };
 
 function statusClass(status) {
-  return statusStyles[status?.toUpperCase()] || "bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white/70 border-slate-200 dark:border-white/10";
+  return (
+    statusStyles[status?.toUpperCase()] ||
+    "bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white/70 border-slate-200 dark:border-white/10"
+  );
 }
 
 function statusLabel(status) {
   const map = {
-    ACTIVE: t('active'),
-    USED: t('used'),
-    CANCELLED: t('cancelled'),
-    EXPIRED: t('expired'),
-    REFUNDED: t('refunded'),
+    ACTIVE: t("active"),
+    USED: t("used"),
+    CANCELLED: t("cancelled"),
+    EXPIRED: t("expired"),
+    REFUNDED: t("refunded"),
   };
-  return map[status?.toUpperCase()] || status || t('unknown');
+  return map[status?.toUpperCase()] || status || t("unknown");
 }
 
 // Public QR renderer. Encodes a link to this app's self check-in page with
@@ -69,11 +79,15 @@ async function load() {
   loading.value = true;
   error.value = "";
   try {
-    const [current, history] = await Promise.all([getMyTicketsData(), getMyTicketHistory()]);
+    const [current, history] = await Promise.all([
+      getMyTicketsData(),
+      getMyTicketHistory(),
+    ]);
     tickets.value = current;
     historyTickets.value = history;
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || t('couldNotLoadTickets');
+    error.value =
+      e.response?.data?.message || e.message || t("couldNotLoadTickets");
   } finally {
     loading.value = false;
   }
@@ -87,39 +101,68 @@ onMounted(load);
     <div class="mx-auto w-full max-w-6xl">
       <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">{{ t('myTickets') }}</h1>
-          <p class="mt-1 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('ticketOwnershipDesc') }}</p>
+          <h1
+            class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl"
+          >
+            {{ t("myTickets") }}
+          </h1>
+          <p class="mt-1 text-sm text-slate-500 dark:text-[#9CA3AF]">
+            {{ t("ticketOwnershipDesc") }}
+          </p>
         </div>
 
         <!-- Current / History tabs -->
-        <div class="flex items-center gap-1 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] p-1">
+        <div
+          class="flex items-center gap-1 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] p-1"
+        >
           <button
             v-for="tab in tabs"
             :key="tab.key"
             type="button"
             class="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition"
-            :class="activeTab === tab.key ? 'bg-[#FFA500] text-black' : 'text-slate-500 dark:text-[#9CA3AF] hover:text-slate-900 dark:hover:text-white'"
-            @click="activeTab = tab.key; selected = null"
+            :class="
+              activeTab === tab.key
+                ? 'bg-[#FFA500] text-black'
+                : 'text-slate-500 dark:text-[#9CA3AF] hover:text-slate-900 dark:hover:text-white'
+            "
+            @click="
+              activeTab = tab.key;
+              selected = null;
+            "
           >
             <component :is="tab.icon" :size="13" />
             {{ tab.label }}
             <span
               v-if="tab.key === 'current'"
               class="rounded-full bg-black/15 px-1.5 text-[10px]"
-              :class="activeTab === 'current' ? 'text-black dark:text-white' : 'text-slate-500 dark:text-[#9CA3AF]'"
-            >{{ tickets.length }}</span>
+              :class="
+                activeTab === 'current'
+                  ? 'text-black dark:text-white'
+                  : 'text-slate-500 dark:text-[#9CA3AF]'
+              "
+              >{{ tickets.length }}</span
+            >
             <span
               v-else
               class="rounded-full bg-black/15 px-1.5 text-[10px]"
-              :class="activeTab === 'history' ? 'text-black dark:text-white' : 'text-slate-500 dark:text-[#9CA3AF]'"
-            >{{ historyTickets.length }}</span>
+              :class="
+                activeTab === 'history'
+                  ? 'text-black dark:text-white'
+                  : 'text-slate-500 dark:text-[#9CA3AF]'
+              "
+              >{{ historyTickets.length }}</span
+            >
           </button>
         </div>
       </div>
 
       <!-- Loading -->
       <div v-if="loading" class="grid gap-4 md:grid-cols-2">
-        <div v-for="n in 4" :key="n" class="h-52 animate-pulse rounded-2xl bg-white dark:bg-[#14171C]"></div>
+        <div
+          v-for="n in 4"
+          :key="n"
+          class="h-52 animate-pulse rounded-2xl bg-white dark:bg-[#14171C]"
+        ></div>
       </div>
 
       <!-- Error -->
@@ -137,28 +180,37 @@ onMounted(load);
           v-if="!tickets.length"
           class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#14171C]/50 px-6 py-16 text-center"
         >
-          <span class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-200 dark:bg-white/5 text-slate-500 dark:text-white/40">
+          <span
+            class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-200 dark:bg-white/5 text-slate-500 dark:text-white/40"
+          >
             <Ticket :size="26" />
           </span>
-          <h2 class="mt-4 text-lg font-bold text-slate-900 dark:text-white">{{ t('noTicketsYet') }}</h2>
+          <h2 class="mt-4 text-lg font-bold text-slate-900 dark:text-white">
+            {{ t("noTicketsYet") }}
+          </h2>
           <p class="mt-1 max-w-sm text-sm text-slate-500 dark:text-[#9CA3AF]">
-            {{ t('noTicketsDesc') }}
+            {{ t("noTicketsDesc") }}
           </p>
           <button
             type="button"
             class="mt-5 rounded-full bg-[#FFA500] px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-[#FFB52E]"
             @click="router.push('/events')"
           >
-            {{ t('browseEvents') }}
+            {{ t("browseEvents") }}
           </button>
         </div>
 
         <!-- Tickets grouped by booking -->
         <div v-else class="space-y-6">
           <section v-for="(group, gi) in groupedByBooking" :key="gi">
-            <div class="mb-3 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-[#9CA3AF]">
+            <div
+              class="mb-3 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-[#9CA3AF]"
+            >
               <TicketCheck :size="14" class="text-[#FFA500]" />
-              {{ t('bookingLabel') }} {{ group[0].booking?.booking_number || `#${group[0].booking_id}` }}
+              {{ t("bookingLabel") }}
+              {{
+                group[0].booking?.booking_number || `#${group[0].booking_id}`
+              }}
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
@@ -175,8 +227,14 @@ onMounted(load);
                     :alt="ticket.ticket_type?.event?.title"
                     class="h-full w-full object-cover"
                   />
-                  <div v-else class="flex h-full items-center justify-center bg-slate-200 dark:bg-[#1D2229]">
-                    <Ticket :size="20" class="text-slate-500 dark:text-white/20" />
+                  <div
+                    v-else
+                    class="flex h-full items-center justify-center bg-slate-200 dark:bg-[#1D2229]"
+                  >
+                    <Ticket
+                      :size="20"
+                      class="text-slate-500 dark:text-white/20"
+                    />
                   </div>
                 </div>
 
@@ -184,11 +242,13 @@ onMounted(load);
                 <div class="flex min-w-0 flex-1 flex-col p-4">
                   <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0">
-                      <p class="line-clamp-1 text-sm font-bold text-slate-900 dark:text-white">
-                        {{ ticket.ticket_type?.event?.title || t('event') }}
+                      <p
+                        class="line-clamp-1 text-sm font-bold text-slate-900 dark:text-white"
+                      >
+                        {{ ticket.ticket_type?.event?.title || t("event") }}
                       </p>
                       <p class="mt-0.5 text-xs font-semibold text-[#FFA500]">
-                        {{ ticket.ticket_type?.name || t('ticket') }}
+                        {{ ticket.ticket_type?.name || t("ticket") }}
                       </p>
                     </div>
                     <span
@@ -199,23 +259,43 @@ onMounted(load);
                     </span>
                   </div>
 
-                  <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-[#9CA3AF]">
-                    <span v-if="ticket.ticket_type?.event?.start_date" class="flex items-center gap-1">
+                  <div
+                    class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-[#9CA3AF]"
+                  >
+                    <span
+                      v-if="ticket.ticket_type?.event?.start_date"
+                      class="flex items-center gap-1"
+                    >
                       <Calendar :size="12" />
                       {{ formatDate(ticket.ticket_type.event.start_date) }}
                     </span>
-                    <span v-if="ticket.ticket_type?.event?.venue?.name" class="flex items-center gap-1">
+                    <span
+                      v-if="ticket.ticket_type?.event?.venue?.name"
+                      class="flex items-center gap-1"
+                    >
                       <MapPin :size="12" />
-                      <span class="truncate">{{ ticket.ticket_type.event.venue.name }}</span>
+                      <span class="truncate">{{
+                        ticket.ticket_type.event.venue.name
+                      }}</span>
                     </span>
                   </div>
 
-                  <div class="mt-3 flex items-center justify-between gap-2 border-t border-slate-200 dark:border-white/5 pt-3">
+                  <div
+                    class="mt-3 flex items-center justify-between gap-2 border-t border-slate-200 dark:border-white/5 pt-3"
+                  >
                     <div class="min-w-0">
-                      <p class="text-[10px] uppercase tracking-wider text-slate-500 dark:text-[#9CA3AF]">{{ t('ticketCode') }}</p>
-                      <p class="truncate font-mono text-sm font-bold text-slate-900 dark:text-white">{{ ticket.ticket_code }}</p>
+                      <p
+                        class="text-[10px] uppercase tracking-wider text-slate-500 dark:text-[#9CA3AF]"
+                      >
+                        {{ t("ticketCode") }}
+                      </p>
+                      <p
+                        class="truncate font-mono text-sm font-bold text-slate-900 dark:text-white"
+                      >
+                        {{ ticket.ticket_code }}
+                      </p>
                     </div>
-                    <button
+                    <!-- <button
                       v-if="statusLabel(ticket.status) === 'Active' || statusLabel(ticket.status) === 'Done'"
                       type="button"
                       class="flex shrink-0 items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-white/5 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-white/80 transition hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
@@ -223,7 +303,7 @@ onMounted(load);
                     >
                       <QrCode :size="14" />
                       {{ selected?.id === ticket.id ? t('hideQR') : t('showQR') }}
-                    </button>
+                    </button> -->
                   </div>
 
                   <transition
@@ -234,20 +314,29 @@ onMounted(load);
                     leave-from-class="opacity-100"
                     leave-to-class="opacity-0"
                   >
-                    <div v-if="selected?.id === ticket.id" class="mt-3 flex items-center gap-3 rounded-xl bg-slate-200 dark:bg-[#1D2229] p-3">
-                      <div class="shrink-0 overflow-hidden rounded-lg bg-white p-1">
+                    <div
+                      v-if="selected?.id === ticket.id"
+                      class="mt-3 flex items-center gap-3 rounded-xl bg-slate-200 dark:bg-[#1D2229] p-3"
+                    >
+                      <div
+                        class="shrink-0 overflow-hidden rounded-lg bg-white p-1"
+                      >
                         <img
                           :src="qrImageUrl(ticket)"
                           :alt="t('ticketQRCode')"
                           class="h-24 w-24 object-contain"
                         />
                       </div>
-                      <div class="min-w-0 text-xs text-slate-500 dark:text-[#9CA3AF]">
-                        <p class="font-semibold text-slate-900 dark:text-white">{{ t('scanQR') }}</p>
+                      <div
+                        class="min-w-0 text-xs text-slate-500 dark:text-[#9CA3AF]"
+                      >
+                        <p class="font-semibold text-slate-900 dark:text-white">
+                          {{ t("scanQR") }}
+                        </p>
                         <p class="mt-1 break-all font-mono text-[10px]">
                           {{ ticket.ticket_code }}
                         </p>
-                        <p class="mt-1">{{ t('selfCheckinDesc') }}</p>
+                        <p class="mt-1">{{ t("selfCheckinDesc") }}</p>
                       </div>
                     </div>
                   </transition>
@@ -264,12 +353,16 @@ onMounted(load);
           v-if="!historyTickets.length"
           class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#14171C]/50 px-6 py-16 text-center"
         >
-          <span class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-200 dark:bg-white/5 text-slate-500 dark:text-white/40">
+          <span
+            class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-200 dark:bg-white/5 text-slate-500 dark:text-white/40"
+          >
             <History :size="26" />
           </span>
-          <h2 class="mt-4 text-lg font-bold text-slate-900 dark:text-white">{{ t('noTicketHistory') }}</h2>
+          <h2 class="mt-4 text-lg font-bold text-slate-900 dark:text-white">
+            {{ t("noTicketHistory") }}
+          </h2>
           <p class="mt-1 max-w-sm text-sm text-slate-500 dark:text-[#9CA3AF]">
-            {{ t('noTicketHistoryDesc') }}
+            {{ t("noTicketHistoryDesc") }}
           </p>
         </div>
 
@@ -287,24 +380,38 @@ onMounted(load);
                 :alt="ticket.ticket_type?.event?.title"
                 class="h-full w-full object-cover"
               />
-              <div v-else class="flex h-full items-center justify-center bg-slate-200 dark:bg-[#1D2229]">
+              <div
+                v-else
+                class="flex h-full items-center justify-center bg-slate-200 dark:bg-[#1D2229]"
+              >
                 <Ticket :size="18" class="text-slate-500 dark:text-white/20" />
               </div>
             </div>
 
             <!-- Body -->
             <div class="min-w-0 flex-1">
-              <p class="line-clamp-1 text-sm font-bold text-slate-900 dark:text-white">
-                {{ ticket.ticket_type?.event?.title || ticket.event?.title || t('event') }}
+              <p
+                class="line-clamp-1 text-sm font-bold text-slate-900 dark:text-white"
+              >
+                {{
+                  ticket.ticket_type?.event?.title ||
+                  ticket.event?.title ||
+                  t("event")
+                }}
               </p>
               <p class="mt-0.5 text-xs font-semibold text-[#FFA500]">
-                {{ ticket.ticket_type?.name || t('ticket') }}
+                {{ ticket.ticket_type?.name || t("ticket") }}
               </p>
-              <p class="mt-1 truncate font-mono text-[10px] text-slate-500 dark:text-[#9CA3AF]">
+              <p
+                class="mt-1 truncate font-mono text-[10px] text-slate-500 dark:text-[#9CA3AF]"
+              >
                 {{ ticket.ticket_code }}
               </p>
-              <p v-if="ticket.expired_at" class="mt-1 text-xs text-slate-500 dark:text-[#9CA3AF]">
-                {{ t('ended') }} {{ formatDate(ticket.expired_at) }}
+              <p
+                v-if="ticket.expired_at"
+                class="mt-1 text-xs text-slate-500 dark:text-[#9CA3AF]"
+              >
+                {{ t("ended") }} {{ formatDate(ticket.expired_at) }}
               </p>
             </div>
 
