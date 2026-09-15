@@ -2,9 +2,10 @@
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { Ticket, QrCode, Calendar, MapPin, TicketCheck, History } from "lucide-vue-next";
+import { Ticket, Calendar, MapPin, TicketCheck, History } from "lucide-vue-next";
 import { getMyTicketsData, getMyTicketHistory } from "../api/bookingApi.js";
 import { coverImage, formatDate, formatTime } from "../utils/event.js";
+import TicketQR from "../components/ticket/TicketQR.vue";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -12,7 +13,6 @@ const tickets = ref([]);
 const historyTickets = ref([]);
 const loading = ref(true);
 const error = ref("");
-const selected = ref(null);
 const activeTab = ref("current");
 
 const tabs = [
@@ -44,15 +44,18 @@ function statusLabel(status) {
   return map[status?.toUpperCase()] || status || t('unknown');
 }
 
-// Public QR renderer. Encodes a link to this app's self check-in page with
-// the raw ticket token: /check-in?ticket=<token>. Scanning with a phone
-// camera opens the page; the logged-in owner is checked in automatically.
-// Staff can also paste the raw token into the admin verify box (POST
-// /api/tickets/verify accepts qr_token OR ticket_code).
-function qrImageUrl(ticket) {
+/**
+ * Value encoded into the ticket QR. Encodes a link to this app's self
+ * check-in page with the raw ticket token: /check-in?ticket=<token>.
+ * Scanning with a phone camera opens the page and the owner is checked in
+ * automatically. Staff scan the same QR in the admin "Verify / Check-In by
+ * QR Token" modal — the backend accepts the full URL or the plain token
+ * (POST /api/tickets/check-in uses the token, ticket_code, or qr_token).
+ */
+function qrValue(ticket) {
   const token = ticket?.qr_token || ticket?.ticket_code || "";
   const base = window.location.origin;
-  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${base}/check-in?ticket=${token}`)}`;
+  return `${base}/check-in?ticket=${encodeURIComponent(token)}`;
 }
 
 const groupedByBooking = computed(() => {
@@ -108,7 +111,7 @@ onMounted(load);
             type="button"
             class="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition"
             :class="activeTab === tab.key ? 'bg-[#FFA500] text-black' : 'text-slate-500 dark:text-[#9CA3AF] hover:text-slate-900 dark:hover:text-white'"
-            @click="activeTab = tab.key; selected = null"
+            @click="activeTab = tab.key"
           >
             <component :is="tab.icon" :size="13" />
             {{ tab.label }}
@@ -232,47 +235,17 @@ onMounted(load);
                     </span>
                   </p>
 
-                  <div class="mt-3 flex items-center justify-between gap-2 border-t border-slate-200 dark:border-white/5 pt-3">
-                    <div class="min-w-0">
-                      <p class="text-[10px] uppercase tracking-wider text-slate-500 dark:text-[#9CA3AF]">{{ t('ticketCode') }}</p>
-                      <p class="truncate font-mono text-sm font-bold text-slate-900 dark:text-white">{{ ticket.ticket_code }}</p>
+                  <div class="mt-3 flex items-center gap-3 rounded-xl border-t border-slate-200 dark:border-white/5 pt-3">
+                    <TicketQR :value="qrValue(ticket)" :size="120" />
+                    <div class="min-w-0 flex-1 text-xs text-slate-500 dark:text-[#9CA3AF]">
+                      <p class="text-[10px] uppercase tracking-wider">{{ t('ticketCode') }}</p>
+                      <p class="mt-0.5 truncate font-mono text-sm font-bold text-slate-900 dark:text-white">
+                        {{ ticket.ticket_code }}
+                      </p>
+                      <p class="mt-2 font-semibold text-slate-900 dark:text-white">{{ t('scanQR') }}</p>
+                      <p class="mt-1">{{ t('selfCheckinDesc') }}</p>
                     </div>
-                    <button
-                      v-if="statusLabel(ticket.status) === 'Active' || statusLabel(ticket.status) === 'Done'"
-                      type="button"
-                      class="flex shrink-0 items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-white/5 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-white/80 transition hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
-                      @click="selected = selected?.id === ticket.id ? null : ticket"
-                    >
-                      <QrCode :size="14" />
-                      {{ selected?.id === ticket.id ? t('hideQR') : t('showQR') }}
-                    </button>
                   </div>
-
-                  <transition
-                    enter-active-class="transition duration-150 ease-out"
-                    enter-from-class="opacity-0 -translate-y-1"
-                    enter-to-class="opacity-100 translate-y-0"
-                    leave-active-class="transition duration-100 ease-in"
-                    leave-from-class="opacity-100"
-                    leave-to-class="opacity-0"
-                  >
-                    <div v-if="selected?.id === ticket.id" class="mt-3 flex items-center gap-3 rounded-xl bg-slate-200 dark:bg-[#1D2229] p-3">
-                      <div class="shrink-0 overflow-hidden rounded-lg bg-white p-1">
-                        <img
-                          :src="qrImageUrl(ticket)"
-                          :alt="t('ticketQRCode')"
-                          class="h-24 w-24 object-contain"
-                        />
-                      </div>
-                      <div class="min-w-0 text-xs text-slate-500 dark:text-[#9CA3AF]">
-                        <p class="font-semibold text-slate-900 dark:text-white">{{ t('scanQR') }}</p>
-                        <p class="mt-1 break-all font-mono text-[10px]">
-                          {{ ticket.ticket_code }}
-                        </p>
-                        <p class="mt-1">{{ t('selfCheckinDesc') }}</p>
-                      </div>
-                    </div>
-                  </transition>
                 </div>
               </article>
             </div>

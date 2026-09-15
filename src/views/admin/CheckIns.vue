@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onBeforeUnmount, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { adminApi } from "@/api/admin.js";
 import QRCodeScanner from "@/components/ticket/QRCodeScanner.vue";
@@ -55,7 +55,15 @@ async function fetchCheckIns() {
   }
 }
 
-onMounted(fetchCheckIns);
+onMounted(() => {
+  fetchCheckIns();
+  window.addEventListener("keydown", onKeydown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", onKeydown);
+  if (isScanModalOpen.value) closeScanner();
+});
 
 const stats = computed(() => {
   const total = checkIns.value.length;
@@ -137,8 +145,19 @@ const scanStep = ref("idle"); // idle | loading | checked | already | invalid | 
 const scannedRaw = ref("");
 const lookup = ref(null);
 const scanError = ref("");
+const scannerRef = ref(null);
+const isClosingScanner = ref(false);
+
+/**
+ * Bumped every time the modal opens or closes. In-flight check-in responses
+ * capture the session they belong to and are ignored if it changed, so a slow
+ * API call can never repaint the result UI or keep the modal open after X.
+ */
+let scanSession = 0;
 
 function openScanModal() {
+  scanSession += 1;
+  isClosingScanner.value = false;
   resetScan();
   isScanModalOpen.value = true;
 }
@@ -152,10 +171,65 @@ function resetScan() {
 }
 
 /**
+ * Single close point for the scan modal (X button, backdrop and Esc).
+ * Stops the QR camera/scanner, releases every MediaStream track, invalidates
+ * any in-flight request and fully resets the modal state.
+ */
+async function closeScanner() {
+  if (!isScanModalOpen.value || isClosingScanner.value) return;
+  isClosingScanner.value = true;
+
+  // 1. Stop the scanner/camera through the child component.
+  try {
+    await scannerRef.value?.stopCamera?.();
+  } catch (e) {
+    console.warn("Scanner cleanup:", e);
+  }
+
+  // 2. Belt-and-suspenders: stop every leftover camera track on the page
+  //    (covers a scanner that was mid-start when the modal closed).
+  try {
+    document.querySelectorAll('[id^="qr-scanner-"] video').forEach((video) => {
+      const stream = video.srcObject;
+      if (stream && typeof stream.getTracks === "function") {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      video.srcObject = null;
+    });
+  } catch (e) {
+    console.warn("Media cleanup:", e);
+  }
+
+  // 3. Cancel/ignore any pending check-in request from this session.
+  scanSession += 1;
+
+  // 4. Reset scan/result/loading/error state.
+  scannedRaw.value = "";
+  lookup.value = null;
+  scanError.value = "";
+  scanStep.value = "idle";
+
+  // 5. Close the modal (v-if removes the backdrop too -> page interactable).
+  isScanModalOpen.value = false;
+
+  isClosingScanner.value = false;
+}
+
+function onKeydown(e) {
+  if (e.key === "Escape" && isScanModalOpen.value) {
+    closeScanner();
+  }
+}
+
+/**
  * Single-step check-in: scan QR → extract token → send to backend →
  * backend validates + checks in atomically → display result.
  */
 async function onScanValue(raw) {
+  // A scan callback may arrive after the modal was closed — ignore it and
+  // never start a new check-in on a closed/closed-again modal.
+  if (!isScanModalOpen.value || isClosingScanner.value) return;
+
   // The camera and manual-entry fallback can both emit while a request is
   // pending. Accept exactly one value, so a valid ticket cannot race into an
   // unnecessary second request and be reported as already checked in.
@@ -164,6 +238,7 @@ async function onScanValue(raw) {
   const value = String(raw || "").trim();
   if (!value) return;
 
+  const session = scanSession;
   scannedRaw.value = value;
   scanStep.value = "loading";
   scanError.value = "";
@@ -171,6 +246,11 @@ async function onScanValue(raw) {
 
   try {
     const res = await adminApi.checkInTicket(value);
+
+    // Modal closed (or a new scan session started) while the request was in
+    // flight: don't paint the result or reopen anything.
+    if (session !== scanSession || !isScanModalOpen.value || isClosingScanner.value) return;
+
     lookup.value = res;
 
     if (res.already_checked_in) {
@@ -180,6 +260,7 @@ async function onScanValue(raw) {
       await fetchCheckIns();
     }
   } catch (e) {
+    if (session !== scanSession || !isScanModalOpen.value || isClosingScanner.value) return;
     lookup.value = null;
     const body = e.response?.data;
     scanError.value = body?.message || e.message || "Check-in failed. Please try again.";
@@ -373,6 +454,7 @@ function showResultPanel() {
     <div
       v-if="isScanModalOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+      @click.self="closeScanner"
     >
       <div class="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl">
         <!-- Modal header -->
@@ -381,7 +463,12 @@ function showResultPanel() {
             <Scan :size="20" class="text-amber-600" />
             <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ t('verifyCheckin') }}</h3>
           </div>
-          <button @click="isScanModalOpen = false" class="rounded-lg p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300">
+          <button
+            type="button"
+            aria-label="Close"
+            @click.stop="closeScanner"
+            class="rounded-lg p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300"
+          >
             <X :size="18" />
           </button>
         </div>
@@ -390,6 +477,7 @@ function showResultPanel() {
           <!-- Scanner (auto-starts) or the loading state -->
           <QRCodeScanner
             v-if="scanStep === 'idle'"
+            ref="scannerRef"
             :key="scanKey"
             @scan="onScanValue"
           />
