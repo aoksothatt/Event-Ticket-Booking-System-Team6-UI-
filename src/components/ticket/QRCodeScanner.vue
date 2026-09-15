@@ -50,6 +50,7 @@ const viewfinderSize = computed(() => props.qrboxSize);
 let html5Qr = null;
 let componentEl = null;
 let scanInFlight = false;
+let disposed = false;
 
 const isSecureContext =
   typeof window !== "undefined" &&
@@ -80,21 +81,103 @@ function cameraSupported() {
   return true;
 }
 
+/**
+ * Stop every MediaStream video track rendered inside a container. Kept as a
+ * reference to the container so this also works after the node was removed
+ * from the DOM by a closing modal.
+ */
+function stopAllTracks(el) {
+  if (!el) return;
+  try {
+    el.querySelectorAll("video").forEach((video) => {
+      const stream = video.srcObject;
+      if (stream && typeof stream.getTracks === "function") {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      video.srcObject = null;
+    });
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+function attachVideoTracks() {
+  try {
+    const videos = document.querySelectorAll(`#${elementId} video`);
+    videos.forEach((video) => {
+      const stream = video.srcObject;
+      if (stream && typeof stream.getTracks === "function") {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      video.srcObject = null;
+    });
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+/**
+ * Clean, idempotent teardown. Safe to call repeatedly — html5-qrcode's
+ * `stop()` throws synchronously when the scanner is already stopped, so we
+ * wrap every call. Always clears the instance and releases the camera.
+ */
+async function stopCamera() {
+  disposed = true;
+  scanInFlight = true;
+
+  const qr = html5Qr;
+  html5Qr = null;
+
+  if (qr) {
+    try {
+      try {
+        await qr.stop();
+      } catch (e) {
+        /* already stopped / never started — nothing to stop */
+      }
+      try {
+        await qr.clear();
+      } catch (e) {
+        /* ignore */
+      }
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  // Belt-and-suspenders: release any leftover camera tracks.
+  stopAllTracks(componentEl);
+  attachVideoTracks();
+
+  if (status.value !== "error") status.value = "stopped";
+  emit("camera-state", "stopped");
+}
+
 async function startCamera() {
   componentEl = getElement();
   if (!componentEl || !cameraSupported()) return;
+  if (disposed) return;
 
+  // Never stack two live sessions: tear down a previous instance first.
+  if (html5Qr) {
+    await stopCamera();
+    html5Qr = null;
+  }
+
+  // This call is a brand-new session (Try again or reopen).
+  disposed = false;
   scanInFlight = false;
   cameraError.value = "";
   status.value = "starting";
   emit("camera-state", "starting");
 
   try {
-    // Request the camera permission here so the browser shows the prompt.
-    html5Qr = html5Qr || new Html5Qrcode(elementId, false);
+    // Brand new scanner instance per session.
+    html5Qr = new Html5Qrcode(elementId, false);
 
     // Enumerate cameras so we can prefer the rear/environment camera on mobile.
     cameras.value = (await Html5Qrcode.getCameras().catch(() => [])) || [];
+    if (disposed) return;
 
     const rearCamera =
       cameras.value.find((c) => /back|rear|environment/i.test(c.label || ""))?.id ||
@@ -119,6 +202,10 @@ async function startCamera() {
         onScanSuccess,
         onScanFailure
       );
+      if (disposed) {
+        await stopCamera();
+        return;
+      }
       activeCameraId.value = cameraId || "";
     } catch (startErr) {
       // Environment camera may not exist on desktops — fall back to default.
@@ -133,6 +220,10 @@ async function startCamera() {
           onScanSuccess,
           onScanFailure
         );
+        if (disposed) {
+          await stopCamera();
+          return;
+        }
         activeCameraId.value = "";
       } else {
         throw startErr;
@@ -149,10 +240,10 @@ async function startCamera() {
 }
 
 function onScanSuccess(decodedText) {
-  if (scanInFlight || status.value !== "scanning") return;
+  if (disposed || scanInFlight || status.value !== "scanning") return;
   scanInFlight = true;
   // Stop the camera before handing the value up so nothing keeps running.
-  stopScanner();
+  stopCamera();
   emit("scan", decodedText);
 }
 
@@ -161,7 +252,7 @@ function onScanFailure() {
 }
 
 async function switchCamera() {
-  if (!html5Qr || status.value !== "scanning" || cameras.value.length < 2) return;
+  if (!html5Qr || disposed || status.value !== "scanning" || cameras.value.length < 2) return;
 
   const idx = cameras.value.findIndex((c) => c.id === activeCameraId.value);
   const next = cameras.value[(idx + 1) % cameras.value.length];
@@ -171,17 +262,6 @@ async function switchCamera() {
   } catch {
     /* constraint switches can fail; keep current camera */
   }
-}
-
-function stopScanner() {
-  if (!html5Qr) return;
-  html5Qr
-    .stop()
-    .catch(() => {})
-    .finally(() => {
-      html5Qr?.clear().catch(() => {});
-    });
-  if (status.value !== "error") status.value = "stopped";
 }
 
 function submitManual() {
@@ -210,14 +290,18 @@ function describeCameraError(e) {
 
 onMounted(() => {
   // Short delay so the container is fully in the DOM before the library reads it.
-  requestAnimationFrame(() => startCamera());
+  requestAnimationFrame(() => {
+    if (disposed) return;
+    startCamera();
+  });
 });
 
 onBeforeUnmount(() => {
-  stopScanner();
+  disposed = true;
+  stopCamera();
 });
 
-defineExpose({ startCamera, stopCamera: stopScanner, switchCamera });
+defineExpose({ startCamera, stopCamera, switchCamera });
 </script>
 
 <template>

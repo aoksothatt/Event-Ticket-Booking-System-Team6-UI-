@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+<<<<<<< HEAD
 import {
   Ticket,
   QrCode,
@@ -10,8 +11,12 @@ import {
   TicketCheck,
   History,
 } from "lucide-vue-next";
+=======
+import { Ticket, Calendar, MapPin, TicketCheck, History } from "lucide-vue-next";
+>>>>>>> 60812b5620fe980790f5f0b64e7a07d6694374fb
 import { getMyTicketsData, getMyTicketHistory } from "../api/bookingApi.js";
 import { coverImage, formatDate, formatTime } from "../utils/event.js";
+import TicketQR from "../components/ticket/TicketQR.vue";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -19,7 +24,6 @@ const tickets = ref([]);
 const historyTickets = ref([]);
 const loading = ref(true);
 const error = ref("");
-const selected = ref(null);
 const activeTab = ref("current");
 
 const tabs = [
@@ -54,15 +58,18 @@ function statusLabel(status) {
   return map[status?.toUpperCase()] || status || t("unknown");
 }
 
-// Public QR renderer. Encodes a link to this app's self check-in page with
-// the raw ticket token: /check-in?ticket=<token>. Scanning with a phone
-// camera opens the page; the logged-in owner is checked in automatically.
-// Staff can also paste the raw token into the admin verify box (POST
-// /api/tickets/verify accepts qr_token OR ticket_code).
-function qrImageUrl(ticket) {
+/**
+ * Value encoded into the ticket QR. Encodes a link to this app's self
+ * check-in page with the raw ticket token: /check-in?ticket=<token>.
+ * Scanning with a phone camera opens the page and the owner is checked in
+ * automatically. Staff scan the same QR in the admin "Verify / Check-In by
+ * QR Token" modal — the backend accepts the full URL or the plain token
+ * (POST /api/tickets/check-in uses the token, ticket_code, or qr_token).
+ */
+function qrValue(ticket) {
   const token = ticket?.qr_token || ticket?.ticket_code || "";
   const base = window.location.origin;
-  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${base}/check-in?ticket=${token}`)}`;
+  return `${base}/check-in?ticket=${encodeURIComponent(token)}`;
 }
 
 const groupedByBooking = computed(() => {
@@ -120,6 +127,7 @@ onMounted(load);
             :key="tab.key"
             type="button"
             class="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition"
+<<<<<<< HEAD
             :class="
               activeTab === tab.key
                 ? 'bg-[#FFA500] text-black'
@@ -129,6 +137,10 @@ onMounted(load);
               activeTab = tab.key;
               selected = null;
             "
+=======
+            :class="activeTab === tab.key ? 'bg-[#FFA500] text-black' : 'text-slate-500 dark:text-[#9CA3AF] hover:text-slate-900 dark:hover:text-white'"
+            @click="activeTab = tab.key"
+>>>>>>> 60812b5620fe980790f5f0b64e7a07d6694374fb
           >
             <component :is="tab.icon" :size="13" />
             {{ tab.label }}
@@ -280,6 +292,7 @@ onMounted(load);
                     </span>
                   </div>
 
+<<<<<<< HEAD
                   <div
                     class="mt-3 flex items-center justify-between gap-2 border-t border-slate-200 dark:border-white/5 pt-3"
                   >
@@ -340,6 +353,26 @@ onMounted(load);
                       </div>
                     </div>
                   </transition>
+=======
+                  <p class="mt-2 text-[11px] text-slate-500 dark:text-[#9CA3AF]">
+                    {{ t('bookingLabel') }} {{ ticket.booking?.booking_number || `#${ticket.booking_id}` }}
+                    <span v-if="ticket.booking?.payments?.[0]?.transaction_reference" class="font-mono">
+                      · {{ ticket.booking.payments[0].transaction_reference }}
+                    </span>
+                  </p>
+
+                  <div class="mt-3 flex items-center gap-3 rounded-xl border-t border-slate-200 dark:border-white/5 pt-3">
+                    <TicketQR :value="qrValue(ticket)" :size="120" />
+                    <div class="min-w-0 flex-1 text-xs text-slate-500 dark:text-[#9CA3AF]">
+                      <p class="text-[10px] uppercase tracking-wider">{{ t('ticketCode') }}</p>
+                      <p class="mt-0.5 truncate font-mono text-sm font-bold text-slate-900 dark:text-white">
+                        {{ ticket.ticket_code }}
+                      </p>
+                      <p class="mt-2 font-semibold text-slate-900 dark:text-white">{{ t('scanQR') }}</p>
+                      <p class="mt-1">{{ t('selfCheckinDesc') }}</p>
+                    </div>
+                  </div>
+>>>>>>> 60812b5620fe980790f5f0b64e7a07d6694374fb
                 </div>
               </article>
             </div>
