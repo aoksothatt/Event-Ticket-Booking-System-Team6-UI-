@@ -2,7 +2,13 @@
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { Ticket, Calendar, MapPin, TicketCheck, History } from "lucide-vue-next";
+import {
+  Ticket,
+  Calendar,
+  MapPin,
+  TicketCheck,
+  History,
+} from "lucide-vue-next";
 import { getMyTicketsData, getMyTicketHistory } from "../api/bookingApi.js";
 import { coverImage, formatDate, formatTime } from "../utils/event.js";
 import TicketQR from "../components/ticket/TicketQR.vue";
@@ -273,22 +279,45 @@ onMounted(load);
                     </span>
                   </div>
 
-<p class="mt-2 text-[11px] text-slate-500 dark:text-[#9CA3AF]">
-                    {{ t('bookingLabel') }} {{ ticket.booking?.booking_number || `#${ticket.booking_id}` }}
-                    <span v-if="ticket.booking?.payments?.[0]?.transaction_reference" class="font-mono">
+                  <p
+                    class="mt-2 text-[11px] text-slate-500 dark:text-[#9CA3AF]"
+                  >
+                    {{ t("bookingLabel") }}
+                    {{
+                      ticket.booking?.booking_number || `#${ticket.booking_id}`
+                    }}
+                    <span
+                      v-if="
+                        ticket.booking?.payments?.[0]?.transaction_reference
+                      "
+                      class="font-mono"
+                    >
                       · {{ ticket.booking.payments[0].transaction_reference }}
                     </span>
                   </p>
 
-                  <div class="mt-3 flex items-center gap-3 rounded-xl border-t border-slate-200 dark:border-white/5 pt-3">
+                  <div
+                    class="mt-3 flex items-center gap-3 rounded-xl border-t border-slate-200 dark:border-white/5 pt-3"
+                  >
                     <TicketQR :value="qrValue(ticket)" :size="120" />
-                    <div class="min-w-0 flex-1 text-xs text-slate-500 dark:text-[#9CA3AF]">
-                      <p class="text-[10px] uppercase tracking-wider">{{ t('ticketCode') }}</p>
-                      <p class="mt-0.5 truncate font-mono text-sm font-bold text-slate-900 dark:text-white">
+                    
+                    <div
+                      class="min-w-0 flex-1 text-xs text-slate-500 dark:text-[#9CA3AF]"
+                    >
+                      <p class="text-[10px] uppercase tracking-wider">
+                        {{ t("ticketCode") }}
+                      </p>
+                      <p
+                        class="mt-0.5 truncate font-mono text-sm font-bold text-slate-900 dark:text-white"
+                      >
                         {{ ticket.ticket_code }}
                       </p>
-                      <p class="mt-2 font-semibold text-slate-900 dark:text-white">{{ t('scanQR') }}</p>
-                      <p class="mt-1">{{ t('selfCheckinDesc') }}</p>
+                      <p
+                        class="mt-2 font-semibold text-slate-900 dark:text-white"
+                      >
+                        {{ t("scanQR") }}
+                      </p>
+                      <p class="mt-1">{{ t("selfCheckinDesc") }}</p>
                     </div>
                   </div>
                 </div>
