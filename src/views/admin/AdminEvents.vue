@@ -652,7 +652,7 @@ async function toggleUpcoming(event) {
                 </span>
               </td>
 
-              <td class="px-6 py-4">
+              <td class="px-10 py-4">
                 <div
                   class="flex items-center gap-2"
                   :class="
