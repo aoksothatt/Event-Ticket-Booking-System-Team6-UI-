@@ -138,7 +138,7 @@ function viewDetails() {
           v-if="image"
           :src="image"
           :alt="event.title"
-          class="absolute inset-0 h-full w-full object-cover"
+          class="absolute inset-0 h-full w-full object-fit"
         />
         <div
           :key="`${event.id}-ph`"

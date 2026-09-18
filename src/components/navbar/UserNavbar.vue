@@ -90,8 +90,8 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
             :key="item.to"
             type="button"
             :class="isActive(item)
-              ? 'bg-[#FFA500]/15 text-white'
-              : 'text-slate-500 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'"
+              ? 'bg-amber-500 text-white'
+              : 'text-slate-500 dark:text-white/50 hover:text-white dark:hover:text-white hover:bg-amber-500  '"
             class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition"
             @click="goPath(item.to)"
           >
