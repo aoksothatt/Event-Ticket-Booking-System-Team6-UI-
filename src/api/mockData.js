@@ -76,14 +76,14 @@ const festival = categories[4];
 const comedy = categories[5];
 
 export const events = [
-  mk(1, music, "Phnom Penh Music Festival 2026", "phnom-penh-music-festival", "2026-12-20", "19:00:00", "Koh Pich Convention Center", 15, IMG.festival, { trending: true, featured: true }),
-  mk(2, music, "Sunset Live Concert", "sunset-live-concert", "2026-10-02", "18:30:00", "Olympic Stadium", 25, IMG.concert, { trending: true }),
-  mk(3, tech, "Tech Innovation Summit", "tech-innovation-summit", "2026-09-15", "09:00:00", "Sofitel Phnom Penh", 45, IMG.tech, { trending: true }),
+  mk(1, music, "Phnom Penh Music Festival 2026", "phnom-penh-music-festival", "2026-12-20", "19:00:00", "Koh Pich Convention Center", 15, IMG.festival, { trending: true, featured: true, is_upcoming: true }),
+  mk(2, music, "Sunset Live Concert", "sunset-live-concert", "2026-10-02", "18:30:00", "Olympic Stadium", 25, IMG.concert, { trending: true, is_upcoming: true }),
+  mk(3, tech, "Tech Innovation Summit", "tech-innovation-summit", "2026-09-15", "09:00:00", "Sofitel Phnom Penh", 45, IMG.tech, { trending: true, is_upcoming: true }),
   mk(4, sports, "Cambodia Marathon 2026", "cambodia-marathon", "2026-11-08", "06:00:00", "Riverfront Park", 20, IMG.sports, { trending: true, featured: true }),
-  mk(5, workshop, "UI/UX Design Workshop", "ui-ux-design-workshop", "2026-09-22", "13:00:00", "CoWorking Space BKK1", 30, IMG.workshop),
+  mk(5, workshop, "UI/UX Design Workshop", "ui-ux-design-workshop", "2026-09-22", "13:00:00", "CoWorking Space BKK1", 30, IMG.workshop, { is_upcoming: true }),
   mk(6, festival, "Angkor Night Festival", "angkor-night-festival", "2027-01-14", "17:00:00", "Siem Reap City", 12, IMG.festival, { featured: true }),
   mk(7, comedy, "Comedy Night Cambodia", "comedy-night-cambodia", "2026-10-18", "20:00:00", "Major Cineplex", 18, IMG.comedy),
-  mk(8, tech, "AI & Data Conference", "ai-data-conference", "2026-11-25", "09:30:00", "NagaWorld Convention", 60, IMG.tech, { trending: true }),
+  mk(8, tech, "AI & Data Conference", "ai-data-conference", "2026-11-25", "09:30:00", "NagaWorld Convention", 60, IMG.tech, { trending: true, is_upcoming: true }),
   mk(9, music, "Jazz by the Riverside", "jazz-by-the-riverside", "2026-12-05", "19:30:00", "Sisowath Quay", 22, IMG.concert),
   mk(10, sports, "Basketball All-Star Game", "basketball-all-star-game", "2026-10-30", "18:00:00", "Indoor Sports Arena", 15, IMG.sports, { featured: true }),
   mk(11, workshop, "Startup Founder Bootcamp", "startup-founder-bootcamp", "2026-10-25", "08:30:00", "Impact Hub Phnom Penh", 40, IMG.workshop),
@@ -94,7 +94,9 @@ export const events = [
 
 export const featuredEvents = events.filter((e) => e.featured);
 export const trendingEvents = events.filter((e) => e.trending);
-export const upcomingEvents = [...events].sort((a, b) => a.start_date.localeCompare(b.start_date));
+export const upcomingEvents = events
+  .filter((e) => e.is_upcoming)
+  .sort((a, b) => a.start_date.localeCompare(b.start_date));
 
 export function searchEvents(query) {
   const q = (query || "").toLowerCase().trim();

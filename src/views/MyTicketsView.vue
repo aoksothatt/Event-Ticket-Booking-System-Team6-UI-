@@ -28,16 +28,16 @@ const tabs = [
   { key: "history", label: computed(() => t("history")), icon: History },
 ];
 
-const statusStyles = {
-  DONE: "bg-blue-500/15 text-blue-300 border-blue-500/20",
-  ACTIVE: "bg-emerald-500/15 text-emerald-300 border-emerald-500/20",
-  USED: "bg-sky-500/15 text-sky-300 border-sky-500/20",
-  CANCELLED: "bg-red-500/15 text-red-300 border-red-500/20",
-  EXPIRED: "bg-amber-500/15 text-amber-300 border-amber-500/20",
-  REFUNDED: "bg-violet-500/15 text-violet-300 border-violet-500/20",
-};
+  const statusStyles = {
+    DONE: "bg-blue-500/15 text-blue-300 border-blue-500/20",
+    ACTIVE: "bg-emerald-500/15 text-emerald-300 border-emerald-500/20",
+    USED: "bg-sky-500/15 text-sky-300 border-sky-500/20",
+    CANCELLED: "bg-red-500/15 text-red-300 border-red-500/20",
+    EXPIRED: "bg-amber-500/15 text-amber-300 border-amber-500/20",
+    REFUNDED: "bg-violet-500/15 text-violet-300 border-violet-500/20",
+  };
 
-function statusClass(status) {
+  function statusClass(status) {
   return (
     statusStyles[status?.toUpperCase()] ||
     "bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white/70 border-slate-200 dark:border-white/10"
@@ -114,6 +114,7 @@ onMounted(load);
             {{ t("ticketOwnershipDesc") }}
           </p>
         </div>
+        
 
         <!-- Current / History tabs -->
         <div

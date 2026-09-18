@@ -94,19 +94,17 @@ export async function getTrendingEvents() {
 }
 
 /**
- * Upcoming events, sorted by closest start_date.
+ * Upcoming events for the homepage banner.
+ * Admin-driven via `is_upcoming` — only published events that the admin
+ * manually flagged come back from `/events/upcoming`.
  */
 export async function getUpcomingEvents() {
   try {
-    const { events } = await getEvents({ per_page: 10 });
-    const now = new Date();
-    return events
-      .filter((e) => {
-        if (e.status === "cancelled" || e.status === "draft") return false;
-        if (!e.start_date) return true;
-        return new Date(`${e.start_date}T23:59:59`) >= now;
-      })
-      .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+    const response = await get("/events/upcoming");
+    const payload = response?.data;
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.data)) return payload.data;
+    return [];
   } catch (error) {
     if (USE_MOCK_FALLBACK && error.isNetwork) return mockData.upcomingEvents;
     throw error;

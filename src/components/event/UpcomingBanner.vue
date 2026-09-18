@@ -64,7 +64,6 @@ function stop() {
   }
 }
 
-// Reset position when the events array changes.
 watch(() => props.events, () => {
   current.value = 0;
   start();
@@ -84,12 +83,12 @@ function viewDetails() {
 
 <template>
   <section
-    class="relative min-h-[78vh] w-full overflow-hidden sm:min-h-[86vh]"
+    class="relative min-h-[60vh] w-full overflow-hidden sm:min-h-[70vh]"
     @mouseenter="paused = true"
     @mouseleave="paused = false"
   >
     <!-- Loading state -->
-    <div v-if="loading" class="relative h-[78vh] w-full animate-pulse bg-white dark:bg-[#14171C] sm:h-[86vh]">
+    <div v-if="loading" class="relative h-[60vh] w-full animate-pulse bg-white dark:bg-[#14171C] sm:h-[70vh]">
       <div class="flex h-full flex-col justify-end p-6 sm:p-12 lg:p-16">
         <div class="h-4 w-32 rounded bg-slate-200 dark:bg-[#1D2229]"></div>
         <div class="mt-4 h-10 w-full max-w-xl rounded bg-slate-200 dark:bg-[#1D2229]"></div>
@@ -104,14 +103,14 @@ function viewDetails() {
     <!-- Error state -->
     <div
       v-else-if="error"
-      class="relative flex h-[80vh] w-full items-center justify-center bg-gradient-to-b from-slate-100 to-slate-200 dark:from-[#14171C] dark:to-[#0B0D10] p-6 text-center"
+      class="relative flex h-[60vh] w-full items-center justify-center bg-gradient-to-b from-slate-100 to-slate-200 dark:from-[#14171C] dark:to-[#0B0D10] p-6 text-center"
     >
       <div>
-        <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ t('unableToLoadTrending') }}</h2>
-        <p class="mt-2 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('trendingLoadError') }}</p>
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ t('unableToLoadUpcoming') }}</h2>
+        <p class="mt-2 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('upcomingLoadError') }}</p>
         <button
           type="button"
-          class="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-contrast shadow-lg shadow-primary/25 transition hover:bg-primary-hover active:scale-[0.98]"
+          class="mt-5 inline-flex items-center gap-2 rounded-full bg-[#FFA500] px-6 py-3 text-sm font-bold text-black shadow-lg shadow-[#FFA500]/25 transition hover:bg-[#FFB52E] active:scale-[0.98]"
           @click="emit('retry')"
         >
           {{ t('retry') }}
@@ -122,10 +121,10 @@ function viewDetails() {
     <!-- Empty state -->
     <div
       v-else-if="!event"
-      class="relative flex h-[80vh] w-full items-center justify-center bg-gradient-to-b from-slate-100 to-slate-200 dark:from-[#14171C] dark:to-[#0B0D10] p-6 text-center"
+      class="relative flex h-[60vh] w-full items-center justify-center bg-gradient-to-b from-slate-100 to-slate-200 dark:from-[#14171C] dark:to-[#0B0D10] p-6 text-center"
     >
       <div>
-        <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ t('noTrendingEvents') }}</h2>
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ t('noUpcomingEvents') }}</h2>
         <p class="mt-2 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('checkBackSoon') }}</p>
       </div>
     </div>
@@ -138,7 +137,7 @@ function viewDetails() {
           v-if="image"
           :src="image"
           :alt="event.title"
-          class="absolute inset-0 h-full w-full object-fit"
+          class="absolute inset-0 h-full w-full object-cover"
         />
         <div
           :key="`${event.id}-ph`"
@@ -162,12 +161,12 @@ function viewDetails() {
 
       <!-- Content -->
       <div
-        class="relative z-10 flex h-full min-h-[78vh] flex-col justify-end px-5 pb-24 pt-28 sm:min-h-[86vh] sm:px-10 sm:pb-28 lg:px-16"
+        class="relative z-10 flex h-full min-h-[60vh] flex-col justify-end px-5 pb-20 pt-24 sm:min-h-[70vh] sm:px-10 sm:pb-24 lg:px-16"
       >
         <div class="max-w-2xl">
           <div class="mb-4 flex items-center gap-2">
-            <span class="rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-[0.15em] text-primary-contrast">
-              {{ t('trendingEvent') }}
+            <span class="rounded-full bg-[#FFA500] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.15em] text-black">
+              {{ t('upcomingEvent') }}
             </span>
             <span
               v-if="category"
@@ -185,15 +184,15 @@ function viewDetails() {
 
           <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/90">
             <span class="flex items-center gap-2">
-              <Calendar :size="16" class="text-primary" />
+              <Calendar :size="16" class="text-[#FFA500]" />
               {{ formatDate(event.start_date) }}
             </span>
             <span class="flex items-center gap-2">
-              <Clock :size="16" class="text-primary" />
+              <Clock :size="16" class="text-[#FFA500]" />
               {{ formatTime(event.start_time) }}
             </span>
             <span v-if="venue" class="flex items-center gap-2">
-              <MapPin :size="16" class="text-primary" />
+              <MapPin :size="16" class="text-[#FFA500]" />
               {{ venue }}
             </span>
           </div>
@@ -204,8 +203,8 @@ function viewDetails() {
 
           <div class="mt-5 flex items-center gap-4">
             <span v-if="price !== null && price > 0" class="flex items-center gap-1.5 text-sm text-white/90">
-              <Tag :size="15" class="text-primary" />
-              <span class="rounded-md bg-primary/10 px-2 py-1 font-bold text-primary">
+              <Tag :size="15" class="text-[#FFA500]" />
+              <span class="rounded-md bg-[#FFA500]/10 px-2 py-1 font-bold text-[#FFA500]">
                 {{ t('fromPrice') }} {{ formatPrice(price) }}
               </span>
             </span>
@@ -217,7 +216,7 @@ function viewDetails() {
           <div class="mt-6 flex flex-wrap items-center gap-3">
             <button
               type="button"
-              class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-contrast shadow-lg shadow-primary/25 transition hover:bg-primary-hover active:scale-[0.98]"
+              class="inline-flex items-center gap-2 rounded-full bg-[#FFA500] px-6 py-3 text-sm font-bold text-black shadow-lg shadow-[#FFA500]/25 transition hover:bg-[#FFB52E] active:scale-[0.98]"
               @click="bookTicket"
             >
               <Ticket :size="17" />
@@ -254,7 +253,7 @@ function viewDetails() {
         <button
           type="button"
           class="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur transition hover:bg-black/60"
-          :aria-label="t('previousTrendingEvent')"
+          :aria-label="t('previousUpcomingEvent')"
           @click="prev"
         >
           <ChevronLeft :size="20" />
@@ -262,7 +261,7 @@ function viewDetails() {
         <button
           type="button"
           class="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur transition hover:bg-black/60"
-          :aria-label="t('nextTrendingEvent')"
+          :aria-label="t('nextUpcomingEvent')"
           @click="next"
         >
           <ChevronRight :size="20" />
@@ -277,7 +276,7 @@ function viewDetails() {
           type="button"
           :aria-label="t('goToSlide', { number: index + 1 })"
           class="h-1.5 rounded-full transition-all duration-300"
-          :class="index === current ? 'w-7 bg-primary' : 'w-3 bg-white/40 hover:bg-white/60'"
+          :class="index === current ? 'w-7 bg-[#FFA500]' : 'w-3 bg-white/40 hover:bg-white/60'"
           @click="go(index)"
         ></button>
       </div>
