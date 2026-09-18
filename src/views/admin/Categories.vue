@@ -157,7 +157,7 @@ async function deleteCategory(id) {
         <button
           type="button"
           @click="openCreateModal"
-          class="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 hover:shadow"
+          class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover hover:shadow"
         >
           <Plus :size="16" :stroke-width="2.5" />
           {{ t('addCategory') }}
@@ -215,7 +215,7 @@ async function deleteCategory(id) {
             v-model="searchQuery"
             type="text"
             :placeholder="t('searchCategories')"
-            class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
+            class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
           />
         </div>
 
@@ -223,7 +223,7 @@ async function deleteCategory(id) {
           <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('eventStatus') }}</label>
           <select
             v-model="selectedStatus"
-            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-primary capitalize dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
             <option value="All">{{ t('allStatuses') }}</option>
             <option value="active">{{ t('active') }}</option>
@@ -282,7 +282,7 @@ async function deleteCategory(id) {
                     <button
                       type="button"
                       @click="openEditModal(cat)"
-                      class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-amber-500/10"
+                      class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-primary hover:text-primary-accent hover:bg-primary/10 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-primary/10"
                     >
                       <Edit :size="14" />
                     </button>
@@ -330,7 +330,7 @@ async function deleteCategory(id) {
               type="text"
               required
               placeholder="e.g. Electronic Music & Festivals"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
             />
           </div>
 
@@ -340,7 +340,7 @@ async function deleteCategory(id) {
               v-model="form.description"
               rows="3"
               placeholder="Brief summary of events included in this category..."
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
             />
           </div>
 
@@ -348,7 +348,7 @@ async function deleteCategory(id) {
             <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('status') }}</label>
             <select
               v-model="form.status"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
             >
               <option value="active">{{ t('active') }}</option>
               <option value="inactive">{{ t('inactive') }}</option>
@@ -366,7 +366,7 @@ async function deleteCategory(id) {
             <button
               type="submit"
               :disabled="isSaving"
-              class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 disabled:opacity-50"
+              class="rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover disabled:opacity-50"
             >
               {{ isSaving ? t('saving') : (editingCategory ? t('saveChanges') : t('createCategory')) }}
             </button>

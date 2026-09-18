@@ -196,7 +196,7 @@ const routes = [
     path: "/admin/settings",
     name: "admin-settings",
     component: () => import("../views/admin/AdminSettings.vue"),
-    meta: { navKey: "settings", requiresAuth: true },
+    meta: { navKey: "settings", requiresAuth: true, permission: "manage_settings" },
   },
   {
     // catch-all for any unknown route

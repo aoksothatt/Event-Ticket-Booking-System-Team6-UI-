@@ -183,7 +183,7 @@ async function deleteVenue(id) {
         <button
           type="button"
           @click="openCreateModal"
-          class="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 hover:shadow"
+          class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover hover:shadow"
         >
           <Plus :size="16" :stroke-width="2.5" />
           {{ t('addVenue') }}
@@ -240,7 +240,7 @@ async function deleteVenue(id) {
             v-model="searchQuery"
             type="text"
             :placeholder="t('searchVenuesPlaceholder')"
-            class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -250,7 +250,7 @@ async function deleteVenue(id) {
             <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('venueCity') }}:</label>
             <select
               v-model="selectedCity"
-              class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500"
+              class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary"
             >
               <option v-for="c in cities" :key="c" :value="c">{{ c }}</option>
             </select>
@@ -261,7 +261,7 @@ async function deleteVenue(id) {
             <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('eventStatus') }}</label>
             <select
               v-model="selectedStatus"
-              class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500 capitalize"
+              class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary capitalize"
             >
               <option value="All">{{ t('allStatuses') }}</option>
               <option value="active">{{ t('active') }}</option>
@@ -324,7 +324,7 @@ async function deleteVenue(id) {
                     <button
                       type="button"
                       @click="openEditModal(venue)"
-                      class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 p-1.5 text-slate-600 dark:text-slate-400 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
+                      class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 p-1.5 text-slate-600 dark:text-slate-400 hover:border-primary hover:text-primary-accent hover:bg-primary/10"
                     >
                       <Edit :size="14" />
                     </button>
@@ -372,7 +372,7 @@ async function deleteVenue(id) {
               type="text"
               required
               :placeholder="t('venueNamePlaceholder')"
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
 
@@ -384,7 +384,7 @@ async function deleteVenue(id) {
                 type="text"
                 required
                 :placeholder="t('streetAddressPlaceholder')"
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
               />
             </div>
             <div>
@@ -394,7 +394,7 @@ async function deleteVenue(id) {
                 type="text"
                 required
                 :placeholder="t('venueCity')"
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
               />
             </div>
           </div>
@@ -406,7 +406,7 @@ async function deleteVenue(id) {
                 v-model="form.province"
                 type="text"
                 :placeholder="t('stateOrProvincePlaceholder')"
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
               />
             </div>
             <div>
@@ -416,7 +416,7 @@ async function deleteVenue(id) {
                 type="text"
                 required
                 :placeholder="t('venueCountry')"
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
               />
             </div>
           </div>
@@ -429,14 +429,14 @@ async function deleteVenue(id) {
                 type="number"
                 min="1"
                 required
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
               />
             </div>
             <div>
               <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('status') }}</label>
               <select
                 v-model="form.status"
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500 capitalize"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary capitalize"
               >
                 <option value="active">{{ t('active') }}</option>
                 <option value="inactive">{{ t('inactive') }}</option>
@@ -450,7 +450,7 @@ async function deleteVenue(id) {
               v-model="form.description"
               rows="2"
               :placeholder="t('venueDescriptionPlaceholder')"
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
             />
           </div>
 
@@ -465,7 +465,7 @@ async function deleteVenue(id) {
             <button
               type="submit"
               :disabled="isSaving"
-              class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 disabled:opacity-50"
+              class="rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover disabled:opacity-50"
             >
               {{ isSaving ? t('saving') : (editingVenue ? t('saveChanges') : t('createVenue')) }}
             </button>

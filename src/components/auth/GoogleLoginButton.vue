@@ -3,9 +3,11 @@ import { ref } from "vue";
 import { Loader2 } from "lucide-vue-next";
 import { GOOGLE_REDIRECT_URL } from "../../config/index.js";
 import { saveIntendedRoute } from "../../composables/useAuthRedirect.js";
+import { useSettingsStore } from "../../stores/settings.js";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
+const settings = useSettingsStore();
 
 const props = defineProps({
   /**
@@ -53,6 +55,7 @@ function handleClick() {
 
 <template>
   <button
+    v-if="settings.googleLoginEnabled"
     type="button"
     :disabled="redirecting || loading"
     class="relative flex h-11 w-full items-center rounded-[6px] border border-slate-200 dark:border-[#454545] bg-white dark:bg-[#303030] text-sm font-medium text-slate-900 dark:text-[#E0E0E0] transition hover:border-slate-300 dark:hover:border-[#5A5A5A] hover:bg-slate-100 dark:hover:bg-[#383838] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"

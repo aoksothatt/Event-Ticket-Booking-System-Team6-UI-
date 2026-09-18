@@ -1,8 +1,10 @@
 <script setup>
 import { Ticket, Facebook, Instagram, Send } from "lucide-vue-next";
 import { useI18n } from "vue-i18n";
+import { useSettingsStore } from "../../stores/settings.js";
 
 const { t } = useI18n();
+const settings = useSettingsStore();
 
 // TikTok isn't part of lucide, so it gets a tiny inline brand glyph to match
 // the same visual weight as the other icons.
@@ -19,7 +21,7 @@ import etecLogo from "../../assets/img/etec.jpg";
     <div aria-hidden="true" class="pointer-events-none absolute inset-0">
       <!-- Soft radial glow to help the watermark blend in -->
       <div
-        class="absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-[#FFA500]/5 blur-3xl sm:h-96 sm:w-96"
+        class="absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-primary/5 blur-3xl sm:h-96 sm:w-96"
       ></div>
       <!-- Large, low-opacity school logo bleeding off the right side -->
       <div class="absolute -bottom-10 -right-12 h-56 w-56 sm:-right-14 sm:h-72 sm:w-72 lg:h-80 lg:w-80">
@@ -37,12 +39,12 @@ import etecLogo from "../../assets/img/etec.jpg";
       <!-- Logo -->
       <RouterLink to="/home" class="flex items-center gap-2">
         <span
-          class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FFA500] font-extrabold text-black"
+          class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-extrabold text-primary-contrast"
         >
           <Ticket :size="17" />
         </span>
         <span class="text-base font-extrabold tracking-tight text-slate-900 dark:text-white"
-          >BILIT</span
+          >{{ settings.platformName }}</span
         >
       </RouterLink>
 
@@ -58,31 +60,31 @@ import etecLogo from "../../assets/img/etec.jpg";
       >
         <RouterLink
           to="/home"
-          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-[#FFA500]"
+          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-primary"
         >
           {{ t('home') }}
         </RouterLink>
         <RouterLink
           to="/events"
-          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-[#FFA500]"
+          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-primary"
         >
           {{ t('events') }}
         </RouterLink>
         <RouterLink
           to="/home"
-          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-[#FFA500]"
+          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-primary"
         >
           {{ t('trending') }}
         </RouterLink>
         <RouterLink
           to="/favorites"
-          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-[#FFA500]"
+          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-primary"
         >
           {{ t('favorites') }}
         </RouterLink>
         <RouterLink
           to="/my-tickets"
-          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-[#FFA500]"
+          class="text-[13px] font-medium text-slate-500 dark:text-white/60 transition-colors hover:text-primary"
         >
           {{ t('myTickets') }}
         </RouterLink>
@@ -141,7 +143,7 @@ import etecLogo from "../../assets/img/etec.jpg";
       <div
         class="flex w-full flex-col items-center gap-3 pt-6 text-xs text-slate-500 dark:text-white/40 sm:flex-row sm:justify-between"
       >
-        <p>© 2026 Event Booking System. Team6.</p>
+        <p>{{ settings.footerCopyright || "© 2026 Event Booking System. Team6." }}</p>
         <div class="flex items-center gap-5">
           <a
             href="#"

@@ -10,11 +10,13 @@ import {
   History,
 } from "lucide-vue-next";
 import { getMyTicketsData, getMyTicketHistory } from "../api/bookingApi.js";
+import { useSettingsStore } from "../stores/settings.js";
 import { coverImage, formatDate, formatTime } from "../utils/event.js";
 import TicketQR from "../components/ticket/TicketQR.vue";
 
 const { t } = useI18n();
 const router = useRouter();
+const settings = useSettingsStore();
 const tickets = ref([]);
 const historyTickets = ref([]);
 const loading = ref(true);
@@ -124,7 +126,7 @@ onMounted(load);
             class="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition"
             :class="
               activeTab === tab.key
-                ? 'bg-[#FFA500] text-black'
+                ? 'bg-primary text-primary-contrast'
                 : 'text-slate-500 dark:text-[#9CA3AF] hover:text-slate-900 dark:hover:text-white'
             "
             @click="activeTab = tab.key"
@@ -172,6 +174,7 @@ onMounted(load);
         {{ error }}
       </div>
 
+
       <!-- CURRENT TICKETS -->
       <template v-else-if="activeTab === 'current'">
         <!-- Empty state -->
@@ -192,7 +195,7 @@ onMounted(load);
           </p>
           <button
             type="button"
-            class="mt-5 rounded-full bg-[#FFA500] px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-[#FFB52E]"
+            class="mt-5 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-contrast transition hover:bg-primary-hover"
             @click="router.push('/events')"
           >
             {{ t("browseEvents") }}
@@ -205,7 +208,7 @@ onMounted(load);
             <div
               class="mb-3 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-[#9CA3AF]"
             >
-              <TicketCheck :size="14" class="text-[#FFA500]" />
+              <TicketCheck :size="14" class="text-primary" />
               {{ t("bookingLabel") }}
               {{
                 group[0].booking?.booking_number || `#${group[0].booking_id}`
@@ -216,7 +219,7 @@ onMounted(load);
               <article
                 v-for="ticket in group"
                 :key="ticket.id"
-                class="flex overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] transition hover:border-[#FFA500]/30"
+                class="flex overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] transition hover:border-primary/30"
               >
                 <!-- Cover -->
                 <div class="w-28 shrink-0 overflow-hidden sm:w-32">
@@ -246,7 +249,7 @@ onMounted(load);
                       >
                         {{ ticket.ticket_type?.event?.title || t("event") }}
                       </p>
-                      <p class="mt-0.5 text-xs font-semibold text-[#FFA500]">
+                      <p class="mt-0.5 text-xs font-semibold text-primary">
                         {{ ticket.ticket_type?.name || t("ticket") }}
                       </p>
                     </div>
@@ -299,7 +302,7 @@ onMounted(load);
                   <div
                     class="mt-3 flex items-center gap-3 rounded-xl border-t border-slate-200 dark:border-white/5 pt-3"
                   >
-                    <TicketQR :value="qrValue(ticket)" :size="120" />
+                    <TicketQR v-if="settings.qrEnabled" :value="qrValue(ticket)" :size="120" />
                     
                     <div
                       class="min-w-0 flex-1 text-xs text-slate-500 dark:text-[#9CA3AF]"
@@ -313,11 +316,12 @@ onMounted(load);
                         {{ ticket.ticket_code }}
                       </p>
                       <p
+                        v-if="settings.qrEnabled"
                         class="mt-2 font-semibold text-slate-900 dark:text-white"
                       >
                         {{ t("scanQR") }}
                       </p>
-                      <p class="mt-1">{{ t("selfCheckinDesc") }}</p>
+                      <p v-if="settings.qrEnabled" class="mt-1">{{ t("selfCheckinDesc") }}</p>
                     </div>
                   </div>
                 </div>
@@ -379,7 +383,7 @@ onMounted(load);
                   t("event")
                 }}
               </p>
-              <p class="mt-0.5 text-xs font-semibold text-[#FFA500]">
+              <p class="mt-0.5 text-xs font-semibold text-primary">
                 {{ ticket.ticket_type?.name || t("ticket") }}
               </p>
               <p

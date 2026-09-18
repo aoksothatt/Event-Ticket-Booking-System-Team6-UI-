@@ -90,7 +90,7 @@ const items = computed(() => {
       :aria-expanded="open"
       @click="toggle"
     >
-      <span class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#FFA500] text-xs font-bold text-black">
+      <span class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-bold text-primary-contrast">
         <img v-if="avatarUrl" :src="avatarUrl" alt="" class="h-full w-full object-cover" />
         <template v-else>{{ initials }}</template>
       </span>
@@ -143,7 +143,7 @@ const items = computed(() => {
   <RouterLink
     v-else
     to="/login"
-    class="rounded-full bg-[#FFA500] px-4 py-1.5 text-xs font-bold text-black shadow-sm transition hover:bg-[#FFB52E]"
+    class="rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-contrast shadow-sm transition hover:bg-primary-hover"
   >
     {{ t('signIn') }}
   </RouterLink>

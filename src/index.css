@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global theme color (appearance.primary_color) — the app-wide accent that
+   drives buttons, tabs, links, focus rings, badges, toggles, hovers, active
+   navigation and accent text across the whole platform.
+
+   The settings store sets --color-primary / --color-primary-rgb /
+   --color-primary-contrast after fetching the public settings. Every other
+   token (hover, active, accent) derives from the base color via color-mix so a
+   single Admin pick propagates consistently with readable contrast. */
+:root {
+  --color-primary: #f59e0b;
+  /* Space-separated channels: utilities emit the modern slash-alpha rgb()
+     syntax (rgb(var(--color-primary-rgb) / <alpha>)), which does NOT accept
+     comma-separated values — commas would make every primary utility invalid. */
+  --color-primary-rgb: 245 158 11;
+  --color-primary-hover: color-mix(in srgb, var(--color-primary) 88%, #000000);
+  --color-primary-active: color-mix(in srgb, var(--color-primary) 78%, #000000);
+  --color-primary-accent: color-mix(in srgb, var(--color-primary) 55%, #000000);
+  --color-primary-contrast: #ffffff;
+}
+
+/* Accent text/links lift toward the lighter end of the primary on dark
+   backgrounds so it stays readable (e.g. text-primary-accent). */
+.dark {
+  --color-primary-accent: color-mix(in srgb, var(--color-primary) 70%, #ffffff);
+}
+
 /* Khmer script renders taller than Latin — use a comfortable line-height
    and avoid clipping/cramped wrapping whenever Khmer is the active locale. */
 html[lang="km"] body,
@@ -22,7 +48,7 @@ html[lang="km"] h6 {
 
 @layer base {
   body {
-    @apply bg-white text-slate-800 antialiased selection:bg-amber-500 selection:text-slate-950;
+    @apply bg-white text-slate-800 antialiased selection:bg-[var(--color-primary)] selection:text-slate-950;
     font-family: 'Noto Sans Khmer', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   }
 

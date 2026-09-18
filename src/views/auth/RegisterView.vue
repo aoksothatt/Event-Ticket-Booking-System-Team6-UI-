@@ -6,6 +6,7 @@ import BrandLogo from "../../components/auth/BrandLogo.vue";
 import AuthField from "../../components/auth/AuthField.vue";
 import GoogleLoginButton from "../../components/auth/GoogleLoginButton.vue";
 import { useAuthStore } from "../../stores/auth.js";
+import { useSettingsStore } from "../../stores/settings.js";
 import { computeDestination } from "../../composables/useAuthRedirect.js";
 import { toast } from "../../composables/useToast.js";
 import { useI18n } from "vue-i18n";
@@ -24,6 +25,7 @@ import heroPoster from "../../assets/hero.png";
 const router = useRouter();
 const route = useRoute();
 const auth = useAuthStore();
+const settings = useSettingsStore();
 
 const form = reactive({
   name: "",
@@ -121,7 +123,7 @@ async function handleSubmit() {
           <span class="whitespace-nowrap">{{ t("alreadyHaveAccount") }}</span>
           <RouterLink
             to="/login"
-            class="whitespace-nowrap font-semibold text-[#FFA500] transition hover:text-[#FFB52E]"
+            class="whitespace-nowrap font-semibold text-primary transition hover:text-primary-hover"
           >
             {{ t("signIn") }}
           </RouterLink>
@@ -133,6 +135,13 @@ async function handleSubmit() {
         >
           {{ t("createAccount") }}
         </h1>
+
+        <div
+          v-if="!settings.registrationEnabled"
+          class="mb-4 rounded-[6px] border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400"
+        >
+          {{ t("registrationDisabled") }}
+        </div>
 
         <form class="space-y-4" novalidate @submit.prevent="handleSubmit">
           <AuthField
@@ -214,8 +223,8 @@ async function handleSubmit() {
 
           <button
             type="submit"
-            :disabled="loading"
-            class="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-[#FFA500] text-sm font-bold text-black transition hover:bg-[#FFB52E] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="loading || !settings.registrationEnabled"
+            class="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-primary text-sm font-bold text-primary-contrast transition hover:bg-primary-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Loader2 v-if="loading" class="h-5 w-5 animate-spin" />
             <span>{{
@@ -256,7 +265,7 @@ async function handleSubmit() {
         ></div>
         <div class="absolute bottom-5 left-5">
           <p
-            class="mb-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#FFA500]"
+            class="mb-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-primary"
           >
             {{ t("brandPresents") }}
           </p>

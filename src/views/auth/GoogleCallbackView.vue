@@ -90,7 +90,7 @@ onMounted(() => {
 
       <!-- Loading -->
       <div v-if="status === 'loading'" class="flex flex-col items-center gap-4 text-center">
-        <Loader2 class="h-10 w-10 animate-spin text-[#FFA500]" />
+        <Loader2 class="h-10 w-10 animate-spin text-primary" />
         <p class="text-sm text-slate-500 dark:text-[#BDBDBD]">{{ t('completingGoogleSignin') }}</p>
       </div>
 
@@ -111,7 +111,7 @@ onMounted(() => {
 
         <RouterLink
           to="/login"
-          class="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-[#FFA500] text-sm font-bold text-black transition hover:bg-[#FFB52E] active:scale-[0.99]"
+          class="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-primary text-sm font-bold text-primary-contrast transition hover:bg-primary-hover active:scale-[0.99]"
         >
           <LogIn class="h-4 w-4" />
           {{ t('backToLogin') }}

@@ -37,7 +37,7 @@ onMounted(loadFavorites);
         <p class="text-sm text-red-300">{{ error }}</p>
         <button
           type="button"
-          class="mt-4 rounded-full bg-[#FFA500] px-5 py-2 text-sm font-semibold text-black transition hover:bg-[#FFB52E]"
+          class="mt-4 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-contrast transition hover:bg-primary-hover"
           @click="retry"
         >
           {{ t('retry') }}
@@ -58,7 +58,7 @@ onMounted(loadFavorites);
         </p>
         <button
           type="button"
-          class="mt-5 rounded-full bg-[#FFA500] px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-[#FFB52E]"
+          class="mt-5 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-contrast transition hover:bg-primary-hover"
           @click="router.push('/events')"
         >
           {{ t('exploreEvents') }}
@@ -71,7 +71,7 @@ onMounted(loadFavorites);
       </div>
 
       <p v-if="favorites.length" class="mt-6 flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#9CA3AF]">
-        <Heart :size="12" class="text-[#FFA500]" />
+        <Heart :size="12" class="text-primary" />
         {{ t('savedCount', { count: favorites.length }) }}
       </p>
     </div>

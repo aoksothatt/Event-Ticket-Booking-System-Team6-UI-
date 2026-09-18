@@ -183,7 +183,7 @@ async function deleteReview(id) {
       <div class="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-500/30 dark:bg-rose-500/10">
         <XCircle :size="24" class="mx-auto mb-2 text-rose-500" />
         <p class="text-sm font-semibold text-rose-700 dark:text-rose-400">{{ error }}</p>
-        <button @click="fetchReviews" class="mt-3 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-600">
+        <button @click="fetchReviews" class="mt-3 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-contrast hover:bg-primary-hover">
           {{ t('retry') }}
         </button>
       </div>
@@ -220,7 +220,7 @@ async function deleteReview(id) {
             v-model="searchQuery"
             type="text"
             :placeholder="t('searchReviewsPlaceholder')"
-            class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -229,7 +229,7 @@ async function deleteReview(id) {
             <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('rating') }}:</label>
             <select
               v-model="selectedRating"
-              class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500"
+              class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary"
             >
               <option v-for="rt in ratings" :key="rt" :value="rt">{{ ratingLabel(rt) }}</option>
             </select>
@@ -239,7 +239,7 @@ async function deleteReview(id) {
             <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('eventStatus') }}</label>
             <select
               v-model="selectedStatus"
-              class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500 capitalize"
+              class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary capitalize"
             >
               <option v-for="st in statuses" :key="st" :value="st">{{ statusLabel(st) }}</option>
             </select>
@@ -323,7 +323,7 @@ async function deleteReview(id) {
                       type="button"
                       @click="updateStatus(r.id, 'rejected')"
                       :title="t('rejectReview')"
-                      class="rounded-lg border border-amber-200 bg-amber-50 p-1.5 text-amber-600 hover:bg-amber-100"
+                      class="rounded-lg border border-primary/20 bg-primary/10 p-1.5 text-primary-accent hover:bg-primary/15"
                     >
                       <XCircle :size="14" />
                     </button>

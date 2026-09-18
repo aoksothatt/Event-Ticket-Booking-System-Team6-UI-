@@ -200,7 +200,7 @@ watch(
               <div class="mb-2 flex items-center gap-2">
                 <span
                   v-if="category"
-                  class="rounded-full bg-[#FFA500] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-black"
+                  class="rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary-contrast"
                 >
                   {{ category }}
                 </span>
@@ -220,7 +220,7 @@ watch(
 
             <div v-if="price !== null" class="text-right">
               <p class="text-xs text-white/70">{{ t("startingFrom") }}</p>
-              <p class="text-2xl font-extrabold text-[#FFA500] sm:text-3xl">
+              <p class="text-2xl font-extrabold text-primary sm:text-3xl">
                 {{ formatPrice(price) }}
               </p>
             </div>
@@ -254,7 +254,7 @@ watch(
                   </h3>
                   <span
                     v-if="avgRating"
-                    class="rounded-full bg-slate-100 dark:bg-white/5 px-2.5 py-0.5 text-xs font-semibold text-[#FFA500]"
+                    class="rounded-full bg-slate-100 dark:bg-white/5 px-2.5 py-0.5 text-xs font-semibold text-primary"
                   >
                     {{ avgRating }} / 5
                   </span>
@@ -294,7 +294,7 @@ watch(
                   v-model="comment"
                   rows="3"
                   :placeholder="t('writeReview')"
-                  class="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#0B0D10] px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 outline-none focus:border-[#FFA500]/60"
+                  class="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#0B0D10] px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 outline-none focus:border-primary/60"
                 ></textarea>
                 <div class="mt-3 flex items-center justify-between gap-3">
                   <div>
@@ -312,7 +312,7 @@ watch(
                   <button
                     type="submit"
                     :disabled="reviewSubmitting"
-                    class="shrink-0 rounded-full bg-[#FFA500] px-5 py-2 text-xs font-bold text-black transition hover:bg-[#FFB52E] disabled:cursor-not-allowed disabled:opacity-50"
+                    class="shrink-0 rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-contrast transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {{ reviewSubmitting ? t("submitting") : t("submitReview") }}
                   </button>
@@ -335,7 +335,7 @@ watch(
                   <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
                       <span
-                        class="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFA500]/15 text-[10px] font-bold text-[#FFA500]"
+                        class="flex h-7 w-7 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary"
                       >
                         {{
                           (r.user?.name || "?")
@@ -376,7 +376,7 @@ watch(
 
             <div class="grid gap-3 sm:grid-cols-2">
               <div class="rounded-2xl bg-white dark:bg-[#14171C] p-4">
-                <div class="flex items-center gap-2 text-[#FFA500]">
+                <div class="flex items-center gap-2 text-primary">
                   <Calendar :size="16" />
                   <span
                     class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-white/50"
@@ -390,7 +390,7 @@ watch(
                 </p>
               </div>
               <div class="rounded-2xl bg-white dark:bg-[#14171C] p-4">
-                <div class="flex items-center gap-2 text-[#FFA500]">
+                <div class="flex items-center gap-2 text-primary">
                   <Clock :size="16" />
                   <span
                     class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-white/50"
@@ -407,7 +407,7 @@ watch(
                 v-if="venue"
                 class="rounded-2xl bg-white dark:bg-[#14171C] p-4 sm:col-span-2"
               >
-                <div class="flex items-center gap-2 text-[#FFA500]">
+                <div class="flex items-center gap-2 text-primary">
                   <MapPin :size="16" />
                   <span
                     class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-white/50"
@@ -471,7 +471,7 @@ watch(
                       {{ t("left") }}
                     </p>
                   </div>
-                  <p class="text-sm font-bold text-[#FFA500]">
+                  <p class="text-sm font-bold text-primary">
                     {{ formatPrice(ticket.price) }}
                   </p>
                 </div>
@@ -490,7 +490,7 @@ watch(
               v-if="price !== null && price > 0"
               class="flex items-center gap-2 text-2xl font-extrabold text-slate-900 dark:text-white"
             >
-              <Tag :size="20" class="text-[#FFA500]" />
+              <Tag :size="20" class="text-primary" />
               {{ t("fromPrice") }} {{ formatPrice(price) }}
             </p>
             <p
@@ -503,7 +503,7 @@ watch(
             <button
               type="button"
               :disabled="event.status === 'cancelled'"
-              class="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#FFA500] px-6 py-3 text-sm font-bold text-black shadow-lg shadow-[#FFA500]/20 transition hover:bg-[#FFB52E] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+              class="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-contrast shadow-lg shadow-primary/20 transition hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               @click="book"
             >
               <Ticket :size="17" />
@@ -514,10 +514,10 @@ watch(
               type="button"
               :class="
                 saved
-                  ? 'border-[#FFA500]/60 bg-[#FFA500]/10 text-[#FFA500]'
+                  ? 'border-primary/60 bg-primary/10 text-primary'
                   : 'border-slate-200 dark:border-white/15 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10'
               "
-              class="mt-3 flex w-full items-center justify-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition hover:border-[#FFA500]/40"
+              class="mt-3 flex w-full items-center justify-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition hover:border-primary/40"
               @click="toggleFavorite"
             >
               <Heart :size="16" :fill="saved ? 'currentColor' : 'none'" />

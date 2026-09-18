@@ -93,7 +93,7 @@ watch(
 
       <!-- Toolbar -->
       <div class="mb-8 space-y-4">
-        <div class="flex max-w-md items-center gap-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3.5 py-2 transition focus-within:border-[#FFA500]/60">
+        <div class="flex max-w-md items-center gap-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3.5 py-2 transition focus-within:border-primary/60">
           <Search :size="16" class="shrink-0 text-white/50" />
           <input
             v-model="query"
@@ -135,7 +135,7 @@ watch(
         <button
           v-if="query || selectedCategory"
           type="button"
-          class="mt-4 rounded-full bg-[#FFA500] px-5 py-2 text-sm font-semibold text-black transition hover:bg-[#FFB52E]"
+          class="mt-4 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-contrast transition hover:bg-primary-hover"
           @click="clearSearch"
         >
           {{ t('clearFilters') }}

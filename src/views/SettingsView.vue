@@ -135,7 +135,7 @@ onMounted(load);
       <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">{{ t('settings') }}</h1>
       <p class="mt-1 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('manageAccountDesc') }}</p>
 
-      <div v-if="isAdmin()" class="mt-6 rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/15 to-transparent p-5">
+      <div v-if="isAdmin()" class="mt-6 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 to-transparent p-5">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="text-base font-bold text-slate-900 dark:text-white">{{ t('adminWorkspace') }}</h2>
@@ -143,7 +143,7 @@ onMounted(load);
           </div>
           <button
             type="button"
-            class="flex items-center justify-center gap-2 rounded-full bg-[#FFA500] px-5 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"
+            class="flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-contrast transition hover:bg-primary-hover"
             @click="router.push('/admin/overview')"
           >
             <LayoutDashboard :size="16" />
@@ -167,7 +167,7 @@ onMounted(load);
             <div class="flex flex-col items-center gap-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] p-5 sm:flex-row sm:items-center">
               <button
                 type="button"
-                class="group relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FFA500] text-2xl font-extrabold text-black transition hover:opacity-90"
+                class="group relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-2xl font-extrabold text-primary-contrast transition hover:opacity-90"
                 @click="avatarInput?.click()"
               >
                 <img v-if="avatarUrl" :src="avatarUrl" :alt="t('avatar')" class="h-full w-full object-cover" />
@@ -196,7 +196,7 @@ onMounted(load);
               <input
                 v-model="form.name"
                 type="text"
-                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
+                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-primary/60 focus:outline-none"
               />
             </label>
             <label class="block">
@@ -204,7 +204,7 @@ onMounted(load);
               <input
                 v-model="form.email"
                 type="email"
-                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
+                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-primary/60 focus:outline-none"
               />
             </label>
             <label class="block">
@@ -212,7 +212,7 @@ onMounted(load);
               <input
                 v-model="form.phone"
                 type="tel"
-                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
+                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-primary/60 focus:outline-none"
               />
             </label>
 
@@ -226,7 +226,7 @@ onMounted(load);
             <button
               type="button"
               :disabled="savingProfile"
-              class="flex items-center gap-2 rounded-full bg-[#FFA500] px-5 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E] disabled:opacity-60"
+              class="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-contrast transition hover:bg-primary-hover disabled:opacity-60"
               @click="updateProfile"
             >
               <Loader2 v-if="savingProfile" :size="15" class="animate-spin" />
@@ -247,7 +247,7 @@ onMounted(load);
               <input
                 v-model="passwordForm.current_password"
                 type="password"
-                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
+                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-primary/60 focus:outline-none"
               />
             </label>
             <label class="block">
@@ -255,7 +255,7 @@ onMounted(load);
               <input
                 v-model="passwordForm.new_password"
                 type="password"
-                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
+                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-primary/60 focus:outline-none"
               />
             </label>
             <label class="block">
@@ -263,7 +263,7 @@ onMounted(load);
               <input
                 v-model="passwordForm.new_password_confirmation"
                 type="password"
-                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-[#FFA500]/60 focus:outline-none"
+                class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-primary/60 focus:outline-none"
               />
             </label>
 

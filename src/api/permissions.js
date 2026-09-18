@@ -14,6 +14,7 @@ export const ROLE_PERMISSIONS = {
     'manage_reviews',
     'manage_checkins',
     'manage_tickets',
+    'manage_settings',
     'view_dashboard',
   ],
   organizer: [

@@ -28,7 +28,7 @@ const model = defineModel({ type: String, default: "" });
         :class="
           error
             ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/10'
-            : 'border-slate-200 dark:border-[#454545] focus:border-[#FFA500] focus:ring-[#FFA500]/20'
+            : 'border-slate-200 dark:border-[#454545] focus:border-primary focus:ring-primary/20'
         "
       />
       <span

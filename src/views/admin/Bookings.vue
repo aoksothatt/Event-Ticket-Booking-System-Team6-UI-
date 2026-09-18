@@ -174,7 +174,7 @@ function updateStatus(newStatus) {
           v-model="searchQuery"
           type="text"
             :placeholder="t('searchBookings')"
-          class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+          class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
         />
       </div>
 
@@ -182,7 +182,7 @@ function updateStatus(newStatus) {
         <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('eventStatus') }}</label>
         <select
           v-model="selectedStatus"
-          class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500 capitalize"
+          class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary capitalize"
         >
           <option value="All">{{ t('allStatuses') }}</option>
           <option value="confirmed">{{ t('confirmed') }}</option>
@@ -263,7 +263,7 @@ function updateStatus(newStatus) {
               :key="b.id"
               class="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/50"
             >
-              <td class="px-6 py-4 font-mono text-xs text-amber-600 font-bold">
+              <td class="px-6 py-4 font-mono text-xs text-primary-accent font-bold">
                 {{ b.booking_number }}
               </td>
               <td class="px-6 py-4">
@@ -289,7 +289,7 @@ function updateStatus(newStatus) {
                 <button
                   type="button"
                   @click="viewBooking(b)"
-                  class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
+                  class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-primary hover:text-primary-accent hover:bg-primary/10"
                 >
                   <Eye :size="13" />
                   {{ t('viewSlip') }}
@@ -314,7 +314,7 @@ function updateStatus(newStatus) {
       <div class="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-2xl">
         <div class="mb-5 flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
           <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary-accent border border-primary/20 dark:bg-primary/15 dark:text-primary-accent dark:border-primary/30">
               <Receipt :size="20" />
             </div>
             <div>
@@ -340,7 +340,7 @@ function updateStatus(newStatus) {
               <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">{{ t('eventInformation') }}</p>
               <p class="text-sm font-bold text-slate-900 dark:text-white">{{ selectedBooking.event?.title }}</p>
               <p class="text-xs text-slate-600 dark:text-slate-400">{{ selectedBooking.event?.venue?.name || 'N/A' }}</p>
-              <p class="text-xs text-amber-600 font-semibold">{{ selectedBooking.event?.start_date || 'N/A' }}</p>
+              <p class="text-xs text-primary-accent font-semibold">{{ selectedBooking.event?.start_date || 'N/A' }}</p>
             </div>
           </div>
 
@@ -376,7 +376,7 @@ function updateStatus(newStatus) {
               <div class="mt-1 flex items-center gap-2">
                 <select
                   v-model="selectedBooking.status"
-                  class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3 py-1.5 text-xs text-slate-800 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500 capitalize"
+                  class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3 py-1.5 text-xs text-slate-800 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary capitalize"
                 >
                   <option value="confirmed">{{ t('confirmed') }}</option>
                   <option value="completed">{{ t('completed') }}</option>
@@ -395,7 +395,7 @@ function updateStatus(newStatus) {
 
             <div class="text-right">
               <p class="text-xs text-slate-500 dark:text-slate-400">{{ t('totalAmountCharged') }}</p>
-              <p class="text-2xl font-bold text-amber-600 font-mono">${{ Number(selectedBooking.total_amount).toFixed(2) }}</p>
+              <p class="text-2xl font-bold text-primary-accent font-mono">${{ Number(selectedBooking.total_amount).toFixed(2) }}</p>
             </div>
           </div>
         </div>
@@ -404,7 +404,7 @@ function updateStatus(newStatus) {
           <button
             type="button"
             @click="isDetailOpen = false"
-            class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600"
+            class="rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover"
           >
             {{ t('done') }}
           </button>

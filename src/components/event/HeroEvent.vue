@@ -111,7 +111,7 @@ function viewDetails() {
         <p class="mt-2 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('trendingLoadError') }}</p>
         <button
           type="button"
-          class="mt-5 inline-flex items-center gap-2 rounded-full bg-[#FFA500] px-6 py-3 text-sm font-bold text-black shadow-lg shadow-[#FFA500]/25 transition hover:bg-[#FFB52E] active:scale-[0.98]"
+          class="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-contrast shadow-lg shadow-primary/25 transition hover:bg-primary-hover active:scale-[0.98]"
           @click="emit('retry')"
         >
           {{ t('retry') }}
@@ -166,7 +166,7 @@ function viewDetails() {
       >
         <div class="max-w-2xl">
           <div class="mb-4 flex items-center gap-2">
-            <span class="rounded-full bg-[#FFA500] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.15em] text-black">
+            <span class="rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-[0.15em] text-primary-contrast">
               {{ t('trendingEvent') }}
             </span>
             <span
@@ -185,15 +185,15 @@ function viewDetails() {
 
           <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/90">
             <span class="flex items-center gap-2">
-              <Calendar :size="16" class="text-[#FFA500]" />
+              <Calendar :size="16" class="text-primary" />
               {{ formatDate(event.start_date) }}
             </span>
             <span class="flex items-center gap-2">
-              <Clock :size="16" class="text-[#FFA500]" />
+              <Clock :size="16" class="text-primary" />
               {{ formatTime(event.start_time) }}
             </span>
             <span v-if="venue" class="flex items-center gap-2">
-              <MapPin :size="16" class="text-[#FFA500]" />
+              <MapPin :size="16" class="text-primary" />
               {{ venue }}
             </span>
           </div>
@@ -204,8 +204,8 @@ function viewDetails() {
 
           <div class="mt-5 flex items-center gap-4">
             <span v-if="price !== null && price > 0" class="flex items-center gap-1.5 text-sm text-white/90">
-              <Tag :size="15" class="text-[#FFA500]" />
-              <span class="rounded-md bg-[#FFA500]/10 px-2 py-1 font-bold text-[#FFA500]">
+              <Tag :size="15" class="text-primary" />
+              <span class="rounded-md bg-primary/10 px-2 py-1 font-bold text-primary">
                 {{ t('fromPrice') }} {{ formatPrice(price) }}
               </span>
             </span>
@@ -217,7 +217,7 @@ function viewDetails() {
           <div class="mt-6 flex flex-wrap items-center gap-3">
             <button
               type="button"
-              class="inline-flex items-center gap-2 rounded-full bg-[#FFA500] px-6 py-3 text-sm font-bold text-black shadow-lg shadow-[#FFA500]/25 transition hover:bg-[#FFB52E] active:scale-[0.98]"
+              class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-contrast shadow-lg shadow-primary/25 transition hover:bg-primary-hover active:scale-[0.98]"
               @click="bookTicket"
             >
               <Ticket :size="17" />
@@ -277,7 +277,7 @@ function viewDetails() {
           type="button"
           :aria-label="t('goToSlide', { number: index + 1 })"
           class="h-1.5 rounded-full transition-all duration-300"
-          :class="index === current ? 'w-7 bg-[#FFA500]' : 'w-3 bg-white/40 hover:bg-white/60'"
+          :class="index === current ? 'w-7 bg-primary' : 'w-3 bg-white/40 hover:bg-white/60'"
           @click="go(index)"
         ></button>
       </div>

@@ -182,7 +182,7 @@ async function cancelTicket(ticket) {
       <div>
         <div class="flex items-center gap-2.5">
           <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{{ t("customerTickets") }}</h1>
-          <span class="rounded-md bg-amber-100 border border-amber-200 px-2.5 py-0.5 text-xs text-amber-800 font-mono font-medium dark:bg-amber-500/15 dark:border-amber-500/30 dark:text-amber-400">
+          <span class="rounded-md bg-primary/15 border border-primary/20 px-2.5 py-0.5 text-xs text-primary-accent font-mono font-medium dark:bg-primary/15 dark:border-primary/30 dark:text-primary-accent">
             manage_tickets
           </span>
         </div>
@@ -239,13 +239,13 @@ async function cancelTicket(ticket) {
                 v-model="verifyToken"
                 type="text"
                 :placeholder="t('searchPlaceholder')"
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
               <button
                 type="button"
                 :disabled="verifying || !verifyToken.trim()"
                 @click="verifyTicket(verifyToken)"
-                class="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-slate-950 shadow-sm hover:bg-amber-600 disabled:opacity-50"
+                class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-contrast shadow-sm hover:bg-primary-hover disabled:opacity-50"
               >
                 <Loader2 v-if="verifying" :size="14" class="animate-spin" />
                 <QrCode v-else :size="14" />
@@ -281,7 +281,7 @@ async function cancelTicket(ticket) {
         <!-- Ticket details -->
         <div v-if="verifyTicketData" class="mt-3 grid grid-cols-1 gap-x-4 gap-y-1.5 border-t border-slate-100 dark:border-slate-700 pt-3 text-sm sm:grid-cols-2">
           <p class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-            <Ticket :size="13" class="text-amber-600" />
+            <Ticket :size="13" class="text-primary-accent" />
             <span class="font-mono font-bold text-slate-900 dark:text-white">{{ verifyTicketData.ticket_code }}</span>
           </p>
           <p class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
@@ -325,12 +325,12 @@ async function cancelTicket(ticket) {
             v-model="searchQuery"
             type="text"
             :placeholder="t('searchPlaceholder')"
-            class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <select
           v-model="selectedStatus"
-          class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500"
+          class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary"
         >
           <option v-for="st in statuses" :key="st" :value="st">{{ st === 'All' ? t('all') : statusLabel(st) }}</option>
         </select>
@@ -361,7 +361,7 @@ async function cancelTicket(ticket) {
                 :key="ticket.id"
                 class="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/50"
               >
-                <td class="px-6 py-4 font-mono text-xs font-semibold text-amber-600">{{ ticket.ticket_code }}</td>
+                <td class="px-6 py-4 font-mono text-xs font-semibold text-primary-accent">{{ ticket.ticket_code }}</td>
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-2.5">
                     <span class="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
@@ -389,7 +389,7 @@ async function cancelTicket(ticket) {
                     <button
                       type="button"
                       @click="selectedTicket = ticket"
-                      class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 p-1.5 text-slate-600 dark:text-slate-400 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
+                      class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 p-1.5 text-slate-600 dark:text-slate-400 hover:border-primary hover:text-primary-accent hover:bg-primary/10"
                       :title="t('view')"
                     >
                       <Eye :size="14" />
@@ -429,7 +429,7 @@ async function cancelTicket(ticket) {
         </div>
         <div class="space-y-3 text-sm">
           <p class="flex items-center gap-2">
-            <Ticket :size="15" class="text-amber-600" />
+            <Ticket :size="15" class="text-primary-accent" />
             <span class="font-mono font-bold text-slate-900 dark:text-white">{{ selectedTicket.ticket_code }}</span>
           </p>
           <p class="flex items-center gap-2">

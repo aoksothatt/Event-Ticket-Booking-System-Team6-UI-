@@ -87,7 +87,7 @@ onMounted(load);
       <template v-else-if="user">
         <!-- Header card -->
         <div class="mt-8 flex flex-col items-center gap-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] p-6 sm:flex-row sm:p-8">
-          <span class="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FFA500] text-3xl font-extrabold text-black">
+          <span class="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-3xl font-extrabold text-primary-contrast">
             <img v-if="avatarUrl" :src="avatarUrl" :alt="t('avatar')" class="h-full w-full object-cover" />
             <template v-else>{{ initials }}</template>
           </span>
@@ -102,7 +102,7 @@ onMounted(load);
               <Phone :size="14" />
               {{ user.phone }}
             </p>
-            <span class="mt-3 inline-block rounded-full bg-[#FFA500]/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FFA500]">
+            <span class="mt-3 inline-block rounded-full bg-primary/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary">
               {{ roleLabel }}
             </span>
           </div>
@@ -111,7 +111,7 @@ onMounted(load);
         <!-- Stats -->
         <div class="mt-6 grid grid-cols-3 gap-4">
           <div v-for="stat in statCards" :key="stat.label" class="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] p-4 text-center">
-            <p class="text-lg font-extrabold text-[#FFA500]">{{ stat.value }}</p>
+            <p class="text-lg font-extrabold text-primary">{{ stat.value }}</p>
             <p class="mt-1 text-xs text-slate-500 dark:text-[#9CA3AF]">{{ stat.label }}</p>
           </div>
         </div>
@@ -121,21 +121,21 @@ onMounted(load);
           <h3 class="mb-4 text-base font-bold text-slate-900 dark:text-white">{{ t('details') }}</h3>
           <div class="grid gap-4 sm:grid-cols-2">
             <div v-if="profileData?.gender" class="flex items-center gap-3">
-              <User :size="16" class="text-[#FFA500]" />
+              <User :size="16" class="text-primary" />
               <div>
                 <p class="text-xs text-slate-500 dark:text-[#9CA3AF]">{{ t('gender') }}</p>
                 <p class="text-sm capitalize text-slate-900 dark:text-white">{{ profileData.gender }}</p>
               </div>
             </div>
             <div v-if="profileData?.dob" class="flex items-center gap-3">
-              <CalendarDays :size="16" class="text-[#FFA500]" />
+              <CalendarDays :size="16" class="text-primary" />
               <div>
                 <p class="text-xs text-slate-500 dark:text-[#9CA3AF]">{{ t('dateOfBirth') }}</p>
                 <p class="text-sm text-slate-900 dark:text-white">{{ profileData.dob }}</p>
               </div>
             </div>
             <div v-if="profileData?.address" class="flex items-center gap-3 sm:col-span-2">
-              <MapPin :size="16" class="shrink-0 text-[#FFA500]" />
+              <MapPin :size="16" class="shrink-0 text-primary" />
               <div class="min-w-0">
                 <p class="text-xs text-slate-500 dark:text-[#9CA3AF]">{{ t('address') }}</p>
                 <p class="text-sm text-slate-900 dark:text-white">{{ profileData.address }}</p>

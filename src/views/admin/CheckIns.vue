@@ -320,7 +320,7 @@ function showResultPanel() {
         <button
           type="button"
           @click="openScanModal"
-          class="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 hover:shadow"
+          class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover hover:shadow"
         >
           <QrCode :size="16" :stroke-width="2.5" />
           {{ t('verifyCheckin') }}
@@ -341,7 +341,7 @@ function showResultPanel() {
       <div class="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-500/30 dark:bg-rose-500/10">
         <XCircle :size="24" class="mx-auto mb-2 text-rose-500" />
         <p class="text-sm font-semibold text-rose-700 dark:text-rose-400">{{ error }}</p>
-        <button @click="fetchCheckIns" class="mt-3 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-600">
+        <button @click="fetchCheckIns" class="mt-3 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-contrast hover:bg-primary-hover">
           {{ t('retry') }}
         </button>
       </div>
@@ -378,7 +378,7 @@ function showResultPanel() {
             v-model="searchQuery"
             type="text"
             :placeholder="t('searchCheckins')"
-            class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -386,7 +386,7 @@ function showResultPanel() {
           <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('eventStatus') }}</label>
           <select
             v-model="selectedStatus"
-            class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500 capitalize"
+            class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary capitalize"
           >
             <option value="All">{{ t('allStatuses') }}</option>
             <option value="checked_in">{{ t('checkIn') }}</option>
@@ -420,7 +420,7 @@ function showResultPanel() {
                 :key="c.id"
                 class="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/50"
               >
-                <td class="px-6 py-4 font-mono text-xs font-bold text-amber-600">
+                <td class="px-6 py-4 font-mono text-xs font-bold text-primary-accent">
                   {{ c.booking_number }}
                 </td>
                 <td class="px-6 py-4">
@@ -460,7 +460,7 @@ function showResultPanel() {
         <!-- Modal header -->
         <div class="mb-0 flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-6 py-4">
           <div class="flex items-center gap-2.5">
-            <Scan :size="20" class="text-amber-600" />
+            <Scan :size="20" class="text-primary-accent" />
             <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ t('verifyCheckin') }}</h3>
           </div>
           <button
@@ -486,11 +486,11 @@ function showResultPanel() {
                server-verification feedback instead of a frozen camera frame. -->
           <div
             v-else-if="scanStep === 'loading'"
-            class="flex min-h-56 flex-col items-center justify-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-6 text-center dark:border-amber-500/30 dark:bg-amber-500/10"
+            class="flex min-h-56 flex-col items-center justify-center gap-3 rounded-xl border border-primary/20 bg-primary/10 p-6 text-center dark:border-primary/30 dark:bg-primary/15"
           >
-            <Loader2 :size="28" class="animate-spin text-amber-600 dark:text-amber-400" />
-            <p class="text-sm font-bold text-amber-800 dark:text-amber-300">{{ t('checkingIn') }}</p>
-            <p class="text-xs text-amber-700 dark:text-amber-400">Checking the ticket and recording entry…</p>
+            <Loader2 :size="28" class="animate-spin text-primary dark:text-primary-accent" />
+            <p class="text-sm font-bold text-primary dark:text-primary-accent">{{ t('checkingIn') }}</p>
+            <p class="text-xs text-primary-accent dark:text-primary-accent">Checking the ticket and recording entry…</p>
           </div>
 
           <!-- Ticket result panel -->
@@ -558,7 +558,7 @@ function showResultPanel() {
                   <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                     <KeyRound :size="12" /> Ticket No.
                   </dt>
-                  <dd class="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">{{ ticketData.ticket_code }}</dd>
+                  <dd class="font-mono text-xs font-bold text-primary-accent dark:text-primary-accent">{{ ticketData.ticket_code }}</dd>
                 </div>
                 <div class="flex items-start justify-between gap-3">
                   <dt class="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">

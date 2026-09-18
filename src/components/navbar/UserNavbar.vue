@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { Home, CalendarDays, Ticket, Heart, Settings, Search, X, Menu, LogIn, UserPlus, User, Sun, Moon } from "lucide-vue-next";
 import { useAuthStore } from "../../stores/auth.js";
+import { useSettingsStore } from "../../stores/settings.js";
 import { useTheme } from "../../composables/useTheme.js";
 import SearchBar from "./SearchBar.vue";
 import ProfileDropdown from "./ProfileDropdown.vue";
@@ -17,6 +18,7 @@ const props = defineProps({
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const settings = useSettingsStore();
 const { isDark, toggle } = useTheme();
 
 const scrolled = ref(false);
@@ -75,11 +77,11 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
       <div class="flex items-center justify-between gap-3">
         <!-- Logo -->
         <RouterLink to="/home" class="flex shrink-0 items-center gap-2">
-          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FFA500] font-extrabold text-black">
+          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-extrabold text-primary-contrast">
             <Ticket :size="17" />
           </span>
           <span class="hidden text-base font-extrabold tracking-tight text-slate-900 dark:text-white md:block">
-            BILIT
+            {{ settings.platformName }}
           </span>
         </RouterLink>
 
@@ -90,7 +92,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
             :key="item.to"
             type="button"
             :class="isActive(item)
-              ? 'bg-[#FFA500]/15 text-white'
+              ? 'bg-primary/15 text-white'
               : 'text-slate-500 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'"
             class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition"
             @click="goPath(item.to)"
@@ -119,7 +121,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
           </button>
 
           <!-- Language Switcher -->
-          <LanguageSwitcher class="flex w-fit h-9 items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 text-xs font-semibold text-slate-600 dark:text-white/80 transition hover:border-[#FFA500]/40 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white" />
+          <LanguageSwitcher class="flex w-fit h-9 items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 text-xs font-semibold text-slate-600 dark:text-white/80 transition hover:border-primary/40 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white" />
 
           <!-- Guest: quick sign-in / sign-up actions -->
           <template v-if="!loggedIn">
@@ -132,7 +134,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
             </RouterLink>
             <RouterLink
               to="/register"
-              class="hidden h-9 items-center gap-1.5 rounded-full bg-[#FFA500] px-3.5 text-sm font-bold text-black transition hover:bg-[#FFB52E] sm:flex"
+              class="hidden h-9 items-center gap-1.5 rounded-full bg-primary px-3.5 text-sm font-bold text-primary-contrast transition hover:bg-primary-hover sm:flex"
             >
               <UserPlus :size="15" />
               {{ t('register') }}
@@ -145,7 +147,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
             type="button"
             class="hidden h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/70 transition hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white sm:flex"
             :aria-label="route.path === '/settings' ? t('settings') : t('openSettings')"
-            :class="route.path === '/settings' ? 'text-[#FFA500]' : ''"
+            :class="route.path === '/settings' ? 'text-primary' : ''"
             @click="goPath('/settings')"
           >
             <Settings :size="17" />
@@ -201,7 +203,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
           v-for="item in navItems"
           :key="item.to"
           type="button"
-          :class="isActive(item) ? 'bg-[#FFA500]/15 text-white' : 'text-slate-600 dark:text-white/70'"
+          :class="isActive(item) ? 'bg-primary/15 text-white' : 'text-slate-600 dark:text-white/70'"
           class="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition hover:bg-slate-100 dark:hover:bg-white/5"
           @click="goPath(item.to)"
         >
@@ -221,7 +223,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
           </button>
           <button
             type="button"
-            class="mt-1 flex w-full items-center gap-3 rounded-xl bg-[#FFA500] px-4 py-3 text-left text-sm font-bold text-black transition hover:bg-[#FFB52E]"
+            class="mt-1 flex w-full items-center gap-3 rounded-xl bg-primary px-4 py-3 text-left text-sm font-bold text-primary-contrast transition hover:bg-primary-hover"
             @click="goPath('/register')"
           >
             <UserPlus :size="17" />
@@ -233,7 +235,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
         <template v-if="loggedIn">
           <button
             type="button"
-          :class="route.path === '/profile' ? 'bg-[#FFA500]/15 text-white' : 'text-slate-600 dark:text-white/70'"
+          :class="route.path === '/profile' ? 'bg-primary/15 text-white' : 'text-slate-600 dark:text-white/70'"
           class="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition hover:bg-slate-100 dark:hover:bg-white/5"
             @click="goPath('/profile')"
           >
@@ -242,7 +244,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
           </button>
           <button
             type="button"
-          :class="route.path === '/settings' ? 'bg-[#FFA500]/15 text-white' : 'text-slate-600 dark:text-white/70'"
+          :class="route.path === '/settings' ? 'bg-primary/15 text-white' : 'text-slate-600 dark:text-white/70'"
           class="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition hover:bg-slate-100 dark:hover:bg-white/5"
             @click="goPath('/settings')"
           >

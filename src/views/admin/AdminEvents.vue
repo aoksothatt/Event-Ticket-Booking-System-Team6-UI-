@@ -322,7 +322,7 @@ async function toggleTrending(event) {
       <div>
         <div class="flex items-center gap-2.5">
           <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{{ t("eventsManagement") }}</h1>
-          <span class="rounded-md bg-amber-100 border border-amber-200 px-2.5 py-0.5 text-xs text-amber-800 font-mono font-medium dark:bg-amber-500/15 dark:border-amber-500/30 dark:text-amber-400">
+          <span class="rounded-md bg-primary/15 border border-primary/20 px-2.5 py-0.5 text-xs text-primary-accent font-mono font-medium dark:bg-primary/15 dark:border-primary/30 dark:text-primary-accent">
             manage_events
           </span>
         </div>
@@ -332,7 +332,7 @@ async function toggleTrending(event) {
         <button
           type="button"
           @click="openCreateModal"
-          class="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 hover:shadow"
+          class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover hover:shadow"
         >
           <Plus :size="16" :stroke-width="2.5" />
           {{ t("createEvent") }}
@@ -351,11 +351,11 @@ async function toggleTrending(event) {
     >
       <div
         v-if="toast"
-        class="fixed right-4 top-4 z-[60] flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-lg dark:border-amber-500/30 dark:bg-slate-800 dark:text-white"
+        class="fixed right-4 top-4 z-[60] flex items-center gap-2 rounded-lg border border-primary/20 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-lg dark:border-primary/30 dark:bg-slate-800 dark:text-white"
         role="status"
         aria-live="polite"
       >
-        <Star :size="15" class="text-amber-500" :fill="'currentColor'" />
+        <Star :size="15" class="text-primary" :fill="'currentColor'" />
         {{ toast }}
       </div>
     </transition>
@@ -404,7 +404,7 @@ async function toggleTrending(event) {
           v-model="searchQuery"
           type="text"
           :placeholder="t('searchPlaceholder')"
-          class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
+          class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
         />
       </div>
 
@@ -414,7 +414,7 @@ async function toggleTrending(event) {
           <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t("eventCategory") }}</label>
           <select
             v-model="selectedCategory"
-            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
             <option v-for="cat in categories" :key="cat" :value="cat">{{ cat === 'All' ? t('all') : cat }}</option>
           </select>
@@ -425,7 +425,7 @@ async function toggleTrending(event) {
           <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t("eventStatus") }}</label>
           <select
             v-model="selectedStatus"
-            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-amber-500 capitalize dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-primary capitalize dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
             <option v-for="st in statuses" :key="st" :value="st">{{ statusDisplayMap[st] || st }}</option>
           </select>
@@ -483,7 +483,7 @@ async function toggleTrending(event) {
                   <div class="min-w-0">
                     <p class="font-semibold text-slate-900 dark:text-white">{{ event.title }}</p>
                     <div class="mt-1 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                      <span class="rounded bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-slate-700 dark:border-slate-600 dark:text-amber-400">{{ event.category?.name || t('na') }}</span>
+                      <span class="rounded bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-primary-accent dark:bg-slate-700 dark:border-slate-600 dark:text-primary-accent">{{ event.category?.name || t('na') }}</span>
                       <span class="truncate">{{ t("by") }} {{ event.organizer?.company_name || t("na") }}</span>
                     </div>
                   </div>
@@ -496,7 +496,7 @@ async function toggleTrending(event) {
               </td>
               <td class="px-6 py-4 text-slate-700 dark:text-slate-300">
                 <div class="flex items-center gap-1.5 text-xs font-medium">
-                  <MapPin :size="13" class="text-amber-600" />
+                  <MapPin :size="13" class="text-primary-accent" />
                   {{ event.venue?.name || t('na') }}
                 </div>
               </td>
@@ -520,7 +520,7 @@ async function toggleTrending(event) {
                     :aria-label="`${event.is_trending ? t('removeFromTrending') : t('addToTrending')} ${event.title}`"
                     :title="event.is_trending ? t('removeFromTrending') : t('addToTrending')"
                     class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-wait"
-                    :class="event.is_trending ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-600'"
+                    :class="event.is_trending ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'"
                     :disabled="trendingBusy.has(event.id)"
                     @click="toggleTrending(event)"
                   >
@@ -531,7 +531,7 @@ async function toggleTrending(event) {
                   </button>
                   <span
                     class="flex items-center gap-1 text-xs font-semibold"
-                    :class="event.is_trending ? 'text-amber-600' : 'text-slate-400 dark:text-slate-500'"
+                    :class="event.is_trending ? 'text-primary-accent' : 'text-slate-400 dark:text-slate-500'"
                   >
                     <Star :size="14" :fill="event.is_trending ? 'currentColor' : 'none'" />
                     {{ event.is_trending ? t("toggleOn") : t("toggleOff") }}
@@ -543,7 +543,7 @@ async function toggleTrending(event) {
                   <button
                     type="button"
                     @click="viewEvent(event.id)"
-                    class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-amber-500/10"
+                    class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-primary hover:text-primary-accent hover:bg-primary/10 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-primary/10"
                     :title="t('viewDetails')"
                   >
                     <Eye :size="14" />
@@ -551,7 +551,7 @@ async function toggleTrending(event) {
                   <button
                     type="button"
                     @click="openEditModal(event)"
-                    class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-amber-500/10"
+                    class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-primary hover:text-primary-accent hover:bg-primary/10 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-primary/10"
                     :title="t('editEvent')"
                   >
                     <Edit :size="14" />
@@ -600,7 +600,7 @@ async function toggleTrending(event) {
               type="text"
               required
               :placeholder="t('eventTitlePlaceholder')"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
             />
           </div>
 
@@ -610,7 +610,7 @@ async function toggleTrending(event) {
               <select
                 v-model="form.category_id"
                 required
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               >
                 <option value="" disabled>{{ t("selectCategory") }}</option>
                 <option v-for="c in categoriesList" :key="c.id" :value="c.id">{{ c.name }}</option>
@@ -621,7 +621,7 @@ async function toggleTrending(event) {
               <select
                 v-model="form.organizer_id"
                 required
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               >
                 <option value="" disabled>{{ t("selectOrganizer") }}</option>
                 <option v-for="o in organizersList" :key="o.id" :value="o.id">
@@ -637,7 +637,7 @@ async function toggleTrending(event) {
               <select
                 v-model="form.venue_id"
                 required
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               >
                 <option value="" disabled>{{ t("selectVenue") }}</option>
                 <option v-for="v in venuesList" :key="v.id" :value="v.id">{{ v.name }}</option>
@@ -647,7 +647,7 @@ async function toggleTrending(event) {
               <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t("status") }}</label>
               <select
                 v-model="form.status"
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 capitalize dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary capitalize dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               >
                 <option value="published">{{ t("published") }}</option>
                 <option value="draft">{{ t("draft") }}</option>
@@ -663,7 +663,7 @@ async function toggleTrending(event) {
                 v-model="form.start_date"
                 type="date"
                 required
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               />
             </div>
             <div>
@@ -672,7 +672,7 @@ async function toggleTrending(event) {
                 v-model="form.end_date"
                 type="date"
                 required
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               />
             </div>
           </div>
@@ -683,7 +683,7 @@ async function toggleTrending(event) {
               <input
                 v-model="form.start_time"
                 type="time"
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               />
             </div>
             <div>
@@ -691,7 +691,7 @@ async function toggleTrending(event) {
               <input
                 v-model="form.end_time"
                 type="time"
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
               />
             </div>
           </div>
@@ -700,7 +700,7 @@ async function toggleTrending(event) {
             <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t("bannerImage") }}</label>
             <div class="flex items-center gap-4">
               <label
-                class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-4 text-center text-slate-500 transition-colors hover:border-amber-500 hover:bg-amber-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-amber-500/10"
+                class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-4 text-center text-slate-500 transition-colors hover:border-primary hover:bg-primary/10 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-primary/10"
               >
                 <Upload :size="20" />
                 <span class="text-xs font-medium">{{ t("uploadBanner") }}</span>
@@ -725,7 +725,7 @@ async function toggleTrending(event) {
             <textarea
               v-model="form.description"
               rows="3"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
             />
           </div>
 
@@ -743,7 +743,7 @@ async function toggleTrending(event) {
             </button>
             <button
               type="submit"
-              class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600"
+              class="rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover"
             >
               {{ editingEvent ? t("saveChanges") : t("createEvent") }}
             </button>

@@ -263,7 +263,7 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
         </p>
         <button
           @click="fetchPayments"
-          class="mt-3 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-600"
+          class="mt-3 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-contrast hover:bg-primary-hover"
         >
           {{ t("retry") }}
         </button>
@@ -317,7 +317,7 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
             v-model="searchQuery"
             type="text"
             :placeholder="t('searchPayments')"
-            class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -329,7 +329,7 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
             >
             <select
               v-model="selectedMethod"
-              class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500"
+              class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary"
             >
               <option v-for="m in methods" :key="m" :value="m">
                 {{ m === "All" ? t("all") : m }}
@@ -344,7 +344,7 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
             >
             <select
               v-model="selectedStatus"
-              class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500 capitalize"
+              class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary capitalize"
             >
               <option v-for="s in statuses" :key="s" :value="s">
                 {{ statusDisplayMap[s] || s }}
@@ -371,7 +371,7 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
             <button
               type="button"
               @click="fetchPayments(true)"
-              class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-amber-500/10 dark:hover:text-amber-400"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-primary hover:text-primary-accent hover:bg-primary/10 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-primary/10 dark:hover:text-primary-accent"
             >
               <RefreshCw :size="13" />
               Refresh
@@ -409,7 +409,7 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
                 class="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/50"
               >
                 <td
-                  class="px-6 py-4 font-mono text-xs font-bold text-amber-600"
+                  class="px-6 py-4 font-mono text-xs font-bold text-primary-accent"
                 >
                   {{ p.transaction_id }}
                 </td>
@@ -458,7 +458,7 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
                     <button
                       type="button"
                       @click="viewPayment(p)"
-                      class="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-500/10"
+                      class="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-primary hover:text-primary-accent hover:bg-primary/10 dark:hover:bg-primary/10"
                     >
                       <Eye :size="13" />
                       {{ t("viewSlip") }}
@@ -527,7 +527,7 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
             <span class="text-slate-500 dark:text-slate-400"
               >Transaction ID</span
             >
-            <span class="font-mono text-amber-600 font-bold">{{
+            <span class="font-mono text-primary-accent font-bold">{{
               selectedPayment.transaction_id
             }}</span>
           </div>
@@ -571,7 +571,7 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
           </div>
           <div class="flex justify-between pt-2 text-sm font-bold">
             <span class="text-slate-900 dark:text-white">Total Amount</span>
-            <span class="text-amber-600 font-mono text-base"
+            <span class="text-primary-accent font-mono text-base"
               >${{ selectedPayment.amount.toFixed(2) }}
               {{ selectedPayment.currency }}</span
             >
@@ -597,7 +597,7 @@ const canConfirm = (p) => ["pending", "held"].includes(p.payment_status);
           <button
             type="button"
             @click="isModalOpen = false"
-            class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600"
+            class="rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover"
           >
             {{ t("close") }}
           </button>

@@ -248,7 +248,7 @@ async function deleteTicket(id) {
         <button
           type="button"
           @click="openCreateModal"
-          class="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 hover:shadow"
+          class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover hover:shadow"
         >
           <Plus :size="16" :stroke-width="2.5" />
           {{ t('addTicket') }} {{ t('type') }}
@@ -269,7 +269,7 @@ async function deleteTicket(id) {
       <div class="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-500/30 dark:bg-rose-500/10">
         <XCircle :size="24" class="mx-auto mb-2 text-rose-500" />
         <p class="text-sm font-semibold text-rose-700 dark:text-rose-400">{{ error }}</p>
-        <button @click="fetchTicketTypes" class="mt-3 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-600">
+        <button @click="fetchTicketTypes" class="mt-3 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-contrast hover:bg-primary-hover">
           {{ t('retry') }}
         </button>
       </div>
@@ -322,7 +322,7 @@ async function deleteTicket(id) {
             v-model="searchQuery"
             type="text"
             :placeholder="t('searchTickets')"
-            class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -330,7 +330,7 @@ async function deleteTicket(id) {
           <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('eventStatus') }}</label>
           <select
             v-model="selectedStatus"
-            class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500 capitalize"
+            class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary capitalize"
           >
             <option v-for="st in statuses" :key="st" :value="st">{{ statusDisplayMap[st] || st }}</option>
           </select>
@@ -383,7 +383,7 @@ async function deleteTicket(id) {
                     <div class="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-600 overflow-hidden border border-slate-200 dark:border-slate-700">
                       <div
                         class="h-full rounded-full"
-                        :class="t.sold_quantity >= t.quantity ? 'bg-rose-500' : 'bg-amber-500'"
+                        :class="t.sold_quantity >= t.quantity ? 'bg-rose-500' : 'bg-primary'"
                         :style="{ width: `${Math.min(100, Math.round((t.sold_quantity / t.quantity) * 100))}%` }"
                       />
                     </div>
@@ -399,7 +399,7 @@ async function deleteTicket(id) {
                     <button
                       type="button"
                       @click="openEditModal(t)"
-                      class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 p-1.5 text-slate-600 dark:text-slate-400 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
+                      class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 p-1.5 text-slate-600 dark:text-slate-400 hover:border-primary hover:text-primary-accent hover:bg-primary/10"
                     >
                       <Edit :size="14" />
                     </button>
@@ -447,7 +447,7 @@ async function deleteTicket(id) {
               type="text"
               required
               :placeholder="t('ticketExamplesPlaceholder')"
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
 
@@ -456,12 +456,12 @@ async function deleteTicket(id) {
             <select
               v-model="form.event_id"
               required
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
             >
               <option :value="null" disabled>{{ t('selectFromList') }}</option>
               <option v-for="ev in events" :key="ev.id" :value="ev.id">{{ ev.title }}</option>
             </select>
-            <p v-if="events.length === 0" class="mt-1 text-xs text-amber-600">
+            <p v-if="events.length === 0" class="mt-1 text-xs text-primary-accent">
               {{ t('noEventsAvailable') }}
             </p>
           </div>
@@ -475,7 +475,7 @@ async function deleteTicket(id) {
                 step="0.01"
                 min="0"
                 required
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
               />
             </div>
             <div>
@@ -485,7 +485,7 @@ async function deleteTicket(id) {
                 type="number"
                 min="1"
                 required
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
               />
             </div>
           </div>
@@ -494,7 +494,7 @@ async function deleteTicket(id) {
             <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('status') }}</label>
             <select
               v-model="form.status"
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500 capitalize"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary capitalize"
             >
               <option value="active">{{ t('active') }}</option>
               <option value="sold_out">{{ t('soldOut') }}</option>
@@ -508,7 +508,7 @@ async function deleteTicket(id) {
               v-model="form.description"
               rows="2"
               :placeholder="t('ticketPerksPlaceholder')"
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
             />
           </div>
 
@@ -522,7 +522,7 @@ async function deleteTicket(id) {
             </button>
             <button
               type="submit"
-              class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600"
+              class="rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover"
             >
               {{ editingTicket ? t('saveChanges') : t('createTicketType') }}
             </button>

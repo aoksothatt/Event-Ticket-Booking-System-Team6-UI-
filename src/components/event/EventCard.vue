@@ -47,7 +47,7 @@ function onToggleFavorite() {
 
 <template>
   <article
-    class="group relative w-[240px] shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] transition-all duration-300 hover:-translate-y-1.5 hover:border-[#FFA500]/30 dark:hover:shadow-2xl dark:hover:shadow-black/60 sm:w-[260px]"
+    class="group relative w-[240px] shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/30 dark:hover:shadow-2xl dark:hover:shadow-black/60 sm:w-[260px]"
     tabindex="0"
     @click="open"
     @keydown.enter="open"
@@ -72,7 +72,7 @@ function onToggleFavorite() {
       <div v-if="showBadges" class="absolute left-3 top-3 flex flex-col gap-1.5">
         <span
           v-if="trending"
-          class="rounded-full bg-[#FFA500] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-black shadow-md shadow-black/30"
+          class="rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-contrast shadow-md shadow-black/30"
         >
           {{ t('trending') }}
         </span>
@@ -98,7 +98,7 @@ function onToggleFavorite() {
       <!-- Category pill at bottom of image -->
       <span
         v-if="category"
-        class="absolute bottom-3 left-3 rounded-md bg-black/50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#FFA500] backdrop-blur-sm"
+        class="absolute bottom-3 left-3 rounded-md bg-black/50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary backdrop-blur-sm"
       >
         {{ category }}
       </span>
@@ -106,7 +106,7 @@ function onToggleFavorite() {
 
     <!-- Body -->
     <div class="flex flex-col gap-1.5 p-3.5">
-      <h3 class="line-clamp-1 text-sm font-semibold text-slate-900 dark:text-white transition-colors group-hover:text-[#FFA500]">
+      <h3 class="line-clamp-1 text-sm font-semibold text-slate-900 dark:text-white transition-colors group-hover:text-primary">
         {{ event.title }}
       </h3>
 
@@ -123,7 +123,7 @@ function onToggleFavorite() {
       <div class="mt-1.5 flex items-center justify-between border-t border-slate-200 dark:border-white/5 pt-2.5">
         <p
           :class="price !== null && price > 0
-            ? 'rounded-md bg-[#FFA500]/10 px-2 py-1 text-sm font-bold text-[#FFA500]'
+            ? 'rounded-md bg-primary/10 px-2 py-1 text-sm font-bold text-primary'
             : 'rounded-md bg-slate-100 dark:bg-white/5 px-2 py-1 text-[11px] font-semibold text-slate-600 dark:text-white/70'"
         >
           <template v-if="price !== null && price > 0">{{ t('fromPrice') }} {{ formatPrice(price) }}</template>
@@ -132,7 +132,7 @@ function onToggleFavorite() {
 
         <button
           type="button"
-          class="flex items-center gap-1 rounded-md bg-slate-100 dark:bg-white/5 px-2 py-1 text-[10px] font-semibold text-slate-600 dark:text-white/70 transition-colors hover:bg-[#FFA500] hover:text-black"
+          class="flex items-center gap-1 rounded-md bg-slate-100 dark:bg-white/5 px-2 py-1 text-[10px] font-semibold text-slate-600 dark:text-white/70 transition-colors hover:bg-primary hover:text-primary-contrast"
           @click.stop="goToBooking"
         >
           <Ticket :size="11" />

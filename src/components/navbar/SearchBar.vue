@@ -79,7 +79,7 @@ onBeforeUnmount(() => {
 <template>
   <div ref="box" class="relative w-full max-w-md">
     <div
-      class="flex items-center gap-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3.5 py-2 transition focus-within:border-[#FFA500]/60 focus-within:bg-slate-200 dark:focus-within:bg-white/10"
+      class="flex items-center gap-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3.5 py-2 transition focus-within:border-primary/60 focus-within:bg-slate-200 dark:focus-within:bg-white/10"
     >
       <Search :size="16" class="shrink-0 text-slate-500 dark:text-white/50" />
       <input
@@ -115,7 +115,7 @@ onBeforeUnmount(() => {
         class="absolute left-0 right-0 top-12 z-30 max-h-[60vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#14171C]/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl"
       >
         <div v-if="loading" class="flex items-center gap-2 px-4 py-3">
-          <Loader2 :size="16" class="animate-spin text-[#FFA500]" />
+          <Loader2 :size="16" class="animate-spin text-primary" />
           <span class="text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('loading') }}</span>
         </div>
 
@@ -148,7 +148,7 @@ onBeforeUnmount(() => {
                 <span class="truncate">{{ r.venue.name }}</span>
               </span>
             </span>
-            <span v-if="minPrice(r) !== null" class="shrink-0 text-xs font-bold text-[#FFA500]">
+            <span v-if="minPrice(r) !== null" class="shrink-0 text-xs font-bold text-primary">
               {{ formatPrice(minPrice(r)) }}
             </span>
           </button>

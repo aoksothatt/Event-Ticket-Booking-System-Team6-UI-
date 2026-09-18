@@ -222,7 +222,7 @@ onMounted(() => {
         <button
           type="button"
           @click="openCreateModal"
-          class="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 hover:shadow"
+          class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover hover:shadow"
         >
           <Plus :size="16" :stroke-width="2.5" />
           {{ t('inviteOrganizer') }}
@@ -233,7 +233,7 @@ onMounted(() => {
     <!-- Loading state -->
     <div v-if="loading" class="mb-8 flex items-center justify-center py-16">
       <div class="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
-        <svg class="h-5 w-5 animate-spin text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <svg class="h-5 w-5 animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -273,7 +273,7 @@ onMounted(() => {
             v-model="searchQuery"
             type="text"
             :placeholder="t('searchOrganizers')"
-            class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -281,7 +281,7 @@ onMounted(() => {
           <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('eventStatus') }}</label>
           <select
             v-model="selectedStatus"
-            class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500 capitalize"
+            class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary capitalize"
           >
             <option value="All">{{ t('allOrganizers') }}</option>
             <option value="Verified">{{ t('verified') }}</option>
@@ -311,7 +311,7 @@ onMounted(() => {
               <tr v-for="org in filteredOrganizers" :key="org.id" class="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/50">
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 font-bold text-xs text-amber-700 border border-amber-200 shadow-sm dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30">
+                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 font-bold text-xs text-primary-accent border border-primary/20 shadow-sm dark:bg-primary/15 dark:text-primary-accent dark:border-primary/30">
                       {{ initials(org.user?.name || org.company_name) }}
                     </span>
                     <div>
@@ -325,7 +325,7 @@ onMounted(() => {
                     <Mail :size="13" class="text-slate-400 dark:text-slate-500" />
                     {{ org.user?.email || "N/A" }}
                   </div>
-                  <div v-if="org.website" class="mt-0.5 flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                  <div v-if="org.website" class="mt-0.5 flex items-center gap-1.5 text-[11px] text-primary-accent dark:text-primary-accent font-medium">
                     <Globe :size="12" class="text-slate-400 dark:text-slate-500" />
                     {{ org.website }}
                   </div>
@@ -349,7 +349,7 @@ onMounted(() => {
                     <button
                       type="button"
                       @click="openEditModal(org)"
-                      class="rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 p-1.5 text-slate-600 dark:text-slate-400 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-500/10"
+                      class="rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 p-1.5 text-slate-600 dark:text-slate-400 hover:border-primary hover:text-primary-accent hover:bg-primary/10 dark:hover:bg-primary/10"
                     >
                       <Edit :size="14" />
                     </button>
@@ -397,7 +397,7 @@ onMounted(() => {
               type="text"
               required
               :placeholder="t('companyNamePlaceholder')"
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
 
@@ -407,7 +407,7 @@ onMounted(() => {
               v-model="form.user_id"
               :required="!editingOrganizer"
               :disabled="!!editingOrganizer"
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 disabled:opacity-60"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
             >
               <option value="" disabled>{{ t('selectUser') }}</option>
               <option v-for="u in users" :key="u.id" :value="u.id">
@@ -423,7 +423,7 @@ onMounted(() => {
                 v-model="form.contact_name"
                 type="text"
                 :placeholder="t('managerFullNamePlaceholder')"
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
               />
             </div>
             <div>
@@ -433,7 +433,7 @@ onMounted(() => {
                 type="email"
                 required
                 :placeholder="t('contactEmailPlaceholder')"
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
               />
             </div>
           </div>
@@ -445,7 +445,7 @@ onMounted(() => {
                 v-model="form.phone"
                 type="text"
                 :placeholder="t('phonePlaceholder')"
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
               />
             </div>
             <div>
@@ -454,7 +454,7 @@ onMounted(() => {
                 v-model="form.website"
                 type="url"
                 :placeholder="t('websitePlaceholder')"
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
               />
             </div>
           </div>
@@ -465,7 +465,7 @@ onMounted(() => {
               v-model="form.description"
               rows="3"
               :placeholder="t('organizerDescPlaceholder')"
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
             />
           </div>
 
@@ -473,7 +473,7 @@ onMounted(() => {
             <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('verificationStatus') }}</label>
             <select
               v-model="form.is_verified"
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500 capitalize"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary capitalize"
             >
               <option :value="true">{{ t('verified') }}</option>
               <option :value="false">{{ t('pendingReview') }}</option>
@@ -490,7 +490,7 @@ onMounted(() => {
             </button>
             <button
               type="submit"
-              class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600"
+              class="rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover"
             >
               {{ editingOrganizer ? t('saveChanges') : t('createOrganizer') }}
             </button>

@@ -50,7 +50,7 @@ function hasRoomToScroll() {
       <div class="hidden shrink-0 items-center gap-2 sm:flex">
         <button
           type="button"
-          class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/70 transition hover:border-[#FFA500]/50 hover:bg-[#FFA500]/10 hover:text-slate-900 dark:hover:text-white"
+          class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/70 transition hover:border-primary/50 hover:bg-primary/10 hover:text-slate-900 dark:hover:text-white"
           :aria-label="t('scrollLeft')"
           @click="scrollByCards(-1)"
         >
@@ -58,7 +58,7 @@ function hasRoomToScroll() {
         </button>
         <button
           type="button"
-          class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/70 transition hover:border-[#FFA500]/50 hover:bg-[#FFA500]/10 hover:text-slate-900 dark:hover:text-white"
+          class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/70 transition hover:border-primary/50 hover:bg-primary/10 hover:text-slate-900 dark:hover:text-white"
           :aria-label="t('scrollRight')"
           @click="scrollByCards(1)"
         >

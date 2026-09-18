@@ -41,7 +41,7 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutside));
   <div ref="rootEl" class="relative">
     <button
       type="button"
-      class="flex h-9 items-center gap-1.5 border-slate-200 dark:border-white/10  text-xs font-semibold text-slate-600 dark:text-white/80 transition hover:border-[#FFA500]/40 n  hover:text-slate-900 dark:hover:text-white"
+      class="flex h-9 items-center gap-1.5 border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-600 dark:text-white/80 transition hover:border-primary/40 hover:text-slate-900 dark:hover:text-white"
       :aria-label="locale === 'en' ? 'Language: English' : 'ភាសា: ខ្មែរ'"
       aria-haspopup="listbox"
       :aria-expanded="open"
@@ -76,12 +76,12 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutside));
           role="option"
           :aria-selected="locale === lang.code"
           class="flex w-fit items-center gap-2 px-3 py-2 text-xs font-medium transition hover:bg-slate-100 dark:hover:bg-white/5"
-          :class="locale === lang.code ? 'text-[#FFA500]' : 'text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white'"
+          :class="locale === lang.code ? 'text-primary' : 'text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white'"
           @click="switchLang(lang.code)"
         >
           <span
-            class="flex h-5 w-fit px-2 items-center justify-center rounded text-[9px] font-bold tracking-wide text-white"
-            :class="lang.code === 'en' ? 'bg-[#FFA500]' : 'bg-blue-600'"
+            class="flex h-5 w-fit px-2 items-center justify-center rounded text-[9px] font-bold tracking-wide text-primary-contrast"
+            :class="lang.code === 'en' ? 'bg-primary' : 'bg-blue-600'"
           >
             {{ lang.badge }}
           </span>
@@ -89,7 +89,7 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutside));
           <Check
             v-if="locale === lang.code"
             :size="14"
-            class="ml-auto text-[#FFA500]"
+            class="ml-auto text-primary"
           />
         </button>
       </div>

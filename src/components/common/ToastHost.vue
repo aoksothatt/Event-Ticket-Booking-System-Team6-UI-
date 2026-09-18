@@ -16,7 +16,7 @@ function toastStyle(type) {
   const styles = {
     success: "border-emerald-500/50 bg-emerald-500/10 text-emerald-300",
     info: "border-sky-500/50 bg-sky-500/10 text-sky-300",
-    error: "border-[#FFA500]/60 bg-[#FFA500]/10 text-[#FFA500]",
+    error: "border-rose-500/60 bg-rose-500/10 text-rose-300",
   };
   return styles[type] || styles.success;
 }

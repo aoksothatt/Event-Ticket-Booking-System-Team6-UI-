@@ -199,7 +199,7 @@ onUnmounted(stopOtpCountdown);
         <button
           type="button"
           @click="goToLogin"
-          class="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#FFA500] text-sm font-bold text-black transition hover:bg-[#FFB52E] active:scale-[0.99]"
+          class="flex h-11 w-full items-center justify-center rounded-[6px] bg-primary text-sm font-bold text-primary-contrast transition hover:bg-primary-hover active:scale-[0.99]"
         >
           {{ t('backToSignIn') }}
         </button>
@@ -243,11 +243,11 @@ onUnmounted(stopOtpCountdown);
         <!-- OTP expiry countdown (step 2 only) -->
         <div
           v-if="step === 2"
-          class="mb-6 flex items-center justify-between rounded-[6px] border border-[#FFA500]/30 bg-[#FFA500]/10 px-3 py-2 text-xs"
+          class="mb-6 flex items-center justify-between rounded-[6px] border border-primary/30 bg-primary/10 px-3 py-2 text-xs"
           :class="
             otpRemaining === 0
               ? 'text-red-400 border-red-500/40 bg-red-500/10'
-              : 'text-[#FFA500]'
+              : 'text-primary'
           "
         >
           <span>{{
@@ -351,7 +351,7 @@ onUnmounted(stopOtpCountdown);
           <button
             type="submit"
             :disabled="loading"
-            class="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-[#FFA500] text-sm font-bold text-black transition hover:bg-[#FFB52E] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+            class="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-primary text-sm font-bold text-primary-contrast transition hover:bg-primary-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Loader2 v-if="loading" class="h-5 w-5 animate-spin" />
             <span>{{
@@ -374,7 +374,7 @@ onUnmounted(stopOtpCountdown);
           {{ t('rememberedPassword') }}
           <RouterLink
             to="/login"
-            class="font-semibold text-[#FFA500] transition hover:text-[#FFB52E]"
+            class="font-semibold text-primary transition hover:text-primary-hover"
           >
             {{ t('signIn') }}
           </RouterLink>

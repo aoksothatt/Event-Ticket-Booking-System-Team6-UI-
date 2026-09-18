@@ -96,7 +96,7 @@ async function handleSubmit() {
           <span class="h-px flex-1 bg-slate-200 dark:bg-[#3A3A3A]"></span>
           <RouterLink
             to="/register"
-            class="whitespace-nowrap font-semibold text-[#FFA500] transition hover:text-[#FFB52E]"
+            class="whitespace-nowrap font-semibold text-primary transition hover:text-primary-hover"
           >
             {{ t("createAccount") }}
           </RouterLink>
@@ -152,7 +152,7 @@ async function handleSubmit() {
               <input
                 v-model="remember"
                 type="checkbox"
-                class="h-4 w-4 cursor-pointer rounded accent-[#FFA500]"
+                class="h-4 w-4 cursor-pointer rounded accent-primary"
               />
               {{ t("rememberMe") }}
             </label>
@@ -174,7 +174,7 @@ async function handleSubmit() {
           <button
             type="submit"
             :disabled="loading"
-            class="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-[#FFA500] text-sm font-bold text-black transition hover:bg-[#FFB52E] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+            class="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-primary text-sm font-bold text-primary-contrast transition hover:bg-primary-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Loader2 v-if="loading" class="h-5 w-5 animate-spin" />
             <span>{{ loading ? t("signingIn") : t("login") }}</span>
@@ -213,7 +213,7 @@ async function handleSubmit() {
         ></div>
         <div class="absolute bottom-5 left-5">
           <p
-            class="mb-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#FFA500]"
+            class="mb-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-primary"
           >
             {{ t("brandPresents") }}
           </p>

@@ -4,6 +4,7 @@ import router from "./router";
 import i18n from "./locales/i18n.js";
 import { pinia } from "./stores";
 import { useAuthStore } from "./stores/auth.js";
+import { useSettingsStore } from "./stores/settings.js";
 import { setUnauthorizedHandler } from "./api/http.js";
 import "./index.css";
 
@@ -14,6 +15,12 @@ app.use(router);
 app.use(i18n);
 
 const auth = useAuthStore(pinia);
+const settings = useSettingsStore(pinia);
+
+// Load the public platform settings (branding, booking constraints,
+// maintenance state) as soon as the app boots. Fire-and-forget — the UI
+// renders with built-in defaults and re-renders when the fetch completes.
+settings.load();
 
 // Invalid / expired JWT received anywhere in the app:
 // wipe the local session AND the Pinia state, then send the user (back) to

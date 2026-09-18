@@ -136,7 +136,7 @@ onBeforeUnmount(clearRedirectTimer);
         <span
           class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C]"
         >
-          <ScanLine :size="28" class="text-[#FFA500]" />
+          <ScanLine :size="28" class="text-primary" />
         </span>
         <h1 class="mt-4 text-xl font-extrabold tracking-tight">{{ t('selfCheckin') }}</h1>
         <p class="mt-1 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('selfCheckinScanPrompt') }}</p>
@@ -166,7 +166,7 @@ onBeforeUnmount(clearRedirectTimer);
               <p class="line-clamp-1 text-sm font-bold">
                 {{ ticket.ticket_type?.event?.title || t('event') }}
               </p>
-              <p class="mt-0.5 text-xs font-semibold text-[#FFA500]">
+              <p class="mt-0.5 text-xs font-semibold text-primary">
                 {{ ticket.ticket_type?.name || t('ticket') }}
               </p>
               <p class="mt-1 truncate font-mono text-[10px] text-slate-500 dark:text-[#9CA3AF]">
@@ -193,7 +193,7 @@ onBeforeUnmount(clearRedirectTimer);
 
         <button
           type="button"
-          class="mt-6 rounded-full bg-[#FFA500] px-6 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"
+          class="mt-6 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-contrast transition hover:bg-primary-hover"
           @click="goToMyTickets"
         >
           {{ t('viewMyTickets') }}
@@ -219,7 +219,7 @@ onBeforeUnmount(clearRedirectTimer);
 
         <button
           type="button"
-          class="mt-6 rounded-full bg-[#FFA500] px-6 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"
+          class="mt-6 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-contrast transition hover:bg-primary-hover"
           @click="checkAgain"
         >
           {{ t('tryCamera') }}
@@ -228,7 +228,7 @@ onBeforeUnmount(clearRedirectTimer);
 
       <!-- Loading -->
       <div v-else-if="state === 'loading'" class="mt-8 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] p-8 text-center">
-        <Loader2 :size="28" class="mx-auto animate-spin text-[#FFA500]" />
+        <Loader2 :size="28" class="mx-auto animate-spin text-primary" />
         <p class="mt-4 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('checkingYouIn') }}</p>
       </div>
 
@@ -254,12 +254,12 @@ onBeforeUnmount(clearRedirectTimer);
           type="text"
           :placeholder="t('pasteTicketCode')"
           @keyup.enter="submitManual"
-          class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-200 dark:bg-[#1D2229] px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-white/25 focus:border-[#FFA500]/50"
+          class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-200 dark:bg-[#1D2229] px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-white/25 focus:border-primary/50"
         />
         <button
           type="button"
           :disabled="!manualCode.trim()"
-          class="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[#FFA500] px-6 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E] disabled:opacity-50"
+          class="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-contrast transition hover:bg-primary-hover disabled:opacity-50"
           @click="submitManual"
         >
           <Ticket :size="15" />

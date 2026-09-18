@@ -192,7 +192,7 @@ onMounted(async () => {
     <!-- Loading State -->
     <div v-if="loading" class="flex items-center justify-center py-32">
       <div class="text-center">
-        <div class="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
+        <div class="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary-accent" />
         <p class="text-sm text-slate-500 dark:text-slate-400">{{ t("loadingData") }}</p>
       </div>
     </div>
@@ -205,7 +205,7 @@ onMounted(async () => {
         </div>
         <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ t("failed") }}</p>
         <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ error }}</p>
-        <button @click="$router.go(0)" class="mt-4 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-600">{{ t("retry") }}</button>
+        <button @click="$router.go(0)" class="mt-4 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-contrast hover:bg-primary-hover">{{ t("retry") }}</button>
       </div>
     </div>
 
@@ -232,13 +232,13 @@ onMounted(async () => {
               v-model="searchQuery"
               type="text"
               :placeholder="t('searchPlaceholder')"
-              class="w-72 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
+              class="w-72 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
             />
           </div>
           <button
             type="button"
             @click="router.push('/home')"
-            class="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-amber-500/10"
+            class="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-primary hover:text-primary-accent hover:bg-primary/10 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-primary/10"
           >
             <Store :size="15" />
             {{ t("viewStorefront") }}
@@ -257,13 +257,13 @@ onMounted(async () => {
             v-for="mod in managementModules"
             :key="mod.name"
             :to="mod.to"
-            class="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition-all hover:border-amber-400 hover:shadow-md hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800"
+            class="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition-all hover:border-primary hover:shadow-md hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800"
           >
             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border" :class="mod.color">
               <component :is="mod.icon" :size="18" />
             </div>
             <div class="min-w-0 flex-1">
-              <p class="truncate text-xs font-bold text-slate-900 group-hover:text-amber-600 dark:text-white">{{ mod.name }}</p>
+              <p class="truncate text-xs font-bold text-slate-900 group-hover:text-primary-accent dark:text-white">{{ mod.name }}</p>
               <p class="truncate text-[11px] font-medium text-slate-400 dark:text-slate-500">{{ mod.count }}</p>
             </div>
           </RouterLink>
@@ -303,7 +303,7 @@ onMounted(async () => {
             </div>
             <RouterLink
               to="/admin/bookings"
-              class="text-xs font-semibold text-amber-600 hover:text-amber-700 transition-colors"
+              class="text-xs font-semibold text-primary-accent hover:text-primary transition-colors"
             >
               {{ t("viewAllBookings") }}
             </RouterLink>
@@ -327,7 +327,7 @@ onMounted(async () => {
                   :key="b.id"
                   class="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/50"
                 >
-                  <td class="px-6 py-3.5 font-mono text-xs text-amber-600 font-semibold">
+                  <td class="px-6 py-3.5 font-mono text-xs text-primary-accent font-semibold">
                     {{ b.booking_number }}
                   </td>
                   <td class="px-6 py-3.5">

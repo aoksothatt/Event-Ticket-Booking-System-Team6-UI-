@@ -320,7 +320,7 @@ onBeforeUnmount(stopCountdown);
               </p>
 
               <!-- Payment Amount -->
-              <p class="mt-4 text-3xl font-black text-[#FFA500]">
+              <p class="mt-4 text-3xl font-black text-primary">
                 ${{ displayAmount }}
                 <span class="text-sm font-bold text-white/80">{{
                   currency
@@ -356,7 +356,7 @@ onBeforeUnmount(stopCountdown);
                 <button
                   type="button"
                   @click="viewEvent"
-                  class="w-full rounded-xl bg-gradient-to-r from-[#FFA500] to-[#FF8C00] py-3 text-sm font-bold text-slate-950 shadow-md hover:brightness-110 active:scale-98 transition flex items-center justify-center gap-2"
+                  class="w-full rounded-xl bg-gradient-to-r from-primary to-primary-hover py-3 text-sm font-bold text-primary-contrast shadow-md hover:brightness-110 active:scale-98 transition flex items-center justify-center gap-2"
                 >
                   <CalendarDays :size="16" />
                   View Event
@@ -392,7 +392,7 @@ onBeforeUnmount(stopCountdown);
               </p>
 
               <div class="mt-4 flex items-center justify-center gap-2">
-                <span class="text-2xl font-extrabold text-[#FFA500]">
+                <span class="text-2xl font-extrabold text-primary">
                   ${{ displayAmount }}
                 </span>
                 <span
@@ -559,7 +559,7 @@ onBeforeUnmount(stopCountdown);
                   v-else
                   class="flex h-[240px] w-[240px] items-center justify-center rounded-xl border border-white/10 bg-[#1D2229]"
                 >
-                  <Loader2 :size="28" class="animate-spin text-[#FFA500]" />
+                  <Loader2 :size="28" class="animate-spin text-primary" />
                 </div>
               </div>
 
@@ -606,9 +606,9 @@ onBeforeUnmount(stopCountdown);
                 :href="deeplink"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="mt-3 inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 hover:border-[#FFA500]/40"
+                class="mt-3 inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 hover:border-primary/40"
               >
-                <Smartphone :size="16" class="text-[#FFA500]" />
+                <Smartphone :size="16" class="text-primary" />
                 Pay with the Bakong app
               </a>
 
@@ -642,7 +642,7 @@ onBeforeUnmount(stopCountdown);
                 <button
                   v-if="paymentStatus === 'pending' && notice"
                   type="button"
-                  class="inline-flex items-center gap-2 rounded-full bg-[#FFA500] px-5 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"
+                  class="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-contrast transition hover:bg-primary-hover"
                   @click="emit('check')"
                 >
                   <Check :size="14" stroke-width="3" />
@@ -653,7 +653,7 @@ onBeforeUnmount(stopCountdown);
                     paymentStatus === 'expired' || paymentStatus === 'failed'
                   "
                   type="button"
-                  class="rounded-full bg-[#FFA500] px-5 py-2.5 text-sm font-bold text-black transition hover:bg-[#FFB52E]"
+                  class="rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-contrast transition hover:bg-primary-hover"
                   @click="retry"
                 >
                   Try Again

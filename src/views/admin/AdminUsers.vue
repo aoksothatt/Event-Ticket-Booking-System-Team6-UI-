@@ -242,7 +242,7 @@ onMounted(() => {
         <button
           type="button"
           @click="openCreateModal"
-          class="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 hover:shadow"
+          class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover hover:shadow"
         >
           <Plus :size="16" :stroke-width="2.5" />
           {{ t('addUser') }}
@@ -252,7 +252,7 @@ onMounted(() => {
 
     <!-- Loading State -->
     <div v-if="loading" class="mb-8 flex flex-col items-center justify-center py-16">
-      <Loader2 :size="36" class="animate-spin text-amber-500" />
+      <Loader2 :size="36" class="animate-spin text-primary" />
       <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">{{ t('loading') }}</p>
     </div>
 
@@ -299,7 +299,7 @@ onMounted(() => {
             v-model="searchQuery"
             type="text"
             :placeholder="t('searchUsers')"
-            class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -309,7 +309,7 @@ onMounted(() => {
             <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('roleHeader') }}:</label>
             <select
               v-model="selectedRole"
-              class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500 capitalize"
+              class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary capitalize"
             >
               <option v-for="r in roles" :key="r" :value="r">{{ roleDisplayMap[r] || r }}</option>
             </select>
@@ -320,7 +320,7 @@ onMounted(() => {
             <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('eventStatus') }}</label>
             <select
               v-model="selectedStatus"
-              class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-amber-500 capitalize"
+              class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary capitalize"
             >
               <option v-for="st in statuses" :key="st" :value="st">{{ statusDisplayMap[st] || st }}</option>
             </select>
@@ -354,7 +354,7 @@ onMounted(() => {
               >
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <span class="flex h-8 w-8 items-center justify-center rounded-full bg-amber-50 font-bold text-xs text-amber-700 border border-amber-200 shadow-sm dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30">
+                    <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 font-bold text-xs text-primary-accent border border-primary/20 shadow-sm dark:bg-primary/15 dark:text-primary-accent dark:border-primary/30">
                       {{ initials(u.name) }}
                     </span>
                     <div>
@@ -397,7 +397,7 @@ onMounted(() => {
                     <button
                       type="button"
                       @click="openEditModal(u)"
-                      class="rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 p-1.5 text-slate-600 dark:text-slate-400 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-500/10"
+                      class="rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 p-1.5 text-slate-600 dark:text-slate-400 hover:border-primary hover:text-primary-accent hover:bg-primary/10 dark:hover:bg-primary/10"
                     >
                       <Edit :size="14" />
                     </button>
@@ -445,7 +445,7 @@ onMounted(() => {
               type="text"
               required
               :placeholder="t('namePlaceholder')"
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
 
@@ -456,7 +456,7 @@ onMounted(() => {
               type="email"
               required
               :placeholder="t('emailPlaceholder')"
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
             />
           </div>
 
@@ -467,7 +467,7 @@ onMounted(() => {
               type="password"
               required
               placeholder="••••••••"
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
             />
           </div>
 
@@ -477,7 +477,7 @@ onMounted(() => {
               v-model="form.phone"
               type="text"
               :placeholder="t('phonePlaceholder')"
-              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500"
+              class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary"
             />
           </div>
 
@@ -486,7 +486,7 @@ onMounted(() => {
               <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('roleHeader') }} *</label>
               <select
                 v-model="form.role"
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500 capitalize"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary capitalize"
               >
                 <option value="customer">{{ t('customer') }}</option>
                 <option value="organizer">{{ t('organizer') }}</option>
@@ -497,7 +497,7 @@ onMounted(() => {
               <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('status') }}</label>
               <select
                 v-model="form.status"
-                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-amber-500 capitalize"
+                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary capitalize"
               >
                 <option value="active">{{ t('active') }}</option>
                 <option value="inactive">{{ t('inactive') }}</option>
@@ -516,7 +516,7 @@ onMounted(() => {
             </button>
             <button
               type="submit"
-              class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600"
+              class="rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover"
             >
               {{ editingUser ? t('saveChanges') : t('createUser') }}
             </button>

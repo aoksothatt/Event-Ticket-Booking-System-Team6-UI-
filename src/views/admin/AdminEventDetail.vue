@@ -245,7 +245,7 @@ async function deleteTicket(tier) {
       <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <div class="mb-3 flex items-center gap-2 text-slate-500 dark:text-slate-400">
-            <Calendar :size="16" class="text-amber-600 dark:text-amber-400" />
+            <Calendar :size="16" class="text-primary-accent" />
             <p class="text-xs font-semibold uppercase tracking-wider">{{ t('datesAndTime') }}</p>
           </div>
           <p class="text-base font-bold text-slate-900 dark:text-white">{{ currentEvent.start_date }}</p>
@@ -254,7 +254,7 @@ async function deleteTicket(tier) {
 
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <div class="mb-3 flex items-center gap-2 text-slate-500 dark:text-slate-400">
-            <MapPin :size="16" class="text-amber-600 dark:text-amber-400" />
+            <MapPin :size="16" class="text-primary-accent" />
             <p class="text-xs font-semibold uppercase tracking-wider">{{ t('venueLocation') }}</p>
           </div>
           <p class="text-base font-bold text-slate-900 dark:text-white">{{ currentEvent.venue }}</p>
@@ -262,7 +262,7 @@ async function deleteTicket(tier) {
 
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <div class="mb-3 flex items-center gap-2 text-slate-500 dark:text-slate-400">
-            <Ticket :size="16" class="text-amber-600 dark:text-amber-400" />
+            <Ticket :size="16" class="text-primary-accent" />
             <p class="text-xs font-semibold uppercase tracking-wider">{{ t('ticketsSold') }}</p>
           </div>
           <p class="text-base font-bold text-slate-900 dark:text-white">{{ currentEvent.sold }} / {{ currentEvent.capacity }}</p>
@@ -270,10 +270,10 @@ async function deleteTicket(tier) {
 
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <div class="mb-3 flex items-center gap-2 text-slate-500 dark:text-slate-400">
-            <DollarSign :size="16" class="text-amber-600 dark:text-amber-400" />
+            <DollarSign :size="16" class="text-primary-accent" />
             <p class="text-xs font-semibold uppercase tracking-wider">{{ t('grossRevenue') }}</p>
           </div>
-          <p class="text-xl font-bold text-amber-600 font-mono">{{ currentEvent.revenue }}</p>
+          <p class="text-xl font-bold text-primary-accent font-mono">{{ currentEvent.revenue }}</p>
         </div>
       </div>
 
@@ -293,7 +293,7 @@ async function deleteTicket(tier) {
           <button
             type="button"
             @click="openAddTicketModal"
-            class="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 hover:shadow"
+            class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover hover:shadow"
           >
             <Plus :size="15" :stroke-width="2.5" />
             {{ t('addTicket') }}
@@ -332,7 +332,7 @@ async function deleteTicket(tier) {
                   <button
                     type="button"
                     @click="openEditTicketModal(tier)"
-                    class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-amber-500/10"
+                    class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-primary hover:text-primary-accent hover:bg-primary/10 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-primary/10"
                     :title="t('editTicketType')"
                   >
                     <Edit :size="14" />
@@ -385,7 +385,7 @@ async function deleteTicket(tier) {
             type="text"
             required
             :placeholder="t('ticketNamePlaceholder')"
-            class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+            class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
           />
         </div>
 
@@ -399,7 +399,7 @@ async function deleteTicket(tier) {
               min="0"
               required
               placeholder="0.00"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
             />
           </div>
           <div>
@@ -410,7 +410,7 @@ async function deleteTicket(tier) {
               min="1"
               required
               :placeholder="t('quantityPlaceholder')"
-              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
             />
           </div>
         </div>
@@ -419,7 +419,7 @@ async function deleteTicket(tier) {
           <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('status') }}</label>
           <select
             v-model="ticketForm.status"
-            class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-amber-500 capitalize dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
+            class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 outline-none focus:bg-white focus:border-primary capitalize dark:border-slate-700 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-800"
           >
             <option value="active">{{ t('active') }}</option>
             <option value="inactive">{{ t('inactive') }}</option>
@@ -442,7 +442,7 @@ async function deleteTicket(tier) {
           <button
             type="submit"
             :disabled="ticketSaving"
-            class="flex items-center gap-2 rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all hover:bg-amber-600 disabled:opacity-60"
+            class="flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover disabled:opacity-60"
           >
             <Loader2 v-if="ticketSaving" :size="14" class="animate-spin" />
             {{ editingTicket ? t('saveChanges') : t('addTicket') }}

@@ -591,7 +591,7 @@ onBeforeUnmount(() => {
                     <p class="text-sm font-semibold text-white">
                       {{ ticket.name }}
                     </p>
-                    <p class="mt-0.5 text-sm font-bold text-[#FFA500]">
+                    <p class="mt-0.5 text-sm font-bold text-primary">
                       {{ formatPrice(ticket.price) }}
                     </p>
                   </div>
@@ -687,7 +687,7 @@ onBeforeUnmount(() => {
               class="mt-5 flex items-center justify-between border-t border-white/5 pt-4 text-sm"
             >
               <span class="text-[#9CA3AF]">Total</span>
-              <span class="text-lg font-extrabold text-[#FFA500]">{{
+              <span class="text-lg font-extrabold text-primary">{{
                 formatPrice(subtotal)
               }}</span>
             </div>
@@ -695,7 +695,7 @@ onBeforeUnmount(() => {
             <button
               type="button"
               :disabled="submitting || !hasSelection || !ticketTypes.length"
-              class="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#FFA500] px-6 py-3 text-sm font-bold text-black shadow-lg shadow-[#FFA500]/20 transition hover:bg-[#FFB52E] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+              class="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-contrast shadow-lg shadow-primary/20 transition hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               @click="doCheckout"
             >
               <Loader2 v-if="submitting" :size="17" class="animate-spin" />
