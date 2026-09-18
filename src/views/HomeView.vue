@@ -21,6 +21,7 @@ const categories = ref([]);
 const trendingLoading = ref(true);
 const upcomingLoading = ref(true);
 const trendingError = ref(false);
+const upcomingError = ref(false);
 
 // Map of categoryId -> events array for the per-category rows.
 const categoryEvents = ref({});
@@ -50,10 +51,12 @@ async function loadTrending() {
 
 async function loadUpcoming() {
   upcomingLoading.value = true;
+  upcomingError.value = false;
   try {
     upcomingEvents.value = await getUpcomingEvents();
   } catch {
     upcomingEvents.value = [];
+    upcomingError.value = true;
   } finally {
     upcomingLoading.value = false;
   }
@@ -149,13 +152,29 @@ watch(selectedCategory, loadVisibleCategories);
 
       <!-- Upcoming -->
       <section class="mx-auto w-full max-w-7xl">
+        <div
+          v-if="upcomingError"
+          class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#14171C]/50 px-6 py-12 text-center"
+        >
+          <p class="text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('upcomingLoadError') }}</p>
+          <button
+            type="button"
+            class="mt-4 inline-flex items-center gap-2 rounded-full bg-[#FFA500] px-5 py-2.5 text-sm font-bold text-black shadow-lg shadow-[#FFA500]/25 transition hover:bg-[#FFB52E] active:scale-[0.98]"
+            @click="loadUpcoming"
+          >
+            {{ t('retry') }}
+          </button>
+        </div>
+
         <EventCarousel
+          v-else
           :title="t('upcomingEvents')"
           :subtitle="t('upcomingEventsDesc')"
           :events="selectedCategory
             ? upcomingEvents.filter(e => String(e.category_id) === String(selectedCategory))
             : upcomingEvents"
           :loading="upcomingLoading"
+          :empty-text="t('noUpcomingEvents')"
         />
       </section>
 

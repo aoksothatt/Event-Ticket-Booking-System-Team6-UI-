@@ -95,6 +95,9 @@ export const adminApi = {
   async setEventTrending(id, isTrending) {
     return patch(`/admin/events/${id}/trending`, { is_trending: isTrending });
   },
+  async setEventUpcoming(id, isUpcoming) {
+    return patch(`/admin/events/${id}/upcoming`, { is_upcoming: isUpcoming });
+  },
 
   // 6. manage_ticket_types
   async getTicketTypes(params = {}) {
