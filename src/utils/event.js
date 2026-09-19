@@ -87,6 +87,76 @@ export function formatDateTime(value) {
   });
 }
 
+/** Returns the "YYYY-MM-DD" portion of a raw API date (handles full ISO
+ * strings like "2026-09-20T00:00:00.000000Z" and plain "2026-09-20"). */
+function datePortion(value) {
+  if (!value) return "";
+  return String(value).slice(0, 10);
+}
+
+/** Formats a "YYYY-MM-DD" (or full ISO) value as e.g. "Sep 20, 2026".
+ * Parses the date portion as a LOCAL date so a midnight timestamp serialized
+ * as "...T00:00:00.000000Z" never shifts to the previous day in negative UTC.
+ */
+function formatDateLocal(value) {
+  const [y, m, d] = datePortion(value).split("-").map(Number);
+  if (!y || !m || !d) return String(value ?? "");
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(y, m - 1, d));
+}
+
+/** Formats a "HH:MM[:SS]" time string (e.g. "07:00:00") as "7:00 AM"
+ * (hour12 = true) or "07:00" (hour12 = false). */
+function formatTimeHHMM(value, hour12) {
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(value ?? ""));
+  if (!m) return String(value ?? "");
+  const [hh, mm] = [Number(m[1]), Number(m[2])];
+  if (hour12) {
+    const meridiem = hh >= 12 ? "PM" : "AM";
+    const hour = hh % 12 || 12;
+    return `${hour}:${String(mm).padStart(2, "0")} ${meridiem}`;
+  }
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
+
+/**
+ * Formats an event's date + time fields into friendly labels for the
+ * DATES & TIMING column. Returns a single string so the template stays clean:
+ *   - same-day  -> "Sep 20, 2026 · 7:00 AM - 11:00 AM"
+ *   - multi-day -> "Sep 20 - Sep 21, 2026 · 7:00 AM - 11:00 AM"
+ * Pass { hour12: false } for 24-hour ("07:00 - 11:00").
+ */
+export function formatDateTimeRange(event, { hour12 = true } = {}) {
+  if (!event) return "";
+  const s = datePortion(event.start_date);
+  const e = datePortion(event.end_date);
+  const sameDay = !e || s === e;
+
+  const timeRange = [event.start_time, event.end_time]
+    .filter(Boolean)
+    .map((t) => formatTimeHHMM(t, hour12))
+    .join(" - ");
+
+  const fill = timeRange ? ` · ${timeRange}` : "";
+  if (sameDay) return `${formatDateLocal(s)}${fill}`;
+  return `${formatDateLocal(s)} - ${formatDateLocal(e)}${fill}`;
+}
+
+/** Indexes the "start," "end" halves of the formatted DATES & TIMING text so
+ * the template can render a bold date on top with a lighter time below. */
+export function formatDateTimeRangeParts(event, options = {}) {
+  const rendered = formatDateTimeRange(event, options);
+  const i = rendered.indexOf(" · ");
+  if (i === -1) return { dateLabel: rendered, timeLabel: "" };
+  return {
+    dateLabel: rendered.slice(0, i),
+    timeLabel: rendered.slice(i + 3),
+  };
+}
+
 /** Formats a float price into a currency string. */
 export function formatPrice(value, currency = "USD") {
   const num = Number(value);

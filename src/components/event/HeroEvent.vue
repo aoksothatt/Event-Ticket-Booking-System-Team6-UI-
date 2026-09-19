@@ -1,8 +1,23 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { Calendar, Clock, MapPin, Ticket, Heart, ChevronLeft, ChevronRight, Tag } from "lucide-vue-next";
-import { coverImage, formatDate, formatTime, formatPrice, minPrice } from "../../utils/event.js";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Ticket,
+  Heart,
+  ChevronLeft,
+  ChevronRight,
+  Tag,
+} from "lucide-vue-next";
+import {
+  coverImage,
+  formatDate,
+  formatTime,
+  formatPrice,
+  minPrice,
+} from "../../utils/event.js";
 import { useFavorites } from "../../composables/useFavorites.js";
 import { useI18n } from "vue-i18n";
 
@@ -65,10 +80,13 @@ function stop() {
 }
 
 // Reset position when the events array changes.
-watch(() => props.events, () => {
-  current.value = 0;
-  start();
-});
+watch(
+  () => props.events,
+  () => {
+    current.value = 0;
+    start();
+  },
+);
 
 onMounted(start);
 onBeforeUnmount(stop);
@@ -89,14 +107,23 @@ function viewDetails() {
     @mouseleave="paused = false"
   >
     <!-- Loading state -->
-    <div v-if="loading" class="relative h-[78vh] w-full animate-pulse bg-white dark:bg-[#14171C] sm:h-[86vh]">
+    <div
+      v-if="loading"
+      class="relative h-[78vh] w-full animate-pulse bg-white dark:bg-[#14171C] sm:h-[86vh]"
+    >
       <div class="flex h-full flex-col justify-end p-6 sm:p-12 lg:p-16">
         <div class="h-4 w-32 rounded bg-slate-200 dark:bg-[#1D2229]"></div>
-        <div class="mt-4 h-10 w-full max-w-xl rounded bg-slate-200 dark:bg-[#1D2229]"></div>
+        <div
+          class="mt-4 h-10 w-full max-w-xl rounded bg-slate-200 dark:bg-[#1D2229]"
+        ></div>
         <div class="mt-3 h-4 w-64 rounded bg-slate-200 dark:bg-[#1D2229]"></div>
         <div class="mt-8 flex gap-3">
-          <div class="h-12 w-36 rounded-full bg-slate-200 dark:bg-[#1D2229]"></div>
-          <div class="h-12 w-32 rounded-full bg-slate-200 dark:bg-[#1D2229]"></div>
+          <div
+            class="h-12 w-36 rounded-full bg-slate-200 dark:bg-[#1D2229]"
+          ></div>
+          <div
+            class="h-12 w-32 rounded-full bg-slate-200 dark:bg-[#1D2229]"
+          ></div>
         </div>
       </div>
     </div>
@@ -107,14 +134,18 @@ function viewDetails() {
       class="relative flex h-[80vh] w-full items-center justify-center bg-gradient-to-b from-slate-100 to-slate-200 dark:from-[#14171C] dark:to-[#0B0D10] p-6 text-center"
     >
       <div>
-        <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ t('unableToLoadTrending') }}</h2>
-        <p class="mt-2 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('trendingLoadError') }}</p>
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white">
+          {{ t("unableToLoadTrending") }}
+        </h2>
+        <p class="mt-2 text-sm text-slate-500 dark:text-[#9CA3AF]">
+          {{ t("trendingLoadError") }}
+        </p>
         <button
           type="button"
           class="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-contrast shadow-lg shadow-primary/25 transition hover:bg-primary-hover active:scale-[0.98]"
           @click="emit('retry')"
         >
-          {{ t('retry') }}
+          {{ t("retry") }}
         </button>
       </div>
     </div>
@@ -125,8 +156,12 @@ function viewDetails() {
       class="relative flex h-[80vh] w-full items-center justify-center bg-gradient-to-b from-slate-100 to-slate-200 dark:from-[#14171C] dark:to-[#0B0D10] p-6 text-center"
     >
       <div>
-        <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ t('noTrendingEvents') }}</h2>
-        <p class="mt-2 text-sm text-slate-500 dark:text-[#9CA3AF]">{{ t('checkBackSoon') }}</p>
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white">
+          {{ t("noTrendingEvents") }}
+        </h2>
+        <p class="mt-2 text-sm text-slate-500 dark:text-[#9CA3AF]">
+          {{ t("checkBackSoon") }}
+        </p>
       </div>
     </div>
 
@@ -138,7 +173,7 @@ function viewDetails() {
           v-if="image"
           :src="image"
           :alt="event.title"
-          class="absolute inset-0 h-full w-full object-fit"
+          class="absolute inset-0 h-full w-full object-cover"
         />
         <div
           :key="`${event.id}-ph`"
@@ -166,8 +201,10 @@ function viewDetails() {
       >
         <div class="max-w-2xl">
           <div class="mb-4 flex items-center gap-2">
-            <span class="rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-[0.15em] text-primary-contrast">
-              {{ t('trendingEvent') }}
+            <span
+              class="rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-[0.15em] text-primary-contrast"
+            >
+              {{ t("trendingEvent") }}
             </span>
             <span
               v-if="category"
@@ -183,7 +220,9 @@ function viewDetails() {
             {{ event.title }}
           </h1>
 
-          <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/90">
+          <div
+            class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/90"
+          >
             <span class="flex items-center gap-2">
               <Calendar :size="16" class="text-primary" />
               {{ formatDate(event.start_date) }}
@@ -198,19 +237,29 @@ function viewDetails() {
             </span>
           </div>
 
-          <p class="mt-4 line-clamp-2 max-w-xl text-sm leading-relaxed text-white/70 sm:text-base">
-            {{ event.description || t('defaultEventDescription') }}
+          <p
+            class="mt-4 line-clamp-2 max-w-xl text-sm leading-relaxed text-white/70 sm:text-base"
+          >
+            {{ event.description || t("defaultEventDescription") }}
           </p>
 
           <div class="mt-5 flex items-center gap-4">
-            <span v-if="price !== null && price > 0" class="flex items-center gap-1.5 text-sm text-white/90">
+            <span
+              v-if="price !== null && price > 0"
+              class="flex items-center gap-1.5 text-sm text-white/90"
+            >
               <Tag :size="15" class="text-primary" />
-              <span class="rounded-md bg-primary/10 px-2 py-1 font-bold text-primary">
-                {{ t('fromPrice') }} {{ formatPrice(price) }}
+              <span
+                class="rounded-md bg-primary/10 px-2 py-1 font-bold text-primary"
+              >
+                {{ t("fromPrice") }} {{ formatPrice(price) }}
               </span>
             </span>
-            <span v-else class="rounded-md bg-white/5 px-2 py-1 text-sm font-semibold text-white/80">
-              {{ t('freeEntry') }}
+            <span
+              v-else
+              class="rounded-md bg-white/5 px-2 py-1 text-sm font-semibold text-white/80"
+            >
+              {{ t("freeEntry") }}
             </span>
           </div>
 
@@ -221,19 +270,21 @@ function viewDetails() {
               @click="bookTicket"
             >
               <Ticket :size="17" />
-              {{ t('bookTickets') }}
+              {{ t("bookTickets") }}
             </button>
 
             <button
               type="button"
-              :class="saved
-                ? 'bg-white text-black'
-                : 'border border-white/25 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white backdrop-blur-sm hover:bg-slate-200 dark:hover:bg-white/10'"
+              :class="
+                saved
+                  ? 'bg-white text-black'
+                  : 'border border-white/25 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white backdrop-blur-sm hover:bg-slate-200 dark:hover:bg-white/10'
+              "
               class="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition active:scale-[0.98]"
               @click="toggleFavorite"
             >
               <Heart :size="16" :fill="saved ? 'currentColor' : 'none'" />
-              {{ saved ? t('eventSaved') : t('saveEvent') }}
+              {{ saved ? t("eventSaved") : t("saveEvent") }}
             </button>
 
             <button
@@ -241,7 +292,7 @@ function viewDetails() {
               class="inline-flex items-center gap-2 rounded-full border border-white/25 bg-slate-100 dark:bg-white/5 px-5 py-3 text-sm font-semibold text-slate-900 dark:text-white backdrop-blur-sm transition hover:bg-slate-200 dark:hover:bg-white/10 active:scale-[0.98]"
               @click="viewDetails"
             >
-              {{ t('viewDetails') }}
+              {{ t("viewDetails") }}
             </button>
           </div>
         </div>
@@ -270,14 +321,20 @@ function viewDetails() {
       </div>
 
       <!-- Pagination indicators -->
-      <div class="absolute bottom-7 left-5 z-20 flex items-center gap-2 sm:left-10">
+      <div
+        class="absolute bottom-7 left-5 z-20 flex items-center gap-2 sm:left-10"
+      >
         <button
           v-for="(item, index) in slideCount"
           :key="item.id"
           type="button"
           :aria-label="t('goToSlide', { number: index + 1 })"
           class="h-1.5 rounded-full transition-all duration-300"
-          :class="index === current ? 'w-7 bg-primary' : 'w-3 bg-white/40 hover:bg-white/60'"
+          :class="
+            index === current
+              ? 'w-7 bg-primary'
+              : 'w-3 bg-white/40 hover:bg-white/60'
+          "
           @click="go(index)"
         ></button>
       </div>

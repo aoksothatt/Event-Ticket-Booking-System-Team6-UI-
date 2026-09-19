@@ -114,9 +114,27 @@ export function postFormData(path, formData) {
   }).then((r) => r.data);
 }
 
-/** FormData PUT — for file uploads. */
+/** FormData PUT — for file uploads.
+ *
+ * PHP/Symfony only populate the request input bag (and $_FILES) for real
+ * POST bodies, so a native `PUT` with `multipart/form-data` reaches Laravel
+ * with an EMPTY input bag: `sometimes` validation silently passes on nothing
+ * and `$model->update([])` becomes a no-op that still returns success. Send
+ * `POST` with the Laravel-standard `_method=PUT` override instead — the
+ * router and controllers still see a PUT request, but fields + files are
+ * fully parsed (this is the same mechanism Laravel's own `<form method=PUT>`
+ * helper uses).
+ */
 export function putFormData(path, formData) {
-  return http.put(path, formData, {
+  if (!(formData instanceof FormData)) {
+    throw new TypeError("putFormData expects a FormData instance.");
+  }
+  const data = new FormData();
+  for (const [key, value] of formData.entries()) {
+    data.append(key, value);
+  }
+  data.append("_method", "PUT");
+  return http.post(path, data, {
     headers: { "Content-Type": "multipart/form-data" },
   }).then((r) => r.data);
 }

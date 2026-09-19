@@ -22,6 +22,8 @@ const { t } = useI18n();
 
 const loading = ref(true);
 const error = ref(null);
+const statusNotice = ref("");
+const statusError = ref("");
 
 const bookings = ref([]);
 
@@ -104,9 +106,18 @@ function viewBooking(booking) {
   isDetailOpen.value = true;
 }
 
-function updateStatus(newStatus) {
-  if (selectedBooking.value) {
-    selectedBooking.value.status = newStatus;
+async function saveBookingStatus() {
+  if (!selectedBooking.value) return;
+  const booking = selectedBooking.value;
+  const previous = booking.status;
+  statusNotice.value = "";
+  statusError.value = "";
+  try {
+    await adminApi.updateBooking(booking.id, { status: booking.status });
+    statusNotice.value = t("bookingUpdated");
+  } catch (e) {
+    booking.status = previous;
+    statusError.value = e.response?.data?.message || e.message || t("failedToUpdateBooking");
   }
 }
 </script>
@@ -373,9 +384,12 @@ function updateStatus(newStatus) {
           <div class="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 pt-4">
             <div>
               <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('bookingStatus') }}:</p>
+              <p v-if="statusNotice" class="mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">{{ statusNotice }}</p>
+              <p v-if="statusError" class="mt-1 text-xs font-semibold text-rose-600 dark:text-rose-400">{{ statusError }}</p>
               <div class="mt-1 flex items-center gap-2">
                 <select
                   v-model="selectedBooking.status"
+                  @change="saveBookingStatus"
                   class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3 py-1.5 text-xs text-slate-800 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary capitalize"
                 >
                   <option value="confirmed">{{ t('confirmed') }}</option>

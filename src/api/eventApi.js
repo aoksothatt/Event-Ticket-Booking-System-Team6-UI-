@@ -95,8 +95,8 @@ export async function getTrendingEvents() {
 
 /**
  * Upcoming events for the homepage banner.
- * Admin-driven via `is_upcoming` — only published events that the admin
- * manually flagged come back from `/events/upcoming`.
+ * Auto-derived on the backend — only published events whose start date has
+ * not passed come back from `/events/upcoming`. No manual admin flag.
  */
 export async function getUpcomingEvents() {
   try {
@@ -114,6 +114,28 @@ export async function getUpcomingEvents() {
 /** Events in a given category. */
 export async function getEventsByCategory(categoryId) {
   return getEvents({ category_id: categoryId, per_page: 12 });
+}
+
+/**
+ * "You Might Also Like" — related events for a single event detail page.
+ * The backend ranks candidates (same category / venue / city, nearby date,
+ * popularity, trending, and the signed-in user's past engagement) and always
+ * excludes the event itself plus any cancelled/ended/unpublished events.
+ */
+export async function getRecommendations(eventId) {
+  try {
+    const response = await get(`/events/${eventId}/recommendations`);
+    const payload = response?.data;
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.data)) return payload.data;
+    return [];
+  } catch (error) {
+    if (USE_MOCK_FALLBACK && error.isNetwork) {
+      // Gentle fallback for offline demoing — never the requested event.
+      return mockData.trendingEvents.filter((e) => String(e.id) !== String(eventId));
+    }
+    throw error;
+  }
 }
 
 /** Search endpoint for the navbar suggestion dropdown. */

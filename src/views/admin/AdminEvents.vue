@@ -1,26 +1,24 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { adminApi } from "@/api/admin.js";
-import { coverImage } from "../../utils/event.js";
+import { coverImage, formatDateTimeRangeParts } from "../../utils/event.js";
 import {
   Search,
   Plus,
   Calendar,
-  Ticket,
   MapPin,
-  Check,
   Flame,
-  Star,
   ArrowUpRight,
   Eye,
   Edit,
   Trash2,
   X,
   Layers,
-  Building2,
   Upload,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-vue-next";
 
 const router = useRouter();
@@ -34,9 +32,20 @@ const categoriesList = ref([]);
 const organizersList = ref([]);
 const venuesList = ref([]);
 
+// ── Server-driven filters (the backend does the actual filtering) ──────────
+const activeTab = ref("all"); // all | trending | upcoming
 const searchQuery = ref("");
-const selectedCategory = ref("All");
+const selectedCategory = ref("All"); // 'All' or a category id
 const selectedStatus = ref("All");
+const currentPage = ref(1);
+const perPage = ref(10);
+const lastPage = ref(1);
+const total = ref(0);
+const from = ref(0);
+const to = ref(0);
+
+// Lightweight totals backing the tab badges + stat cards.
+const counts = ref({ all: 0, trending: 0, upcoming: 0 });
 
 const statuses = ["All", "published", "draft", "cancelled"];
 const statusDisplayMap = {
@@ -55,75 +64,57 @@ const statusStyle = {
     "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30",
 };
 
-const categories = computed(() => {
-  const set = new Set(
-    events.value.map((e) => e.category?.name).filter(Boolean),
-  );
-  return ["All", ...set];
-});
+const tabs = computed(() => [
+  { key: "all", label: t("allEvents"), icon: Layers, count: counts.value.all },
+  { key: "trending", label: t("trending"), icon: Flame, count: counts.value.trending },
+  { key: "upcoming", label: t("upcomingHeader"), icon: Calendar, count: counts.value.upcoming },
+]);
 
-const stats = computed(() => {
-  const total = events.value.length;
-  const published = events.value.filter((e) => e.status === "published").length;
-  const draft = events.value.filter((e) => e.status === "draft").length;
-  return [
-    {
-      label: t("totalEvents"),
-      value: String(total),
-      change: `${published} ${t("published").toLowerCase()}`,
-      trend: "up",
-      icon: Calendar,
-      color: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
-    },
-    {
-      label: t("published"),
-      value: String(published),
-      change: total
-        ? `${Math.round((published / total) * 100)}% ${t("ofAllEvents")}`
-        : "0%",
-      trend: "up",
-      icon: Flame,
-      color:
-        "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
-    },
-    {
-      label: t("draft"),
-      value: String(draft),
-      change: `${draft} ${t("pendingReviewCount")}`,
-      trend: "up",
-      icon: Ticket,
-      color:
-        "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
-    },
-  ];
-});
-
-const filteredEvents = computed(() => {
-  return events.value.filter((event) => {
-    const q = searchQuery.value.toLowerCase();
-    const matchesSearch =
-      event.title?.toLowerCase().includes(q) ||
-      event.category?.name?.toLowerCase().includes(q) ||
-      event.organizer?.company_name?.toLowerCase().includes(q) ||
-      event.venue?.name?.toLowerCase().includes(q);
-
-    const matchesCategory =
-      selectedCategory.value === "All" ||
-      event.category?.name === selectedCategory.value;
-
-    const matchesStatus =
-      selectedStatus.value === "All" || event.status === selectedStatus.value;
-
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-});
+const stats = computed(() => [
+  {
+    label: t("totalEvents"),
+    value: String(counts.value.all),
+    change: t("totalEventsNote"),
+    icon: Layers,
+    color:
+      "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+  },
+  {
+    label: t("trending"),
+    value: String(counts.value.trending),
+    change: t("trendingNote"),
+    icon: Flame,
+    color:
+      "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
+  },
+  {
+    label: t("upcomingHeader"),
+    value: String(counts.value.upcoming),
+    change: t("upcomingAuto"),
+    icon: Calendar,
+    color:
+      "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+  },
+]);
 
 async function fetchEvents() {
   loading.value = true;
   error.value = null;
   try {
-    const res = await adminApi.getEvents();
-    events.value = res.data?.data || [];
+    const params = { page: currentPage.value, per_page: perPage.value };
+    if (activeTab.value !== "all") params.filter = activeTab.value;
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim();
+    if (selectedCategory.value !== "All") params.category_id = selectedCategory.value;
+    if (selectedStatus.value !== "All") params.status = selectedStatus.value;
+
+    const res = await adminApi.getEvents(params);
+    const paginated = res?.data;
+    events.value = paginated?.data || [];
+    total.value = paginated?.total || events.value.length;
+    currentPage.value = paginated?.current_page || 1;
+    lastPage.value = paginated?.last_page || 1;
+    from.value = paginated?.from || 0;
+    to.value = paginated?.to || 0;
   } catch (e) {
     error.value = e.response?.data?.message || e.message || t("failed");
   } finally {
@@ -131,8 +122,47 @@ async function fetchEvents() {
   }
 }
 
+async function loadCounts() {
+  try {
+    const [allRes, trendRes, upcomingRes] = await Promise.all([
+      adminApi.getEvents({ per_page: 1 }),
+      adminApi.getEvents({ per_page: 1, filter: "trending" }),
+      adminApi.getEvents({ per_page: 1, filter: "upcoming" }),
+    ]);
+    counts.value = {
+      all: allRes?.data?.total || 0,
+      trending: trendRes?.data?.total || 0,
+      upcoming: upcomingRes?.data?.total || 0,
+    };
+  } catch (e) {
+    // Counts are informational — keep whatever we had if they fail.
+  }
+}
+
+function applyFilters() {
+  currentPage.value = 1;
+  fetchEvents();
+}
+
+function goToPage(page) {
+  if (page < 1 || page > lastPage.value || page === currentPage.value) return;
+  currentPage.value = page;
+  fetchEvents();
+}
+
+let searchTimer = null;
+watch(searchQuery, () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    applyFilters();
+  }, 400);
+});
+
+watch([activeTab, selectedCategory, selectedStatus], applyFilters);
+
 onMounted(() => {
   fetchEvents();
+  loadCounts();
   fetchFormOptions();
 });
 
@@ -264,19 +294,12 @@ async function saveEvent() {
 
   try {
     if (editingEvent.value) {
-      const res = await adminApi.updateEvent(editingEvent.value.id, fd);
-      const updated = res.data?.data || res.data;
-      const idx = events.value.findIndex((e) => e.id === editingEvent.value.id);
-      if (idx !== -1) {
-        events.value[idx] = { ...events.value[idx], ...updated };
-      }
+      await adminApi.updateEvent(editingEvent.value.id, fd);
     } else {
-      const res = await adminApi.createEvent(fd);
-      const created = res.data?.data || res.data;
-      events.value.unshift(created);
+      await adminApi.createEvent(fd);
     }
     isModalOpen.value = false;
-    fetchEvents();
+    await Promise.all([fetchEvents(), loadCounts()]);
   } catch (e) {
     formError.value =
       e.response?.data?.message || e.message || t("errorMessage");
@@ -287,13 +310,16 @@ async function deleteEvent(id) {
   if (!confirm(t("deleteConfirm"))) return;
   try {
     await adminApi.deleteEvent(id);
-    events.value = events.value.filter((e) => e.id !== id);
+    if (events.value.length === 1 && currentPage.value > 1) {
+      currentPage.value -= 1;
+    }
+    await Promise.all([fetchEvents(), loadCounts()]);
   } catch (e) {
     alert(e.response?.data?.message || e.message || t("errorMessage"));
   }
 }
 
-// ── Trending toggle ─────────────────────────────────────────────────────────
+// ── Trending toggle (manual admin selection; Upcoming is auto-derived) ───────
 const trendingBusy = ref(new Set());
 const toast = ref("");
 let toastTimer = null;
@@ -315,13 +341,9 @@ async function toggleTrending(event) {
   trendingBusy.value = new Set(trendingBusy.value).add(id);
 
   try {
-    const res = await adminApi.setEventTrending(id, next);
-    const updated = res?.data || res;
-    const idx = events.value.findIndex((e) => e.id === id);
-    if (idx !== -1 && updated) {
-      events.value[idx] = { ...events.value[idx], ...updated };
-    }
+    await adminApi.setEventTrending(id, next);
     showToast(next ? t("addToTrending") : t("removeFromTrending"));
+    await Promise.all([fetchEvents(), loadCounts()]);
   } catch (e) {
     event.is_trending = prev;
     alert(e.response?.data?.message || e.message || t("errorMessage"));
@@ -329,35 +351,6 @@ async function toggleTrending(event) {
     const s = new Set(trendingBusy.value);
     s.delete(id);
     trendingBusy.value = s;
-  }
-}
-
-// ── Upcoming toggle ─────────────────────────────────────────────────────────
-const upcomingBusy = ref(new Set());
-
-async function toggleUpcoming(event) {
-  const id = event.id;
-  const next = !Boolean(event.is_upcoming);
-  const prev = Boolean(event.is_upcoming);
-
-  event.is_upcoming = next;
-  upcomingBusy.value = new Set(upcomingBusy.value).add(id);
-
-  try {
-    const res = await adminApi.setEventUpcoming(id, next);
-    const updated = res?.data || res;
-    const idx = events.value.findIndex((e) => e.id === id);
-    if (idx !== -1 && updated) {
-      events.value[idx] = { ...events.value[idx], ...updated };
-    }
-    showToast(next ? t("addToUpcoming") : t("removeFromUpcoming"));
-  } catch (e) {
-    event.is_upcoming = prev;
-    alert(e.response?.data?.message || e.message || t("errorMessage"));
-  } finally {
-    const s = new Set(upcomingBusy.value);
-    s.delete(id);
-    upcomingBusy.value = s;
   }
 }
 </script>
@@ -408,7 +401,7 @@ async function toggleUpcoming(event) {
         role="status"
         aria-live="polite"
       >
-        <Star :size="15" class="text-primary" :fill="'currentColor'" />
+        <Flame :size="15" class="text-primary" :fill="'currentColor'" />
         {{ toast }}
       </div>
     </transition>
@@ -443,7 +436,7 @@ async function toggleUpcoming(event) {
     </div>
 
     <!-- Stat cards -->
-    <div v-else class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div v-else class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
       <div
         v-for="stat in stats"
         :key="stat.label"
@@ -474,6 +467,42 @@ async function toggleUpcoming(event) {
       </div>
     </div>
 
+    <!-- Segmented control: All / Trending / Upcoming -->
+    <div
+      role="tablist"
+      aria-label="Event list filter"
+      class="mb-6 flex gap-2 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm [scrollbar-width:thin] dark:border-slate-700 dark:bg-slate-800"
+    >
+      <button
+        v-for="tab in tabs"
+        :key="tab.key"
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === tab.key"
+        :aria-label="`${tab.label}: ${tab.count} ${t('events')}`"
+        @click="activeTab = tab.key"
+        class="flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all"
+        :class="
+          activeTab === tab.key
+            ? 'bg-primary text-primary-contrast shadow-md shadow-primary/20'
+            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
+        "
+      >
+        <component :is="tab.icon" :size="15" />
+        {{ tab.label }}
+        <span
+          class="rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums"
+          :class="
+            activeTab === tab.key
+              ? 'bg-white/20 text-primary-contrast'
+              : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300'
+          "
+        >
+          {{ tab.count }}
+        </span>
+      </button>
+    </div>
+
     <!-- Filter & Search Bar -->
     <div
       class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800"
@@ -485,7 +514,7 @@ async function toggleUpcoming(event) {
         />
         <input
           v-model="searchQuery"
-          type="text"
+          type="search"
           :placeholder="t('searchPlaceholder')"
           class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none shadow-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
         />
@@ -502,8 +531,9 @@ async function toggleUpcoming(event) {
             v-model="selectedCategory"
             class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
-            <option v-for="cat in categories" :key="cat" :value="cat">
-              {{ cat === "All" ? t("all") : cat }}
+            <option value="All">{{ t("all") }}</option>
+            <option v-for="c in categoriesList" :key="c.id" :value="c.id">
+              {{ c.name }}
             </option>
           </select>
         </div>
@@ -534,13 +564,13 @@ async function toggleUpcoming(event) {
         class="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-700"
       >
         <h2 class="text-base font-bold text-slate-900 dark:text-white">
-          {{ t("events") }} ({{ filteredEvents.length }})
+          {{ t("events") }} ({{ total }})
         </h2>
       </div>
 
       <!-- Table Loading Skeleton -->
       <div
-        v-if="loading"
+        v-if="loading && !events.length"
         class="divide-y divide-slate-100 dark:divide-slate-700"
       >
         <div
@@ -567,14 +597,13 @@ async function toggleUpcoming(event) {
               <th class="px-6 py-3">{{ t("datesTiming") }}</th>
               <th class="px-6 py-3">{{ t("venueLocation") }}</th>
               <th class="px-6 py-3">{{ t("status") }}</th>
-              <th class="px-6 py-3">{{ t("trendingHeader") }}</th>
-              <th class="px-6 py-3">{{ t("upcomingHeader") }}</th>
+              <th class="px-6 py-3">{{ t("type") }}</th>
               <th class="px-6 py-3 text-right">{{ t("actions") }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
             <tr
-              v-for="event in filteredEvents"
+              v-for="event in events"
               :key="event.id"
               class="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/50"
             >
@@ -609,17 +638,26 @@ async function toggleUpcoming(event) {
                 </div>
               </td>
               <td class="px-6 py-4 text-slate-700 dark:text-slate-300">
-                <div
-                  class="text-sm font-semibold text-slate-900 dark:text-white"
-                >
-                  {{ event.start_date }}
-                </div>
-                <div class="text-xs text-slate-400 dark:text-slate-500">
-                  {{ event.start_time }} - {{ event.end_time }}
-                </div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">
-                  {{ t("ends") }} {{ event.end_date }}
-                </div>
+                <template v-if="formatDateTimeRangeParts(event).dateLabel">
+                  <div
+                    class="text-sm font-semibold text-slate-900 dark:text-white"
+                  >
+                    {{ formatDateTimeRangeParts(event).dateLabel }}
+                  </div>
+                  <div
+                    v-if="formatDateTimeRangeParts(event).timeLabel"
+                    class="text-xs text-slate-400 dark:text-slate-500"
+                  >
+                    {{ formatDateTimeRangeParts(event).timeLabel }}
+                  </div>
+                </template>
+                <template v-else>
+                  <div
+                    class="text-sm font-semibold text-slate-900 dark:text-white"
+                  >
+                    {{ event.start_date }}
+                  </div>
+                </template>
               </td>
               <td class="px-6 py-4 text-slate-700 dark:text-slate-300">
                 <div class="flex items-center gap-1.5 text-xs font-medium">
@@ -629,110 +667,52 @@ async function toggleUpcoming(event) {
               </td>
               <td class="px-6 py-4 w-32">
                 <span
-                  class="rounded-full border px-2 w py-0.5 text-[11px] font-semibold capitalize"
+                  class="rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize"
                   :class="statusStyle[event.status]"
                 >
                   {{ statusDisplayMap[event.status] || event.status }}
                 </span>
               </td>
 
-              <td class="px-10 py-4">
-                <div
-                  class="flex items-center gap-2"
-                  :class="
-                    trendingBusy.has(event.id)
-                      ? 'opacity-60 pointer-events-none'
-                      : ''
-                  "
-                >
+              <!-- Type: Trending (manual toggle) + Upcoming (auto badge) -->
+              <td class="px-6 py-4">
+                <div class="flex flex-col items-start gap-1.5">
                   <button
                     type="button"
                     role="switch"
                     :aria-checked="Boolean(event.is_trending)"
-                    :aria-label="`${event.is_trending ? t('removeFromTrending') : t('addToTrending')} ${event.title}`"
-                    :title="event.is_trending ? t('removeFromTrending') : t('addToTrending')"
-                    class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-wait"
-                    :class="event.is_trending ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'"
+                    :aria-label="`${event.is_trending ? t('removeFromTrending') : t('markTrending')} ${event.title}`"
+                    :title="event.is_trending ? t('removeFromTrending') : t('markTrending')"
                     :disabled="trendingBusy.has(event.id)"
                     @click="toggleTrending(event)"
+                    class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-all disabled:cursor-wait"
                     :class="[
-                      'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:cursor-wait',
+                      trendingBusy.has(event.id) ? 'opacity-60 pointer-events-none' : '',
                       event.is_trending
-                        ? 'bg-emerald-500 text-white hover:bg-emerald-50000'
-                        : 'border border-slate-300 bg-white text-slate-500 hover:border-red-500 hover:text-red-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:border-red-400 dark:hover:text-red-400',
+                        ? 'bg-primary text-primary-contrast shadow-sm hover:bg-primary-hover'
+                        : 'border border-slate-300 bg-white text-slate-500 hover:border-primary hover:text-primary-accent dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:border-primary dark:hover:text-primary-accent',
                     ]"
                   >
-                    <!-- ON = Check -->
-                    <Check
-                      v-if="event.is_trending"
-                      :size="14"
-                      :stroke-width="3"
-                    />
-
-                    <!-- OFF = X -->
-                    <X v-else :size="14" :stroke-width="3" />
-
-                   
+                    <Flame :size="12" :fill="event.is_trending ? 'currentColor' : 'none'" />
+                    {{ event.is_trending ? t("trending") : t("markTrending") }}
                   </button>
+
                   <span
-                    class="flex items-center gap-1 text-xs font-semibold"
-                    :class="event.is_trending ? 'text-primary-accent' : 'text-slate-400 dark:text-slate-500'"
+                    v-if="event.is_upcoming"
+                    :title="t('upcomingAutoNote')"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-400"
                   >
-                    <Star :size="14" :fill="event.is_trending ? 'currentColor' : 'none'" />
-                    {{ event.is_trending ? t("toggleOn") : t("toggleOff") }}
+                    <Calendar :size="12" />
+                    {{ t("upcomingHeader") }}
+                  </span>
+                  <span
+                    v-else
+                    :title="t('upcomingAutoNote')"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-400 dark:border-slate-600 dark:bg-slate-700/40 dark:text-slate-500"
+                  >
+                    {{ t("notUpcoming") }}
                   </span>
                 </div>
-              </td>
-
-              <td class="px-10 py-4">
-                <!-- <button
-                  type="button"
-                  :aria-label="`${event.is_upcoming ? t('removeFromUpcoming') : t('setUpcoming')} ${event.title}`"
-                  :title="event.is_upcoming ? t('removeFromUpcoming') : t('setUpcoming')"
-                  :disabled="upcomingBusy.has(event.id)"
-                  :class="[
-                    'inline-flex items-center  gap-1.5  rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:cursor-wait',
-                    event.is_upcoming
-                      ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                      : 'border border-slate-300 bg-white text-slate-500 hover:border-emerald-500 hover:text-emerald-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:border-emerald-400 dark:hover:text-emerald-400',
-                    upcomingBusy.has(event.id) ? 'opacity-60 pointer-events-none' : '',
-                  ]"
-                  @click="toggleUpcoming(event)"
-                >
-                  <Check :size="14" :fill="event.is_upcoming ? 'currentColor' : 'none'" />
-                  
-                </button> -->
-
-                <button
-                  type="button"
-                  :aria-label="`${event.is_upcoming ? t('removeFromUpcoming') : t('setUpcoming')} ${event.title}`"
-                  :title="
-                    event.is_upcoming
-                      ? t('removeFromUpcoming')
-                      : t('setUpcoming')
-                  "
-                  :disabled="upcomingBusy.has(event.id)"
-                  :class="[
-                    'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:cursor-wait',
-                    event.is_upcoming
-                      ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                      : 'border border-slate-300 bg-white text-slate-500 hover:border-red-500 hover:text-red-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:border-red-400 dark:hover:text-red-400',
-                    upcomingBusy.has(event.id)
-                      ? 'opacity-60 pointer-events-none'
-                      : '',
-                  ]"
-                  @click="toggleUpcoming(event)"
-                >
-                  <!-- True = Check ✓ -->
-                  <Check
-                    v-if="event.is_upcoming"
-                    :size="14"
-                    :stroke-width="3"
-                  />
-
-                  <!-- False = X ✕ -->
-                  <X v-else :size="14" :stroke-width="3" />
-                </button>
               </td>
               <td class="px-6 py-4 text-right">
                 <div class="flex items-center justify-end gap-1.5">
@@ -741,6 +721,7 @@ async function toggleUpcoming(event) {
                     @click="viewEvent(event.id)"
                     class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-primary hover:text-primary-accent hover:bg-primary/10 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-primary/10"
                     :title="t('viewDetails')"
+                    :aria-label="`${t('viewDetails')}: ${event.title}`"
                   >
                     <Eye :size="14" />
                   </button>
@@ -749,6 +730,7 @@ async function toggleUpcoming(event) {
                     @click="openEditModal(event)"
                     class="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:border-primary hover:text-primary-accent hover:bg-primary/10 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-primary/10"
                     :title="t('editEvent')"
+                    :aria-label="`${t('editEvent')}: ${event.title}`"
                   >
                     <Edit :size="14" />
                   </button>
@@ -757,15 +739,16 @@ async function toggleUpcoming(event) {
                     @click="deleteEvent(event.id)"
                     class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
                     :title="t('delete')"
+                    :aria-label="`${t('delete')}: ${event.title}`"
                   >
                     <Trash2 :size="14" />
                   </button>
                 </div>
               </td>
             </tr>
-            <tr v-if="filteredEvents.length === 0">
+            <tr v-if="events.length === 0">
               <td
-                colspan="7"
+                colspan="6"
                 class="px-6 py-8 text-center text-sm text-slate-400 dark:text-slate-500"
               >
                 {{ t("noEventsFound") }}
@@ -773,6 +756,41 @@ async function toggleUpcoming(event) {
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination -->
+      <div
+        v-if="!loading && total > 0"
+        class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-6 py-3 dark:border-slate-700"
+      >
+        <span class="text-xs text-slate-500 dark:text-slate-400">
+          {{ t("showingResult", { from, to, total }) }}
+        </span>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            :disabled="currentPage <= 1"
+            @click="goToPage(currentPage - 1)"
+            class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-primary hover:text-primary-accent disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+          >
+            <ChevronLeft :size="14" />
+            {{ t("previous") }}
+          </button>
+          <span
+            class="text-xs font-semibold tabular-nums text-slate-600 dark:text-slate-300"
+          >
+            {{ t("page") }} {{ currentPage }} {{ t("of") }} {{ lastPage }}
+          </span>
+          <button
+            type="button"
+            :disabled="currentPage >= lastPage"
+            @click="goToPage(currentPage + 1)"
+            class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-primary hover:text-primary-accent disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+          >
+            {{ t("next") }}
+            <ChevronRight :size="14" />
+          </button>
+        </div>
       </div>
     </div>
 
@@ -791,7 +809,9 @@ async function toggleUpcoming(event) {
             {{ editingEvent ? t("editEvent") : t("createNewEvent") }}
           </h3>
           <button
+            type="button"
             @click="isModalOpen = false"
+            :aria-label="t('close')"
             class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-white"
           >
             <X :size="18" />

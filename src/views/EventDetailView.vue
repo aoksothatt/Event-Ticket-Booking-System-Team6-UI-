@@ -12,8 +12,10 @@ import {
   ChevronLeft,
   Users,
   Star,
+  Flame,
 } from "lucide-vue-next";
 import { getEvent } from "../api/eventApi.js";
+import RecommendedEvents from "../components/event/RecommendedEvents.vue";
 import {
   coverImage,
   formatDate,
@@ -209,6 +211,20 @@ watch(
                   class="rounded-full bg-red-500 px-3 py-1 text-[11px] font-bold uppercase text-white"
                 >
                   {{ t("cancelled") }}
+                </span>
+                <span
+                  v-if="event.is_trending"
+                  class="inline-flex items-center gap-1 rounded-full border border-white/25 bg-black/45 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-300 backdrop-blur-sm"
+                >
+                  <Flame :size="12" :fill="'currentColor'" />
+                  {{ t("trending") }}
+                </span>
+                <span
+                  v-if="event.is_upcoming"
+                  class="inline-flex items-center gap-1 rounded-full border border-white/25 bg-black/45 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-300 backdrop-blur-sm"
+                >
+                  <Calendar :size="12" />
+                  {{ t("upcomingHeader") }}
                 </span>
               </div>
               <h1
@@ -532,6 +548,9 @@ watch(
             </div>
           </aside>
         </div>
+
+        <!-- You Might Also Like — recalculated when a recommended event is opened -->
+        <RecommendedEvents :key="event.id" :event-id="event.id" />
       </template>
     </div>
   </div>
