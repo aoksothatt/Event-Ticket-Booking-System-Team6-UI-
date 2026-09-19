@@ -15,7 +15,7 @@ import {
   Flame,
 } from "lucide-vue-next";
 import { getEvent } from "../api/eventApi.js";
-import RecommendedEvents from "../components/event/RecommendedEvents.vue";
+import YouMightAlsoLike from "../components/YouMightAlsoLike.vue";
 import {
   coverImage,
   formatDate,
@@ -549,8 +549,8 @@ watch(
           </aside>
         </div>
 
-        <!-- You Might Also Like — recalculated when a recommended event is opened -->
-        <RecommendedEvents :key="event.id" :event-id="event.id" />
+        <!-- You Might Also Like — recalculated when a new event is opened -->
+        <YouMightAlsoLike :current-event-id="event.id" />
       </template>
     </div>
   </div>

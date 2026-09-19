@@ -138,6 +138,25 @@ export async function getRecommendations(eventId) {
   }
 }
 
+/**
+ * "You Might Also Like" — related events for an event detail page.
+ * Fetches from `/events/{id}/related`; falls back to all events on failure.
+ */
+export async function getRelatedEvents(eventId) {
+  try {
+    const response = await get(`/events/${eventId}/related`);
+    const payload = response?.data;
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.data)) return payload.data;
+    return [];
+  } catch (error) {
+    if (USE_MOCK_FALLBACK && error.isNetwork) {
+      return mockData.events.filter((e) => String(e.id) !== String(eventId));
+    }
+    throw error;
+  }
+}
+
 /** Search endpoint for the navbar suggestion dropdown. */
 export async function searchEvents(query) {
   try {
