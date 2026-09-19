@@ -17,12 +17,9 @@ const { saving, errors, save, fieldError } = useSettingsSection(emit);
 const platformSettings = useSettingsStore();
 
 const form = reactive({
-  logo: "",
   favicon: "",
   primary_color: "#f59e0b",
-  secondary_color: "#0f172a",
   theme: "system",
-  tagline: "",
   footer_copyright: "",
 });
 
@@ -35,18 +32,14 @@ const themes = [
 const HEX_RE = /^#([0-9a-fA-F]{6})$/;
 
 const primaryColorValid = computed(() => HEX_RE.test(form.primary_color));
-const secondaryColorValid = computed(() => HEX_RE.test(form.secondary_color));
 
 watch(
   () => props.settings,
   (s) => {
     if (!s) return;
-    form.logo = s["appearance.logo"] ?? "";
     form.favicon = s["appearance.favicon"] ?? "";
     form.primary_color = s["appearance.primary_color"] ?? "#f59e0b";
-    form.secondary_color = s["appearance.secondary_color"] ?? "#0f172a";
     form.theme = s["appearance.theme"] ?? "system";
-    form.tagline = s["appearance.tagline"] ?? "";
     form.footer_copyright = s["appearance.footer_copyright"] ?? "";
   },
   { immediate: true }
@@ -56,9 +49,6 @@ function validate() {
   const errs = {};
   if (!HEX_RE.test(form.primary_color.trim())) {
     errs["appearance.primary_color"] = t("invalidHexColor");
-  }
-  if (!HEX_RE.test(form.secondary_color.trim())) {
-    errs["appearance.secondary_color"] = t("invalidHexColor");
   }
   return errs;
 }
@@ -90,12 +80,9 @@ async function handleSave() {
   errors.value = validate();
   if (Object.keys(errors.value).length) return;
   const ok = await save({
-    "appearance.logo": form.logo.trim(),
     "appearance.favicon": form.favicon.trim(),
     "appearance.primary_color": form.primary_color.trim(),
-    "appearance.secondary_color": form.secondary_color.trim(),
     "appearance.theme": form.theme,
-    "appearance.tagline": form.tagline.trim(),
     "appearance.footer_copyright": form.footer_copyright.trim(),
   });
   // Saved value comes from the backend — refresh the store so the persisted
@@ -111,22 +98,13 @@ async function handleSave() {
 
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
       <SettingInput
-        id="logo"
-        v-model="form.logo"
-        type="url"
-        :label="t('settingsLogo')"
-        :hint="t('settingsAssetHint')"
-      />
-      <SettingInput
         id="favicon"
         v-model="form.favicon"
         type="url"
         :label="t('settingsFavicon')"
         :hint="t('settingsAssetHint')"
       />
-    </div>
 
-    <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
       <div>
         <label class="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('settingsPrimaryColor') }}</label>
         <div class="flex items-center gap-3">
@@ -152,32 +130,6 @@ async function handleSave() {
           </div>
         </div>
       </div>
-
-      <div>
-        <label class="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('settingsSecondaryColor') }}</label>
-        <div class="flex items-center gap-3">
-          <input
-            type="color"
-            :value="hexToInput(form.secondary_color)"
-            @input="form.secondary_color = $event.target.value"
-            class="h-10 w-14 shrink-0 cursor-pointer rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 p-1 dark:bg-slate-700"
-          />
-          <div class="flex-1">
-            <input
-              v-model="form.secondary_color"
-              type="text"
-              spellcheck="false"
-              :class="secondaryColorValid
-                ? 'border-slate-200 dark:border-slate-600'
-                : 'border-rose-400 focus:border-rose-400 focus:ring-rose-500/20'"
-              class="w-full rounded-lg border bg-slate-50 dark:bg-slate-700 px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:ring-2"
-            />
-            <p v-if="fieldError('appearance.secondary_color')" class="mt-1 text-xs text-rose-500">
-              {{ fieldError('appearance.secondary_color') }}
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
 
     <div class="mt-5">
@@ -199,12 +151,7 @@ async function handleSave() {
       <p v-if="fieldError('appearance.theme')" class="mt-1 text-xs text-rose-500">{{ fieldError('appearance.theme') }}</p>
     </div>
 
-    <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
-      <SettingInput
-        id="tagline"
-        v-model="form.tagline"
-        :label="t('settingsTagline')"
-      />
+    <div class="mt-5 max-w-md">
       <SettingInput
         id="footer_copyright"
         v-model="form.footer_copyright"

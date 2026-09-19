@@ -81,7 +81,7 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutside));
         >
           <span
             class="flex h-5 w-fit px-2 items-center justify-center rounded text-[9px] font-bold tracking-wide text-primary-contrast"
-            :class="lang.code === 'en' ? 'bg-primary' : 'bg-blue-600'"
+            :class="lang.code === 'en' ? 'bg-primary' : 'bg-slate-600'"
           >
             {{ lang.badge }}
           </span>

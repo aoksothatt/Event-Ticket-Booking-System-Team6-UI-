@@ -150,11 +150,12 @@ function openCreateModal() {
 
 function openEditModal(u) {
   editingUser.value = u;
+  const actualPhone = (u.phone && u.phone !== "N/A" ? u.phone : (u.profile?.phone && u.profile?.phone !== "N/A" ? u.profile.phone : "")) || "";
   form.value = {
     name: u.name || "",
     email: u.email || "",
     password: "",
-    phone: getPhone(u),
+    phone: actualPhone,
     role: u.role || "customer",
     status: u.status || "active",
   };

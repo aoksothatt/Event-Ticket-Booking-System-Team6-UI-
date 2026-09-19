@@ -20,9 +20,6 @@ const form = reactive({
   allow_cancellation: true,
   auto_handle_past: true,
   qr_enabled: true,
-  allow_download: true,
-  allow_printing: true,
-  auto_mark_used: true,
 });
 
 const eventControls = [
@@ -35,9 +32,6 @@ const eventControls = [
 
 const ticketControls = [
   { key: "qr_enabled", label: t("settingsQREnabled"), desc: t("settingsQREnabledDesc") },
-  { key: "allow_download", label: t("settingsTicketDownload"), desc: t("settingsTicketDownloadDesc") },
-  { key: "allow_printing", label: t("settingsTicketPrinting"), desc: t("settingsTicketPrintingDesc") },
-  { key: "auto_mark_used", label: t("settingsAutoMarkUsed"), desc: t("settingsAutoMarkUsedDesc") },
 ];
 
 watch(

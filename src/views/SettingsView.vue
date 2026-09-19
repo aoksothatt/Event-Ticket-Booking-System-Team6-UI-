@@ -3,12 +3,14 @@ import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { Save, Lock, Loader2, Check, LayoutDashboard, Camera } from "lucide-vue-next";
-import { getProfile } from "../api/userApi.js";
+import { getProfile, cachedUser } from "../api/userApi.js";
 import { patch, put, postFormData, STORAGE_BASE } from "../api/http.js";
 import { isAdmin } from "../api/auth.js";
+import { useAuthStore } from "../stores/auth.js";
 
 const { t } = useI18n();
 const router = useRouter();
+const authStore = useAuthStore();
 
 const loading = ref(true);
 const profile = ref(null);
@@ -67,7 +69,14 @@ async function load() {
     avatarFile.value = null;
     avatarPreview.value = "";
   } catch {
-    /* handled by view-level fallback to stored user */
+    const cached = cachedUser();
+    if (cached) {
+      form.value = {
+        name: cached.name || "",
+        email: cached.email || "",
+        phone: cached.phone || "",
+      };
+    }
   } finally {
     loading.value = false;
   }
@@ -82,8 +91,9 @@ async function updateProfile() {
       const fd = new FormData();
       fd.append("avatar", avatarFile.value);
       const upload = await postFormData("/profile/avatar", fd);
-      if (profile.value) {
-        profile.value.user.avatar = upload?.data?.avatar_path;
+      if (profile.value && upload?.data?.avatar_path) {
+        if (!profile.value.user) profile.value.user = {};
+        profile.value.user.avatar = upload.data.avatar_path;
       }
       avatarFile.value = null;
     }
@@ -92,8 +102,22 @@ async function updateProfile() {
       email: form.value.email,
       phone: form.value.phone,
     });
-    if (profile.value && response?.data?.user) {
-      profile.value.user = response.data.user;
+    const resData = response?.data;
+    const updatedUser = resData?.user || (resData?.id ? resData : null);
+    const updatedProfile = resData?.profile || updatedUser?.profile || null;
+
+    if (profile.value) {
+      if (updatedUser) profile.value.user = updatedUser;
+      if (updatedProfile) profile.value.profile = updatedProfile;
+    }
+
+    if (updatedUser) {
+      form.value = {
+        name: updatedUser.name || "",
+        email: updatedUser.email || "",
+        phone: updatedUser.phone || updatedProfile?.phone || "",
+      };
+      authStore.setSession(authStore.token, updatedUser);
     }
     profileMsg.value = response?.message || t('profileUpdated');
   } catch (e) {
@@ -163,7 +187,7 @@ onMounted(load);
           <h2 class="mb-1 text-base font-bold text-slate-900 dark:text-white">{{ t('accountInformation') }}</h2>
           <p class="mb-5 text-xs text-slate-500 dark:text-[#9CA3AF]">{{ t('updateAccountDesc') }}</p>
 
-          <div class="space-y-4">
+          <form id="profile-form" class="space-y-4" novalidate @submit.prevent="updateProfile">
             <div class="flex flex-col items-center gap-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] p-5 sm:flex-row sm:items-center">
               <button
                 type="button"
@@ -176,7 +200,7 @@ onMounted(load);
                   <Camera :size="20" />
                 </span>
               </button>
-              <input ref="avatarInput" type="file" accept="image/*" class="hidden" @change="onAvatarSelect" />
+              <input ref="avatarInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" @change="onAvatarSelect" />
               <div class="flex flex-1 flex-col items-center gap-1 text-center sm:items-start sm:text-left">
                 <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ t('avatar') }}</p>
                 <p class="text-xs text-slate-500 dark:text-[#9CA3AF]">JPEG, PNG or WebP — max 2MB</p>
@@ -191,27 +215,38 @@ onMounted(load);
               </div>
             </div>
 
-            <label class="block">
+            <label class="block" for="settings-name">
               <span class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-[#9CA3AF]">{{ t('name') }}</span>
               <input
+                id="settings-name"
+                name="name"
                 v-model="form.name"
                 type="text"
+                autocomplete="name"
                 class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-primary/60 focus:outline-none"
               />
             </label>
-            <label class="block">
+            <label class="block" for="settings-email">
               <span class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-[#9CA3AF]">{{ t('email') }}</span>
               <input
+                id="settings-email"
+                name="email"
                 v-model="form.email"
                 type="email"
+                autocomplete="email"
                 class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-primary/60 focus:outline-none"
               />
             </label>
-            <label class="block">
+            <label class="block" for="settings-phone">
               <span class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-[#9CA3AF]">{{ t('phone') }}</span>
               <input
+                id="settings-phone"
+                name="phone"
                 v-model="form.phone"
                 type="tel"
+                autocomplete="tel"
+                inputmode="tel"
+                :placeholder="t('phonePlaceholder')"
                 class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-primary/60 focus:outline-none"
               />
             </label>
@@ -224,16 +259,15 @@ onMounted(load);
             </p>
 
             <button
-              type="button"
+              type="submit"
               :disabled="savingProfile"
               class="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-contrast transition hover:bg-primary-hover disabled:opacity-60"
-              @click="updateProfile"
             >
               <Loader2 v-if="savingProfile" :size="15" class="animate-spin" />
               <Save v-else :size="15" />
               {{ savingProfile ? t('saving') : t('saveChanges') }}
             </button>
-          </div>
+          </form>
         </section>
 
         <!-- Password settings -->
@@ -241,28 +275,47 @@ onMounted(load);
           <h2 class="mb-1 text-base font-bold text-slate-900 dark:text-white">{{ t('changePassword') }}</h2>
           <p class="mb-5 text-xs text-slate-500 dark:text-[#9CA3AF]">{{ t('passwordStrengthHint') }}</p>
 
-          <div class="space-y-4">
-            <label class="block">
+          <form id="password-form" class="space-y-4" novalidate @submit.prevent="updatePassword">
+            <!-- Hidden username field to prevent browser autofill colliding with profile fields -->
+            <input
+              type="text"
+              name="username"
+              :value="form.email"
+              autocomplete="username"
+              class="hidden"
+              tabindex="-1"
+              aria-hidden="true"
+            />
+            <label class="block" for="settings-current-password">
               <span class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-[#9CA3AF]">{{ t('currentPassword') }}</span>
               <input
+                id="settings-current-password"
+                name="current_password"
                 v-model="passwordForm.current_password"
                 type="password"
+                autocomplete="current-password"
                 class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-primary/60 focus:outline-none"
               />
             </label>
-            <label class="block">
+            <label class="block" for="settings-new-password">
               <span class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-[#9CA3AF]">{{ t('newPassword') }}</span>
               <input
+                id="settings-new-password"
+                name="new_password"
                 v-model="passwordForm.new_password"
                 type="password"
+                autocomplete="new-password"
                 class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-primary/60 focus:outline-none"
               />
             </label>
-            <label class="block">
+            <label class="block" for="settings-confirm-password">
               <span class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-[#9CA3AF]">{{ t('confirmNewPassword') }}</span>
               <input
+                id="settings-confirm-password"
+                name="new_password_confirmation"
                 v-model="passwordForm.new_password_confirmation"
                 type="password"
+                autocomplete="new-password"
                 class="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#1D2229] px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:border-primary/60 focus:outline-none"
               />
             </label>
@@ -275,16 +328,15 @@ onMounted(load);
             </p>
 
             <button
-              type="button"
+              type="submit"
               :disabled="savingPassword"
               class="flex items-center gap-2 rounded-full border border-slate-200 dark:border-white/15 bg-slate-100 dark:bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-900 dark:text-white transition hover:bg-slate-200 dark:hover:bg-white/10 disabled:opacity-60"
-              @click="updatePassword"
             >
               <Loader2 v-if="savingPassword" :size="15" class="animate-spin" />
               <Lock v-else :size="15" />
               {{ savingPassword ? t('updating') : t('updatePassword') }}
             </button>
-          </div>
+          </form>
         </section>
       </div>
     </div>

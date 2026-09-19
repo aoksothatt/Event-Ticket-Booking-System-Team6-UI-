@@ -50,7 +50,7 @@ import etecLogo from "../../assets/img/etec.jpg";
 
       <!-- Short description -->
       <p class="mt-3 max-w-[42ch] text-[13px] leading-relaxed text-slate-500 dark:text-white/50">
-        {{ t('footerDescription') }}
+        {{ settings.platformDescription || t('footerDescription') }}
       </p>
 
       <!-- Navigation links -->

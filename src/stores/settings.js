@@ -71,8 +71,14 @@ function contrastText(hex) {
 
 /**
  * Push the theme color onto the document CSS variables that back the primary
- * Tailwind palette. Hover/active/accent tones are derived in the stylesheet
- * with color-mix, so only the base color + rgb triplet + contrast are needed.
+ * Tailwind palette (see index.css for the fallback definitions).
+ *
+ * The base color, its space-separated rgb channels and the contrast text are
+ * always set. Hover/active tones are ALSO derived here (from the same weights
+ * used by the color-mix() fallbacks in index.css) so every browser renders the
+ * exact chosen brand color on hover/active regardless of color-mix() support.
+ * The accent token is left to the stylesheet (it has its own .dark override);
+ * an explicit JS value is only supplied when color-mix() is unavailable.
  */
 function applyBrandTokens(hex) {
   if (typeof document === "undefined") return;
@@ -85,6 +91,19 @@ function applyBrandTokens(hex) {
   // "245 158 11" (commas would produce an invalid, ignored color).
   root.style.setProperty("--color-primary-rgb", `${r} ${g} ${b}`);
   root.style.setProperty("--color-primary-contrast", contrastText(primary));
+  root.style.setProperty("--color-primary-hover", mixHex(primary, "#000000", 0.88));
+  root.style.setProperty("--color-primary-active", mixHex(primary, "#000000", 0.78));
+
+  const supportsColorMix =
+    typeof window !== "undefined" &&
+    !!window.CSS?.supports?.("color", "color-mix(in srgb, red, black)");
+  if (!supportsColorMix) {
+    const dark = root.classList.contains("dark");
+    root.style.setProperty(
+      "--color-primary-accent",
+      dark ? mixHex(primary, "#ffffff", 0.7) : mixHex(primary, "#000000", 0.55)
+    );
+  }
 }
 
 export const useSettingsStore = defineStore("settings", () => {
@@ -95,18 +114,10 @@ export const useSettingsStore = defineStore("settings", () => {
   // ---- Branding / general ----
   const platformName = computed(() => values.value["general.platform_name"] || "EventHub");
   const platformDescription = computed(() => values.value["general.platform_description"] || "");
-  const supportEmail = computed(() => values.value["general.support_email"] || "");
-  const supportPhone = computed(() => values.value["general.support_phone"] || "");
-  const defaultCurrency = computed(() => values.value["general.default_currency"] || "USD");
-  const language = computed(() => values.value["general.language"] || "en");
-  const timezone = computed(() => values.value["general.timezone"] || "Asia/Phnom_Penh");
 
-  const logo = computed(() => values.value["appearance.logo"] || "");
   const favicon = computed(() => values.value["appearance.favicon"] || "");
   const primaryColor = computed(() => values.value["appearance.primary_color"] || "#f59e0b");
-  const secondaryColor = computed(() => values.value["appearance.secondary_color"] || "#0f172a");
   const themeSetting = computed(() => values.value["appearance.theme"] || "system");
-  const tagline = computed(() => values.value["appearance.tagline"] || "");
   const footerCopyright = computed(() => values.value["appearance.footer_copyright"] || "");
 
   // ---- Booking constraints ----
@@ -131,8 +142,6 @@ export const useSettingsStore = defineStore("settings", () => {
   const adminApprovalRequired = computed(() => values.value["event.admin_approval_required"] === true);
   const allowCancellation = computed(() => values.value["event.allow_cancellation"] !== false);
   const qrEnabled = computed(() => values.value["ticket.qr_enabled"] !== false);
-  const allowDownload = computed(() => values.value["ticket.allow_download"] !== false);
-  const allowPrinting = computed(() => values.value["ticket.allow_printing"] !== false);
 
   // ---- System ----
   const maintenanceMode = computed(() => values.value["system.maintenance_mode"] === true);
@@ -162,7 +171,10 @@ export const useSettingsStore = defineStore("settings", () => {
     }
     const theme = String(themeSetting.value || "system");
     const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ?? false;
-    root.classList.toggle("dark", theme === "dark" || (theme === "system" && prefersDark));
+    document.documentElement.classList.toggle(
+      "dark",
+      theme === "dark" || (theme === "system" && prefersDark)
+    );
   }
 
   /**
@@ -200,17 +212,9 @@ export const useSettingsStore = defineStore("settings", () => {
     loading,
     platformName,
     platformDescription,
-    supportEmail,
-    supportPhone,
-    defaultCurrency,
-    language,
-    timezone,
-    logo,
     favicon,
     primaryColor,
-    secondaryColor,
     themeSetting,
-    tagline,
     footerCopyright,
     bookingsEnabled,
     minTickets,
@@ -227,8 +231,6 @@ export const useSettingsStore = defineStore("settings", () => {
     adminApprovalRequired,
     allowCancellation,
     qrEnabled,
-    allowDownload,
-    allowPrinting,
     maintenanceMode,
     maintenanceMessage,
     load,

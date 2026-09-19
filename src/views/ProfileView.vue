@@ -98,9 +98,9 @@ onMounted(load);
               <Mail :size="14" />
               {{ user.email }}
             </p>
-            <p v-if="user.phone" class="mt-1 flex items-center justify-center gap-2 text-sm text-slate-500 dark:text-[#9CA3AF] sm:justify-start">
+            <p v-if="user.phone || profileData?.phone" class="mt-1 flex items-center justify-center gap-2 text-sm text-slate-500 dark:text-[#9CA3AF] sm:justify-start">
               <Phone :size="14" />
-              {{ user.phone }}
+              {{ user.phone || profileData?.phone }}
             </p>
             <span class="mt-3 inline-block rounded-full bg-primary/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary">
               {{ roleLabel }}

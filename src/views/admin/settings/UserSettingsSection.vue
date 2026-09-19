@@ -19,7 +19,6 @@ const form = reactive({
   email_verification: true,
   google_login: true,
   profile_editing: true,
-  account_deletion: false,
   default_role: "customer",
 });
 
@@ -36,7 +35,6 @@ watch(
     form.email_verification = s["user.email_verification"] ?? true;
     form.google_login = s["user.google_login"] ?? true;
     form.profile_editing = s["user.profile_editing"] ?? true;
-    form.account_deletion = s["user.account_deletion"] ?? false;
     form.default_role = s["user.default_role"] ?? "customer";
   },
   { immediate: true }
@@ -48,7 +46,6 @@ async function handleSave() {
     "user.email_verification": form.email_verification,
     "user.google_login": form.google_login,
     "user.profile_editing": form.profile_editing,
-    "user.account_deletion": form.account_deletion,
     "user.default_role": form.default_role,
   });
 }
@@ -79,11 +76,6 @@ async function handleSave() {
         v-model="form.profile_editing"
         :label="t('settingsProfileEditing')"
         :description="t('settingsProfileEditingDesc')"
-      />
-      <SettingToggle
-        v-model="form.account_deletion"
-        :label="t('settingsAccountDeletion')"
-        :description="t('settingsAccountDeletionDesc')"
       />
     </div>
 
