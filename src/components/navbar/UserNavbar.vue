@@ -97,9 +97,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
             v-for="item in navItems"
             :key="item.to"
             type="button"
-            :class="isActive(item)
-              ? 'bg-primary text-primary-contrast'
-              : 'text-slate-500 dark:text-white/60 hover:bg-primary hover:text-primary-contrast dark:hover:text-primary-contrast'"
+            :class="isActive(item) ? 'bg-primary text-primary-contrast' : 'text-slate-500 dark:text-white/60 hover:bg-primary hover:text-primary-contrast dark:hover:text-primary-contrast'"
             class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition"
             @click="goPath(item.to)"
           >

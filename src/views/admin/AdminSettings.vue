@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { settingsApi } from "@/api/settingsApi.js";
+import { useSettingsStore } from "@/stores/settings.js";
 import {
   Loader2,
   AlertCircle,
@@ -25,6 +26,7 @@ import EventTicketSettingsSection from "./settings/EventTicketSettingsSection.vu
 import SystemSettingsSection from "./settings/SystemSettingsSection.vue";
 
 const { t } = useI18n();
+const platformSettings = useSettingsStore();
 
 const loading = ref(true);
 const loadError = ref("");
@@ -62,6 +64,10 @@ async function loadSettings() {
   try {
     const res = await settingsApi.getSettings();
     settings.value = res?.data?.settings || {};
+    // "Reload Values": refresh the centralized platform settings store too,
+    // which re-applies the Primary Color (--primary-color) to the whole
+    // customer-facing UI without a browser refresh.
+    await platformSettings.load(true);
   } catch (e) {
     loadError.value = e?.response?.data?.message || e?.message || t("errorMessage");
   } finally {

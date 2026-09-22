@@ -84,12 +84,13 @@ function hasRoomToScroll() {
       ref="track"
       class="-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] dark:[scrollbar-color:#2a2f37_transparent] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-[#2a2f37]"
     >
-      <EventCard
+      <div
         v-for="event in events"
         :key="event.id"
-        :event="event"
-        class="snap-start"
-      />
+        class="w-[240px] shrink-0 snap-start sm:w-[260px]"
+      >
+        <EventCard :event="event" />
+      </div>
     </div>
   </section>
 </template>

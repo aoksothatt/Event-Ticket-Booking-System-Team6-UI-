@@ -54,7 +54,7 @@ function onToggleFavorite() {
 
 <template>
   <article
-    class="group relative w-[240px] shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/30 dark:hover:shadow-2xl dark:hover:shadow-black/60 sm:w-[260px]"
+    class="group relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14171C] transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/30 dark:hover:shadow-2xl dark:hover:shadow-black/60"
     tabindex="0"
     @click="open"
     @keydown.enter="open"
@@ -140,7 +140,7 @@ function onToggleFavorite() {
     </div>
 
     <!-- Body -->
-    <div class="flex flex-col gap-1.5 p-3.5">
+    <div class="flex flex-1 flex-col gap-1.5 p-3.5">
       <h3 class="line-clamp-1 text-sm font-semibold text-slate-900 dark:text-white transition-colors group-hover:text-primary">
         {{ event.title }}
       </h3>

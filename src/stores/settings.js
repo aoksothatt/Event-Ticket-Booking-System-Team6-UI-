@@ -14,6 +14,7 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import { settingsApi } from "../api/settingsApi.js";
+<<<<<<< HEAD
 import { STORAGE_BASE } from "../api/http.js";
 
 /**
@@ -69,6 +70,14 @@ function luminance(hex) {
 function contrastText(hex) {
   return luminance(hex) > 0.4 ? "#111111" : "#ffffff";
 }
+=======
+import {
+  getContrastColor,
+  hexToRgb,
+  mixHex,
+  normalizeHex,
+} from "../utils/color.js";
+>>>>>>> d27cc2a0fb5731029708c040f7d39ba30f514ed6
 
 /**
  * Push the theme color onto the document CSS variables that back the primary
@@ -86,12 +95,17 @@ function applyBrandTokens(hex) {
   const root = document.documentElement;
   const primary = normalizeHex(hex || "#f59e0b");
   const { r, g, b } = hexToRgb(primary);
-  root.style.setProperty("--color-primary", primary);
-  // Space-separated channels: the emitted utilities are the modern
-  // `rgb(var(--color-primary-rgb) / <alpha>)` form, which REQUIRES
+  const contrast = getContrastColor(primary);
+
+  // --primary-color is the canonical token (set both the base and the
+  // derived tokens). Space-separated channels: the emitted utilities are the
+  // modern `rgb(var(--color-primary-rgb) / <alpha>)` form, which REQUIRES
   // "245 158 11" (commas would produce an invalid, ignored color).
+  root.style.setProperty("--primary-color", primary);
+  root.style.setProperty("--color-primary", primary);
   root.style.setProperty("--color-primary-rgb", `${r} ${g} ${b}`);
-  root.style.setProperty("--color-primary-contrast", contrastText(primary));
+  root.style.setProperty("--color-primary-contrast", contrast);
+  root.style.setProperty("--primary-color-contrast", contrast);
   root.style.setProperty("--color-primary-hover", mixHex(primary, "#000000", 0.88));
   root.style.setProperty("--color-primary-active", mixHex(primary, "#000000", 0.78));
 
