@@ -14,6 +14,7 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import { settingsApi } from "../api/settingsApi.js";
+import { STORAGE_BASE } from "../api/http.js";
 
 /**
  * Normalize a "#RGB"/"#RRGGBB" hex string; returns `fallback` when invalid.
@@ -120,6 +121,17 @@ export const useSettingsStore = defineStore("settings", () => {
   const themeSetting = computed(() => values.value["appearance.theme"] || "system");
   const footerCopyright = computed(() => values.value["appearance.footer_copyright"] || "");
 
+  /**
+   * Website logo URL. The backend stores the public-disk path
+   * (e.g. "logos/abc.png"); full absolute URLs pass straight through.
+   */
+  const logo = computed(() => {
+    const raw = String(values.value["appearance.logo"] || "").trim();
+    if (!raw) return "";
+    if (/^(https?:|data:|\/)/.test(raw)) return raw;
+    return `${STORAGE_BASE}/${raw}`;
+  });
+
   // ---- Booking constraints ----
   const bookingsEnabled = computed(() => values.value["booking.enabled"] !== false);
   const minTickets = computed(() => Number(values.value["booking.min_tickets"] || 1));
@@ -212,6 +224,7 @@ export const useSettingsStore = defineStore("settings", () => {
     loading,
     platformName,
     platformDescription,
+    logo,
     favicon,
     primaryColor,
     themeSetting,

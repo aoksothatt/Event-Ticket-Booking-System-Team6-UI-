@@ -38,7 +38,14 @@ import etecLogo from "../../assets/img/etec.jpg";
     >
       <!-- Logo -->
       <RouterLink to="/home" class="flex items-center gap-2">
+        <img
+          v-if="settings.logo"
+          :src="settings.logo"
+          :alt="settings.platformName"
+          class="h-8 w-8 rounded-lg object-contain bg-white/60 p-0.5 dark:bg-transparent"
+        />
         <span
+          v-else
           class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-extrabold text-primary-contrast"
         >
           <Ticket :size="17" />

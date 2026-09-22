@@ -86,7 +86,13 @@ async function handleLogout() {
     <div>
       <!-- Brand -->
       <div class="mb-6 flex items-center gap-2 px-0">
-        <div class="flex h-10 w-14 items-center justify-center rounded-xl bg-primary font-bold text-primary-contrast shadow-md">
+        <img
+          v-if="settings.logo"
+          :src="settings.logo"
+          :alt="settings.platformName"
+          class="h-10 w-14 rounded-xl bg-white/60 object-contain p-1 shadow-md dark:bg-slate-700/40"
+        />
+        <div v-else class="flex h-10 w-14 items-center justify-center rounded-xl bg-primary font-bold text-primary-contrast shadow-md">
           <Ticket :size="22" :stroke-width="2.5" />
         </div>
         <div class="flex-1">

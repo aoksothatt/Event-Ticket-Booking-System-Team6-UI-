@@ -17,6 +17,7 @@ import {
   formatCountdown,
 } from "../api/checkoutApi.js";
 import { useAuthStore } from "../stores/auth.js";
+import { useSettingsStore } from "../stores/settings.js";
 import { toast } from "../composables/useToast.js";
 import {
   coverImage,
@@ -30,12 +31,27 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const settings = useSettingsStore();
 
 const event = ref(null);
 const loading = ref(true);
 const error = ref("");
 const submitting = ref(false);
 const submitError = ref("");
+
+// The checkout no longer collects a phone number: when the administrator
+// requires one (booking.require_phone) the buyer's PROFILE phone is the only
+// accepted source. Buyers without a saved number are shown a blocked panel
+// and directed to /settings (SettingsView) to add one before booking.
+const phoneBlocked = computed(
+  () =>
+    settings.requirePhone &&
+    !String(auth.user?.phone || "").trim(),
+);
+
+// A finished event (current datetime past end_date + end_time) must never
+// accept a checkout — the backend rejects it too.
+const eventExpired = computed(() => event.value?.is_expired === true);
 
 const showModal = ref(false);
 const order = ref(null);
@@ -229,6 +245,20 @@ async function doCheckout() {
   const user = auth.user;
   if (!user?.id) {
     submitError.value = t("signInToBook");
+    return;
+  }
+
+  // This event has already ended — refuse right away (backend would too).
+  if (eventExpired.value) {
+    submitError.value = t("eventEnded");
+    return;
+  }
+
+  // Profile phone is required by the administrator but the buyer has none:
+  // the backend would reject with PHONE_REQUIRED anyway, so stop here and
+  // leave the blocked panel visible.
+  if (phoneBlocked.value) {
+    submitError.value = t("phoneRequiredProfile");
     return;
   }
 
@@ -646,6 +676,46 @@ onBeforeUnmount(() => {
               </p>
             </div>
 
+            <!-- When the administrator requires a phone number the buyer's
+                 PROFILE phone is used — the checkout form never collects one.
+                 Buyers without a saved number get a blocked panel linking to
+                 their profile settings so they can add it and come back. -->
+            <div
+              v-if="phoneBlocked"
+              class="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-4"
+            >
+              <p class="text-sm font-semibold text-white">
+                {{ t("phoneRequiredProfile") }}
+              </p>
+              <p class="mt-1 text-xs text-[#9CA3AF]">
+                {{ t("phoneRequiredHint") }}
+              </p>
+              <button
+                type="button"
+                class="mt-3 flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-contrast shadow-md transition hover:bg-primary-hover"
+                @click="router.push('/settings')"
+              >
+                {{ t("goToProfile") }}
+              </button>
+            </div>
+
+            <!-- A past event cannot be booked; show a notice instead of the form. -->
+            <div
+              v-else-if="eventExpired"
+              class="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4"
+            >
+              <p class="text-sm font-semibold text-white">
+                {{ t("eventEnded") }}
+              </p>
+              <button
+                type="button"
+                class="mt-3 flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/10"
+                @click="router.push(`/events/${event?.id}`)"
+              >
+                {{ t("backToEvent") }}
+              </button>
+            </div>
+
             <p
               v-if="submitError"
               class="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-300"
@@ -694,7 +764,13 @@ onBeforeUnmount(() => {
 
             <button
               type="button"
-              :disabled="submitting || !hasSelection || !ticketTypes.length"
+              :disabled="
+                submitting ||
+                !hasSelection ||
+                !ticketTypes.length ||
+                phoneBlocked ||
+                eventExpired
+              "
               class="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-contrast shadow-lg shadow-primary/20 transition hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               @click="doCheckout"
             >

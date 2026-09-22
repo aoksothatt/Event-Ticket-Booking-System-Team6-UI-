@@ -80,9 +80,19 @@ const currentEvent = computed(() => {
   if (!e) return null;
 
   const ticketTypes = e.ticketTypes || [];
-  const sold = ticketTypes.reduce((sum, t) => sum + (t.sold_quantity || 0), 0);
-  const capacity = ticketTypes.reduce((sum, t) => sum + (t.quantity || 0), 0);
-  const revenue = ticketTypes.reduce((sum, t) => sum + (t.sold_quantity || 0) * (t.price || 0), 0);
+  // Backend-computed stats (from the shared EventStatsService) are the single
+  // source of truth: they count confirmed/paid bookings only. Fall back to the
+  // old live `sold_quantity` reservation counter when stats are unavailable.
+  const stats = e.stats || null;
+  const sold = stats
+    ? Number(stats.tickets_sold || 0)
+    : ticketTypes.reduce((sum, t) => sum + (t.sold_quantity || 0), 0);
+  const capacity = stats
+    ? Number(stats.capacity || 0)
+    : ticketTypes.reduce((sum, t) => sum + (t.quantity || 0), 0);
+  const revenue = stats
+    ? Number(stats.revenue || 0)
+    : ticketTypes.reduce((sum, t) => sum + (t.sold_quantity || 0) * (t.price || 0), 0);
 
   return {
     title: e.title || t("untitledEvent"),
@@ -97,6 +107,7 @@ const currentEvent = computed(() => {
     capacity: formatNumber(capacity),
     revenue: formatCurrency(revenue),
     status: e.status || "draft",
+    rejectionReason: e.rejection_reason || "",
     description: e.description || t("noDescriptionProvided"),
     tiers: ticketTypes.map((t) => ({
       id: t.id,
@@ -112,10 +123,46 @@ const currentEvent = computed(() => {
 const statusStyle = {
   published: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
   draft: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30",
+  rejected: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/15 dark:text-orange-400 dark:border-orange-500/30",
   cancelled: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30",
 };
 
-const statusDisplayMap = { published: t("published"), draft: t("draft"), cancelled: t("cancelled") };
+const statusDisplayMap = { published: t("published"), draft: t("draft"), rejected: t("rejected"), cancelled: t("cancelled") };
+
+// ── Admin approval workflow ──────────────────────────────────────────────
+const actionBusy = ref(false);
+
+async function approveEvent() {
+  if (!event.value) return;
+  if (!confirm(t("approveEventConfirm", { title: event.value.title }))) return;
+  actionBusy.value = true;
+  try {
+    await adminApi.approveEvent(event.value.id);
+    await loadEvent();
+  } catch (e) {
+    alert(e.response?.data?.message || e.message || t("errorMessage"));
+  } finally {
+    actionBusy.value = false;
+  }
+}
+
+async function rejectEvent() {
+  if (!event.value) return;
+  const reason = window.prompt(
+    t("rejectEventPrompt", { title: event.value.title }),
+    "",
+  );
+  if (reason === null) return;
+  actionBusy.value = true;
+  try {
+    await adminApi.rejectEvent(event.value.id, reason.trim());
+    await loadEvent();
+  } catch (e) {
+    alert(e.response?.data?.message || e.message || t("errorMessage"));
+  } finally {
+    actionBusy.value = false;
+  }
+}
 
 // ── Ticket management state ──────────────────────────────────────────────
 const ticketModalOpen = ref(false);
@@ -238,7 +285,36 @@ async function deleteTicket(tier) {
           <span class="h-fit rounded-full border px-3.5 py-1 text-xs font-semibold capitalize" :class="statusStyle[currentEvent.status] || 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'">
             {{ statusDisplayMap[currentEvent.status] || currentEvent.status }}
           </span>
+          <button
+            v-if="['draft', 'rejected'].includes(currentEvent.status)"
+            type="button"
+            :disabled="actionBusy"
+            @click="approveEvent"
+            class="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-60"
+          >
+            <CheckCircle2 :size="15" />
+            {{ t('approveEvent') }}
+          </button>
+          <button
+            v-if="['draft', 'rejected'].includes(currentEvent.status)"
+            type="button"
+            :disabled="actionBusy"
+            @click="rejectEvent"
+            class="flex items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-4 py-2 text-xs font-semibold text-orange-700 transition-all hover:bg-orange-100 disabled:opacity-60 dark:border-orange-500/30 dark:bg-orange-500/15 dark:text-orange-400 dark:hover:bg-orange-500/25"
+          >
+            <X :size="15" />
+            {{ t('rejectEvent') }}
+          </button>
         </div>
+      </div>
+
+      <!-- Rejection reason banner -->
+      <div
+        v-if="currentEvent.status === 'rejected' && currentEvent.rejectionReason"
+        class="mb-8 rounded-xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-500/30 dark:bg-orange-500/10"
+      >
+        <p class="text-xs font-bold uppercase tracking-wider text-orange-700 dark:text-orange-400">{{ t('rejectionReason') }}</p>
+        <p class="mt-1 text-sm text-orange-800 dark:text-orange-300">{{ currentEvent.rejectionReason }}</p>
       </div>
 
       <!-- Stat metrics cards -->

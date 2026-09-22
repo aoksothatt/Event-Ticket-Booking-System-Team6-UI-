@@ -77,7 +77,13 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
       <div class="flex items-center justify-between gap-3">
         <!-- Logo -->
         <RouterLink to="/home" class="flex shrink-0 items-center gap-2">
-          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-extrabold text-primary-contrast">
+          <img
+            v-if="settings.logo"
+            :src="settings.logo"
+            :alt="settings.platformName"
+            class="h-8 w-8 rounded-lg object-contain bg-white/60 p-0.5 dark:bg-transparent"
+          />
+          <span v-else class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-extrabold text-primary-contrast">
             <Ticket :size="17" />
           </span>
           <span class="hidden text-base font-extrabold tracking-tight text-slate-900 dark:text-white md:block">

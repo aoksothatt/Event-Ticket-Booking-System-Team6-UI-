@@ -17,6 +17,9 @@ const props = defineProps({
 // Events admin-flagged as upcoming get the subtle ticket/cart treatment.
 const isTicket = computed(() => Boolean(props.event?.is_upcoming));
 
+// Backend-derived: current datetime already passed the event's end datetime.
+const isExpired = computed(() => Boolean(props.event?.is_expired));
+
 const router = useRouter();
 const { isFavorite, toggle } = useFavorites();
 
@@ -40,6 +43,7 @@ function open() {
 }
 
 function goToBooking() {
+  if (isExpired.value) return;
   router.push(`/events/${props.event.id}/booking`);
 }
 
@@ -74,7 +78,13 @@ function onToggleFavorite() {
       <!-- Badges -->
       <div v-if="showBadges" class="absolute left-3 top-3 flex flex-col gap-1.5">
         <span
-          v-if="trending"
+          v-if="isExpired"
+          class="rounded-full bg-slate-700/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md shadow-black/30"
+        >
+          {{ t('expired') }}
+        </span>
+        <span
+          v-else-if="trending"
           class="rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-contrast shadow-md shadow-black/30"
         >
           {{ t('trending') }}
@@ -166,7 +176,8 @@ function onToggleFavorite() {
 
         <button
           type="button"
-          class="flex items-center gap-1 rounded-md bg-slate-100 dark:bg-white/5 px-2 py-1 text-[10px] font-semibold text-slate-600 dark:text-white/70 transition-colors hover:bg-primary hover:text-primary-contrast"
+          :disabled="isExpired"
+          class="flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600 transition-colors hover:bg-primary hover:text-primary-contrast disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-600 dark:bg-white/5 dark:text-white/70 dark:disabled:hover:bg-white/5 dark:disabled:hover:text-white/70"
           @click.stop="goToBooking"
         >
           <ShoppingCart
@@ -175,7 +186,7 @@ function onToggleFavorite() {
             class="ticket-cart-icon transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
           />
           <Ticket v-else :size="11" />
-          <span class="group-hover:translate-x-px transition-transform duration-300">{{ t('bookSingle') }}</span>
+          <span class="transition-transform duration-300">{{ isExpired ? t('expired') : t('bookSingle') }}</span>
         </button>
       </div>
     </div>

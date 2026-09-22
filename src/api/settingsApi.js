@@ -9,7 +9,7 @@
  * getPublicSettings() exposes a curated, non-sensitive subset the customer-
  * facing UI needs (branding, booking constraints, maintenance state).
  */
-import { get, put } from "./http.js";
+import { get, put, postFormData } from "./http.js";
 
 export const settingsApi = {
   getSettings() {
@@ -17,6 +17,9 @@ export const settingsApi = {
   },
   updateSettings(values) {
     return put("/admin/settings", { settings: values });
+  },
+  uploadLogo(formData) {
+    return postFormData("/admin/settings/logo", formData);
   },
   getPublicSettings() {
     return get("/settings/public");

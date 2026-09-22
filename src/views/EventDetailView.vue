@@ -124,6 +124,9 @@ async function submitReview() {
 function book() {
   if (!event.value) return;
 
+  // A past event is never bookable — the booking page and backend also refuse.
+  if (event.value.is_expired) return;
+
   // Guests may browse, but purchasing requires an account. Explain why we're
   // sending them to login and bring them straight back here afterwards.
   if (!auth.isAuthenticated) {
@@ -211,6 +214,12 @@ watch(
                   class="rounded-full bg-red-500 px-3 py-1 text-[11px] font-bold uppercase text-white"
                 >
                   {{ t("cancelled") }}
+                </span>
+                <span
+                  v-if="event.is_expired"
+                  class="rounded-full bg-slate-700 px-3 py-1 text-[11px] font-bold uppercase text-white"
+                >
+                  {{ t("expired") }}
                 </span>
                 <span
                   v-if="event.is_trending"
@@ -518,12 +527,12 @@ watch(
 
             <button
               type="button"
-              :disabled="event.status === 'cancelled'"
+              :disabled="event.status === 'cancelled' || event.is_expired"
               class="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-contrast shadow-lg shadow-primary/20 transition hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               @click="book"
             >
               <Ticket :size="17" />
-              {{ t("bookTickets") }}
+              {{ event.is_expired ? t("expired") : t("bookTickets") }}
             </button>
 
             <button

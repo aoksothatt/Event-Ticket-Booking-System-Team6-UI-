@@ -19,6 +19,8 @@ import {
   Upload,
   ChevronLeft,
   ChevronRight,
+  Check,
+  MessageSquareWarning,
 } from "lucide-vue-next";
 
 const router = useRouter();
@@ -45,13 +47,14 @@ const from = ref(0);
 const to = ref(0);
 
 // Lightweight totals backing the tab badges + stat cards.
-const counts = ref({ all: 0, trending: 0, upcoming: 0 });
+const counts = ref({ all: 0, trending: 0, upcoming: 0, pending: 0 });
 
-const statuses = ["All", "published", "draft", "cancelled"];
+const statuses = ["All", "published", "draft", "rejected", "cancelled"];
 const statusDisplayMap = {
   All: t("all"),
   published: t("published"),
   draft: t("draft"),
+  rejected: t("rejected"),
   cancelled: t("cancelled"),
 };
 
@@ -60,12 +63,15 @@ const statusStyle = {
     "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
   draft:
     "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30",
+  rejected:
+    "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/15 dark:text-orange-400 dark:border-orange-500/30",
   cancelled:
     "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30",
 };
 
 const tabs = computed(() => [
   { key: "all", label: t("allEvents"), icon: Layers, count: counts.value.all },
+  { key: "pending", label: t("pendingApproval"), icon: MessageSquareWarning, count: counts.value.pending },
   { key: "trending", label: t("trending"), icon: Flame, count: counts.value.trending },
   { key: "upcoming", label: t("upcomingHeader"), icon: Calendar, count: counts.value.upcoming },
 ]);
@@ -124,15 +130,17 @@ async function fetchEvents() {
 
 async function loadCounts() {
   try {
-    const [allRes, trendRes, upcomingRes] = await Promise.all([
+    const [allRes, trendRes, upcomingRes, pendingRes] = await Promise.all([
       adminApi.getEvents({ per_page: 1 }),
       adminApi.getEvents({ per_page: 1, filter: "trending" }),
       adminApi.getEvents({ per_page: 1, filter: "upcoming" }),
+      adminApi.getEvents({ per_page: 1, filter: "pending" }),
     ]);
     counts.value = {
       all: allRes?.data?.total || 0,
       trending: trendRes?.data?.total || 0,
       upcoming: upcomingRes?.data?.total || 0,
+      pending: pendingRes?.data?.total || 0,
     };
   } catch (e) {
     // Counts are informational — keep whatever we had if they fail.
@@ -229,6 +237,18 @@ function openCreateModal() {
   isModalOpen.value = true;
 }
 
+/** Extract the date-only portion ("2026-12-31 00:00:00" -> "2026-12-31"). */
+function datePart(value) {
+  const v = value || "";
+  return typeof v === "string" ? v.slice(0, 10) : v;
+}
+
+/** Extract the time-only portion ("19:00:00" -> "19:00"). */
+function timePart(value) {
+  const v = value || "";
+  return typeof v === "string" ? v.slice(0, 5) : v;
+}
+
 function openEditModal(ev) {
   editingEvent.value = ev;
   form.value = {
@@ -237,10 +257,10 @@ function openEditModal(ev) {
     organizer_id: ev.organizer?.id || "",
     category_id: ev.category?.id || "",
     venue_id: ev.venue?.id || "",
-    start_date: ev.start_date || "",
-    end_date: ev.end_date || "",
-    start_time: ev.start_time || "",
-    end_time: ev.end_time || "",
+    start_date: datePart(ev.start_date),
+    end_date: datePart(ev.end_date),
+    start_time: timePart(ev.start_time),
+    end_time: timePart(ev.end_time),
     status: ev.status || "published",
     description: ev.description || "",
     banner: null,
@@ -351,6 +371,46 @@ async function toggleTrending(event) {
     const s = new Set(trendingBusy.value);
     s.delete(id);
     trendingBusy.value = s;
+  }
+}
+
+// ── Admin approval workflow (approve/reject pending events) ─────────────────
+const actionBusy = ref(new Set());
+
+async function approveEvent(event) {
+  if (!confirm(t("approveEventConfirm", { title: event.title }))) return;
+  actionBusy.value = new Set(actionBusy.value).add(event.id);
+  try {
+    await adminApi.approveEvent(event.id);
+    showToast(t("eventApproved"));
+    await Promise.all([fetchEvents(), loadCounts()]);
+  } catch (e) {
+    alert(e.response?.data?.message || e.message || t("errorMessage"));
+  } finally {
+    const s = new Set(actionBusy.value);
+    s.delete(event.id);
+    actionBusy.value = s;
+  }
+}
+
+async function rejectEvent(event) {
+  const reason = window.prompt(
+    t("rejectEventPrompt", { title: event.title }),
+    "",
+  );
+  // `null` = the admin dismissed the prompt (no action); "" = reject without a reason.
+  if (reason === null) return;
+  actionBusy.value = new Set(actionBusy.value).add(event.id);
+  try {
+    await adminApi.rejectEvent(event.id, reason.trim());
+    showToast(t("eventRejected"));
+    await Promise.all([fetchEvents(), loadCounts()]);
+  } catch (e) {
+    alert(e.response?.data?.message || e.message || t("errorMessage"));
+  } finally {
+    const s = new Set(actionBusy.value);
+    s.delete(event.id);
+    actionBusy.value = s;
   }
 }
 </script>
@@ -716,6 +776,28 @@ async function toggleTrending(event) {
               </td>
               <td class="px-6 py-4 text-right">
                 <div class="flex items-center justify-end gap-1.5">
+                  <button
+                    v-if="['draft', 'rejected'].includes(event.status)"
+                    type="button"
+                    :disabled="actionBusy.has(event.id)"
+                    @click="approveEvent(event)"
+                    class="rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-400 dark:hover:bg-emerald-500/25"
+                    :title="t('approveEvent')"
+                    :aria-label="`${t('approveEvent')}: ${event.title}`"
+                  >
+                    <Check :size="14" />
+                  </button>
+                  <button
+                    v-if="['draft', 'rejected'].includes(event.status)"
+                    type="button"
+                    :disabled="actionBusy.has(event.id)"
+                    @click="rejectEvent(event)"
+                    class="rounded-lg border border-orange-200 bg-orange-50 p-1.5 text-orange-600 hover:bg-orange-100 disabled:opacity-50 dark:border-orange-500/30 dark:bg-orange-500/15 dark:text-orange-400 dark:hover:bg-orange-500/25"
+                    :title="t('rejectEvent')"
+                    :aria-label="`${t('rejectEvent')}: ${event.title}`"
+                  >
+                    <MessageSquareWarning :size="14" />
+                  </button>
                   <button
                     type="button"
                     @click="viewEvent(event.id)"

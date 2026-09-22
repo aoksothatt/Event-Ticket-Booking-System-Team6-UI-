@@ -95,6 +95,13 @@ export const adminApi = {
   async setEventTrending(id, isTrending) {
     return patch(`/admin/events/${id}/trending`, { is_trending: isTrending });
   },
+  // Admin approval workflow — approve/reject organizer-submitted events.
+  async approveEvent(id) {
+    return post(`/admin/events/${id}/approve`);
+  },
+  async rejectEvent(id, reason) {
+    return post(`/admin/events/${id}/reject`, { reason: reason || null });
+  },
 
   // 6. manage_ticket_types
   async getTicketTypes(params = {}) {

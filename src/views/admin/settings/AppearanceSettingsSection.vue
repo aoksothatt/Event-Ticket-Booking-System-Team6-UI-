@@ -1,11 +1,12 @@
 <script setup>
-import { reactive, watch, computed, onBeforeUnmount } from "vue";
+import { reactive, watch, computed, onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useSettingsSection } from "@/composables/useSettingsSection.js";
 import { useSettingsStore } from "@/stores/settings.js";
+import { settingsApi } from "@/api/settingsApi.js";
+import { toast } from "@/composables/useToast.js";
 import SettingInput from "@/components/common/SettingInput.vue";
-import SettingSelect from "@/components/common/SettingSelect.vue";
-import { Loader2 } from "lucide-vue-next";
+import { Loader2, Upload, ImagePlus, Trash2 } from "lucide-vue-next";
 
 const props = defineProps({
   settings: { type: Object, required: true },
@@ -17,11 +18,16 @@ const { saving, errors, save, fieldError } = useSettingsSection(emit);
 const platformSettings = useSettingsStore();
 
 const form = reactive({
-  favicon: "",
   primary_color: "#f59e0b",
   theme: "system",
   footer_copyright: "",
 });
+
+// Website logo: the persisted public path plus the pending upload file.
+const logoUploading = ref(false);
+const logoPending = ref(false);
+const logoPendingPreview = ref("");
+const selectedLogoFile = ref(null);
 
 const themes = [
   { value: "light", label: t("themeLight") },
@@ -33,11 +39,16 @@ const HEX_RE = /^#([0-9a-fA-F]{6})$/;
 
 const primaryColorValid = computed(() => HEX_RE.test(form.primary_color));
 
+/** Current logo source: a freshly-picked file preview wins over the saved logo. */
+const logoSource = computed(() => {
+  if (logoPendingPreview.value) return logoPendingPreview.value;
+  return platformSettings.logo;
+});
+
 watch(
   () => props.settings,
   (s) => {
     if (!s) return;
-    form.favicon = s["appearance.favicon"] ?? "";
     form.primary_color = s["appearance.primary_color"] ?? "#f59e0b";
     form.theme = s["appearance.theme"] ?? "system";
     form.footer_copyright = s["appearance.footer_copyright"] ?? "";
@@ -55,6 +66,42 @@ function validate() {
 
 function hexToInput(raw) {
   return HEX_RE.test(raw.trim()) ? raw : "#f59e0b";
+}
+
+function onLogoSelected(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  selectedLogoFile.value = file;
+  logoPending.value = true;
+  logoPendingPreview.value = URL.createObjectURL(file);
+}
+
+function clearLogoSelection() {
+  selectedLogoFile.value = null;
+  logoPending.value = false;
+  logoPendingPreview.value = "";
+}
+
+/**
+ * Upload the chosen logo to the backend (POST /api/admin/settings/logo),
+ * which persists it as `appearance.logo` and deletes the previous file.
+ * Refreshes the public settings so every navbar/footer re-renders.
+ */
+async function uploadLogo() {
+  if (!selectedLogoFile.value) return;
+  logoUploading.value = true;
+  try {
+    const fd = new FormData();
+    fd.append("image", selectedLogoFile.value);
+    await settingsApi.uploadLogo(fd);
+    clearLogoSelection();
+    await platformSettings.load(true);
+    toast(t("logoUploaded"), "success");
+  } catch (e) {
+    toast(e.response?.data?.message || e.message || t("logoUploadFailed"), "error");
+  } finally {
+    logoUploading.value = false;
+  }
 }
 
 // Live preview: while the admin picks/edits the primary color the whole app
@@ -80,7 +127,6 @@ async function handleSave() {
   errors.value = validate();
   if (Object.keys(errors.value).length) return;
   const ok = await save({
-    "appearance.favicon": form.favicon.trim(),
     "appearance.primary_color": form.primary_color.trim(),
     "appearance.theme": form.theme,
     "appearance.footer_copyright": form.footer_copyright.trim(),
@@ -96,15 +142,65 @@ async function handleSave() {
     <h2 class="mb-1 text-base font-bold text-slate-900 dark:text-white">{{ t('settingsAppearanceSection') }}</h2>
     <p class="mb-6 text-sm text-slate-500 dark:text-slate-400">{{ t('settingsAppearanceHint') }}</p>
 
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-      <SettingInput
-        id="favicon"
-        v-model="form.favicon"
-        type="url"
-        :label="t('settingsFavicon')"
-        :hint="t('settingsAssetHint')"
-      />
+    <!-- Website Logo (replaces the old Favicon URL field) -->
+    <div class="mb-6">
+      <label class="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('settingsWebsiteLogo') }}</label>
+      <div class="flex items-center gap-4">
+        <span
+          class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-600 dark:bg-slate-700"
+        >
+          <img
+            v-if="logoSource"
+            :src="logoSource"
+            :alt="t('settingsWebsiteLogo')"
+            class="h-full w-full object-contain p-1"
+          />
+          <ImagePlus v-else :size="22" class="text-slate-400" />
+        </span>
 
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <label
+              class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 transition hover:border-primary hover:text-primary dark:hover:border-primary"
+            >
+              <Upload :size="14" />
+              {{ platformSettings.logo ? t('replaceLogo') : t('chooseLogo') }}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                class="hidden"
+                :disabled="logoUploading"
+                @change="onLogoSelected"
+              />
+            </label>
+
+            <button
+              v-if="logoPending"
+              type="button"
+              @click="uploadLogo"
+              :disabled="logoUploading"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-contrast shadow-sm transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Loader2 v-if="logoUploading" :size="14" class="animate-spin" />
+              {{ logoUploading ? t("uploading") : t("uploadLogo") }}
+            </button>
+
+            <button
+              v-if="logoPending"
+              type="button"
+              @click="clearLogoSelection"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-600"
+            >
+              <Trash2 :size="14" />
+              {{ t("cancel") }}
+            </button>
+          </div>
+          <p class="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{{ t('settingsLogoHint') }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
       <div>
         <label class="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('settingsPrimaryColor') }}</label>
         <div class="flex items-center gap-3">
