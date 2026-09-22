@@ -34,22 +34,38 @@ const searchQuery = ref("");
 const selectedRole = ref("All");
 const selectedStatus = ref("All");
 
-const roles = ["All", "admin", "organizer", "event_staff", "customer"];
+const roles = ["All", "admin", "organizer", "customer"];
 const statuses = ["All", "active", "inactive", "suspended"];
-const roleDisplayMap = { All: t("all"), admin: t("administrator"), organizer: t("organizer"), event_staff: t("eventStaff"), customer: t("customer") };
-const statusDisplayMap = { All: t("all"), active: t("active"), inactive: t("inactive"), suspended: t("suspended") };
+const roleDisplayMap = {
+  All: t("all"),
+  admin: t("administrator"),
+  organizer: t("organizer"),
+  event_staff: t("eventStaff"),
+  customer: t("customer"),
+};
+const statusDisplayMap = {
+  All: t("all"),
+  active: t("active"),
+  inactive: t("inactive"),
+  suspended: t("suspended"),
+};
 
 const roleStyle = {
-  admin: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30",
-  organizer: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30",
-  customer: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600",
-  event_staff: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30",
+  admin:
+    "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30",
+  organizer:
+    "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30",
+  customer:
+    "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"
 };
 
 const statusStyle = {
-  active: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
-  inactive: "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600",
-  suspended: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30",
+  active:
+    "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
+  inactive:
+    "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600",
+  suspended:
+    "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30",
 };
 
 function formatDate(dateStr) {
@@ -93,7 +109,8 @@ const stats = computed(() => [
       : "—",
     trend: "up",
     icon: UserCheck,
-    color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+    color:
+      "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
   },
   {
     label: t("staffAdministrators"),
@@ -101,7 +118,8 @@ const stats = computed(() => [
     change: t("adminsOrganizers"),
     trend: "up",
     icon: Shield,
-    color: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
+    color:
+      "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
   },
 ]);
 
@@ -150,7 +168,12 @@ function openCreateModal() {
 
 function openEditModal(u) {
   editingUser.value = u;
-  const actualPhone = (u.phone && u.phone !== "N/A" ? u.phone : (u.profile?.phone && u.profile?.phone !== "N/A" ? u.profile.phone : "")) || "";
+  const actualPhone =
+    (u.phone && u.phone !== "N/A"
+      ? u.phone
+      : u.profile?.phone && u.profile?.phone !== "N/A"
+        ? u.profile.phone
+        : "") || "";
   form.value = {
     name: u.name || "",
     email: u.email || "",
@@ -183,19 +206,21 @@ async function saveUser() {
     }
     isModalOpen.value = false;
   } catch (e) {
-    error.value = e?.response?.data?.message || e.message || t("failedToSaveUser");
+    error.value =
+      e?.response?.data?.message || e.message || t("failedToSaveUser");
   }
 }
 
 async function deleteUser(id) {
-  if (!confirm(t('deleteConfirm'))) return;
+  if (!confirm(t("deleteConfirm"))) return;
 
   try {
     await adminApi.deleteUser(id);
     users.value = users.value.filter((u) => u.id !== id);
     totalUsers.value = Math.max(0, totalUsers.value - 1);
   } catch (e) {
-    error.value = e?.response?.data?.message || e.message || t("failedToDeleteUser");
+    error.value =
+      e?.response?.data?.message || e.message || t("failedToDeleteUser");
   }
 }
 
@@ -211,10 +236,11 @@ async function fetchUsers() {
     lastPage.value = paginated?.last_page || 1;
     totalActive.value = users.value.filter((u) => u.status === "active").length;
     totalStaff.value = users.value.filter(
-      (u) => u.role === "admin" || u.role === "organizer"
+      (u) => u.role === "admin" || u.role === "organizer",
     ).length;
   } catch (e) {
-    error.value = e?.response?.data?.message || e.message || t("failedToLoadUsers");
+    error.value =
+      e?.response?.data?.message || e.message || t("failedToLoadUsers");
     users.value = [];
   } finally {
     loading.value = false;
@@ -227,17 +253,29 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="min-h-screen flex-1 bg-slate-50 dark:bg-slate-900 px-8 py-8 text-slate-800 dark:text-slate-100">
+  <main
+    class="min-h-screen flex-1 bg-slate-50 dark:bg-slate-900 px-8 py-8 text-slate-800 dark:text-slate-100"
+  >
     <!-- Header -->
-    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div
+      class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+    >
       <div>
         <div class="flex items-center gap-2.5">
-          <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{{ t('usersManagement') }}</h1>
-          <span class="rounded-md bg-teal-100 border border-teal-200 px-2.5 py-0.5 text-xs text-teal-800 font-mono font-medium dark:bg-teal-500/15 dark:border-teal-500/30 dark:text-teal-400">
+          <h1
+            class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white"
+          >
+            {{ t("usersManagement") }}
+          </h1>
+          <span
+            class="rounded-md bg-teal-100 border border-teal-200 px-2.5 py-0.5 text-xs text-teal-800 font-mono font-medium dark:bg-teal-500/15 dark:border-teal-500/30 dark:text-teal-400"
+          >
             manage_users
           </span>
         </div>
-        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ t('usersManagementDesc') }}</p>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          {{ t("usersManagementDesc") }}
+        </p>
       </div>
       <div class="flex items-center gap-3">
         <button
@@ -246,26 +284,36 @@ onMounted(() => {
           class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover hover:shadow"
         >
           <Plus :size="16" :stroke-width="2.5" />
-          {{ t('addUser') }}
+          {{ t("addUser") }}
         </button>
       </div>
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="mb-8 flex flex-col items-center justify-center py-16">
+    <div
+      v-if="loading"
+      class="mb-8 flex flex-col items-center justify-center py-16"
+    >
       <Loader2 :size="36" class="animate-spin text-primary" />
-      <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">{{ t('loading') }}</p>
+      <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">
+        {{ t("loading") }}
+      </p>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="mb-8 rounded-xl border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-500/30 dark:bg-rose-500/10">
+    <div
+      v-else-if="error"
+      class="mb-8 rounded-xl border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-500/30 dark:bg-rose-500/10"
+    >
       <AlertCircle :size="28" class="mx-auto text-rose-500" />
-      <p class="mt-2 text-sm font-semibold text-rose-700 dark:text-rose-400">{{ error }}</p>
+      <p class="mt-2 text-sm font-semibold text-rose-700 dark:text-rose-400">
+        {{ error }}
+      </p>
       <button
         @click="fetchUsers"
         class="mt-3 rounded-lg bg-rose-500 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-600"
       >
-        {{ t('retry') }}
+        {{ t("retry") }}
       </button>
     </div>
 
@@ -279,13 +327,24 @@ onMounted(() => {
           class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm"
         >
           <div class="mb-4 flex items-start justify-between">
-            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ stat.label }}</p>
-            <span class="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm" :class="stat.color">
+            <p
+              class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+            >
+              {{ stat.label }}
+            </p>
+            <span
+              class="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm"
+              :class="stat.color"
+            >
               <component :is="stat.icon" :size="16" />
             </span>
           </div>
-          <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ stat.value }}</p>
-          <p class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
+          <p class="text-2xl font-bold text-slate-900 dark:text-white">
+            {{ stat.value }}
+          </p>
+          <p
+            class="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600"
+          >
             <ArrowUpRight :size="14" />
             {{ stat.change }}
           </p>
@@ -293,9 +352,14 @@ onMounted(() => {
       </div>
 
       <!-- Filter & Search Bar -->
-      <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+      <div
+        class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm"
+      >
         <div class="relative min-w-[260px] flex-1">
-          <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+          <Search
+            :size="16"
+            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+          />
           <input
             v-model="searchQuery"
             type="text"
@@ -307,44 +371,64 @@ onMounted(() => {
         <div class="flex flex-wrap items-center gap-3">
           <!-- Role Filter -->
           <div class="flex items-center gap-2">
-            <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('roleHeader') }}:</label>
+            <label
+              class="text-xs font-semibold text-slate-500 dark:text-slate-400"
+              >{{ t("roleHeader") }}:</label
+            >
             <select
               v-model="selectedRole"
               class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary capitalize"
             >
-              <option v-for="r in roles" :key="r" :value="r">{{ roleDisplayMap[r] || r }}</option>
+              <option v-for="r in roles" :key="r" :value="r">
+                {{ roleDisplayMap[r] || r }}
+              </option>
             </select>
           </div>
 
           <!-- Status Filter -->
           <div class="flex items-center gap-2">
-            <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ t('eventStatus') }}</label>
+            <label
+              class="text-xs font-semibold text-slate-500 dark:text-slate-400"
+              >{{ t("eventStatus") }}</label
+            >
             <select
               v-model="selectedStatus"
               class="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none shadow-sm focus:border-primary capitalize"
             >
-              <option v-for="st in statuses" :key="st" :value="st">{{ statusDisplayMap[st] || st }}</option>
+              <option v-for="st in statuses" :key="st" :value="st">
+                {{ statusDisplayMap[st] || st }}
+              </option>
             </select>
           </div>
         </div>
       </div>
 
       <!-- Users Table -->
-      <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-6 py-4">
-          <h2 class="text-base font-bold text-slate-900 dark:text-white">{{ t('userDirectory') }} ({{ filteredUsers.length }})</h2>
+      <div
+        class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm"
+      >
+        <div
+          class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-6 py-4"
+        >
+          <h2 class="text-base font-bold text-slate-900 dark:text-white">
+            {{ t("userDirectory") }} ({{ filteredUsers.length }})
+          </h2>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
-            <thead class="bg-slate-50/70 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-              <tr class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                <th class="px-6 py-3">{{ t('userHeader') }}</th>
-                <th class="px-6 py-3">{{ t('email') }}</th>
-                <th class="px-6 py-3">{{ t('roleHeader') }}</th>
-                <th class="px-6 py-3">{{ t('joinedHeader') }}</th>
-                <th class="px-6 py-3">{{ t('status') }}</th>
-                <th class="px-6 py-3 text-right">{{ t('actions') }}</th>
+            <thead
+              class="bg-slate-50/70 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700"
+            >
+              <tr
+                class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+              >
+                <th class="px-6 py-3">{{ t("userHeader") }}</th>
+                <th class="px-6 py-3">{{ t("email") }}</th>
+                <th class="px-6 py-3">{{ t("roleHeader") }}</th>
+                <th class="px-6 py-3">{{ t("joinedHeader") }}</th>
+                <th class="px-6 py-3">{{ t("status") }}</th>
+                <th class="px-6 py-3 text-right">{{ t("actions") }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
@@ -355,21 +439,35 @@ onMounted(() => {
               >
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 font-bold text-xs text-primary-accent border border-primary/20 shadow-sm dark:bg-primary/15 dark:text-primary-accent dark:border-primary/30">
+                    <span
+                      class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 font-bold text-xs text-primary-accent border border-primary/20 shadow-sm dark:bg-primary/15 dark:text-primary-accent dark:border-primary/30"
+                    >
                       {{ initials(u.name) }}
                     </span>
                     <div>
-                      <p class="font-semibold text-slate-900 dark:text-white">{{ u.name }}</p>
-                      <p class="text-xs text-slate-400 dark:text-slate-500 font-mono">ID: #USR-{{ u.id }}</p>
+                      <p class="font-semibold text-slate-900 dark:text-white">
+                        {{ u.name }}
+                      </p>
+                      <p
+                        class="text-xs text-slate-400 dark:text-slate-500 font-mono"
+                      >
+                        ID: #USR-{{ u.id }}
+                      </p>
                     </div>
                   </div>
                 </td>
                 <td class="px-6 py-4 text-slate-600 dark:text-slate-400">
                   <div class="flex items-center gap-1.5 text-xs">
-                    <Mail :size="13" class="text-slate-400 dark:text-slate-500" />
+                    <Mail
+                      :size="13"
+                      class="text-slate-400 dark:text-slate-500"
+                    />
                     {{ u.email }}
                   </div>
-                  <div v-if="getPhone(u) !== 'N/A'" class="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+                  <div
+                    v-if="getPhone(u) !== 'N/A'"
+                    class="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500"
+                  >
                     <Phone :size="11" />
                     {{ getPhone(u) }}
                   </div>
@@ -382,7 +480,9 @@ onMounted(() => {
                     {{ roleDisplayMap[u.role] || u.role }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-xs text-slate-500 dark:text-slate-400">
+                <td
+                  class="px-6 py-4 text-xs text-slate-500 dark:text-slate-400"
+                >
                   {{ formatDate(u.created_at) }}
                 </td>
                 <td class="px-6 py-4">
@@ -413,8 +513,11 @@ onMounted(() => {
                 </td>
               </tr>
               <tr v-if="filteredUsers.length === 0">
-                <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
-                  {{ t('noUsersFound') }}
+                <td
+                  colspan="6"
+                  class="px-6 py-8 text-center text-sm text-slate-400 dark:text-slate-500"
+                >
+                  {{ t("noUsersFound") }}
                 </td>
               </tr>
             </tbody>
@@ -428,19 +531,29 @@ onMounted(() => {
       v-if="isModalOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
     >
-      <div class="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-2xl">
-        <div class="mb-5 flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
+      <div
+        class="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-2xl"
+      >
+        <div
+          class="mb-5 flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4"
+        >
           <h3 class="text-lg font-bold text-slate-900 dark:text-white">
-            {{ editingUser ? t('editUser') : t('addUser') }}
+            {{ editingUser ? t("editUser") : t("addUser") }}
           </h3>
-          <button @click="isModalOpen = false" class="rounded-lg p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300">
+          <button
+            @click="isModalOpen = false"
+            class="rounded-lg p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-300"
+          >
             <X :size="18" />
           </button>
         </div>
 
         <form @submit.prevent="saveUser" class="space-y-4">
           <div>
-            <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('name') }} *</label>
+            <label
+              class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              >{{ t("name") }} *</label
+            >
             <input
               v-model="form.name"
               type="text"
@@ -451,7 +564,10 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('email') }} *</label>
+            <label
+              class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              >{{ t("email") }} *</label
+            >
             <input
               v-model="form.email"
               type="email"
@@ -462,7 +578,10 @@ onMounted(() => {
           </div>
 
           <div v-if="!editingUser">
-            <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('password') }} *</label>
+            <label
+              class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              >{{ t("password") }} *</label
+            >
             <input
               v-model="form.password"
               type="password"
@@ -473,7 +592,10 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('phone') }}</label>
+            <label
+              class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              >{{ t("phone") }}</label
+            >
             <input
               v-model="form.phone"
               type="text"
@@ -484,25 +606,31 @@ onMounted(() => {
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('roleHeader') }} *</label>
+              <label
+                class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >{{ t("roleHeader") }} *</label
+              >
               <select
                 v-model="form.role"
                 class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary capitalize"
               >
-                <option value="customer">{{ t('customer') }}</option>
-                <option value="organizer">{{ t('organizer') }}</option>
-                <option value="admin">{{ t('administrator') }}</option>
+                <option value="customer">{{ t("customer") }}</option>
+                <option value="organizer">{{ t("organizer") }}</option>
+                <option value="admin">{{ t("administrator") }}</option>
               </select>
             </div>
             <div>
-              <label class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('status') }}</label>
+              <label
+                class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >{{ t("status") }}</label
+              >
               <select
                 v-model="form.status"
                 class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:border-primary capitalize"
               >
-                <option value="active">{{ t('active') }}</option>
-                <option value="inactive">{{ t('inactive') }}</option>
-                <option value="suspended">{{ t('suspended') }}</option>
+                <option value="active">{{ t("active") }}</option>
+                <option value="inactive">{{ t("inactive") }}</option>
+                <option value="suspended">{{ t("suspended") }}</option>
               </select>
             </div>
           </div>
@@ -513,13 +641,13 @@ onMounted(() => {
               @click="isModalOpen = false"
               class="rounded-lg border border-slate-200 dark:border-slate-600 px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
             >
-              {{ t('cancel') }}
+              {{ t("cancel") }}
             </button>
             <button
               type="submit"
               class="rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-contrast shadow-sm transition-all hover:bg-primary-hover"
             >
-              {{ editingUser ? t('saveChanges') : t('createUser') }}
+              {{ editingUser ? t("saveChanges") : t("createUser") }}
             </button>
           </div>
         </form>

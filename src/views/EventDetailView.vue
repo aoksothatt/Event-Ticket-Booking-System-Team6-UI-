@@ -550,6 +550,7 @@ watch(
         </div>
 
         <!-- You Might Also Like — recalculated when a new event is opened -->
+        <br />
         <YouMightAlsoLike :current-event-id="event.id" />
       </template>
     </div>

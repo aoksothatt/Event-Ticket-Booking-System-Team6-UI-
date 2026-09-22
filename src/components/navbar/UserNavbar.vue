@@ -71,7 +71,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
 <template>
   <header class="fixed inset-x-0 top-3 z-40 px-3 sm:top-4 sm:px-6">
     <div
-      class="mx-auto max-w-7xl rounded-full border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-[#0B0D10]/70 px-4 shadow-2xl shadow-black/50 backdrop-blur-xl transition-all sm:px-5"
+      class="mx-auto max-w-7xl rounded-full border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-[#0B0D10]/70 px-4 shadow-2xl shadow-black/50 backdrop-blur-xl transition-all sm:px-5"
       :class="scrolled ? 'py-1.5' : 'py-2'"
     >
       <div class="flex items-center justify-between gap-3">
@@ -92,8 +92,8 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
             :key="item.to"
             type="button"
             :class="isActive(item)
-              ? 'bg-amber-500 dar text-white'
-              : 'text-slate-500 dark:text-white/60 hover:bg-amber-500  dark:hover:text-white'"
+              ? 'bg-primary text-primary-contrast'
+              : 'text-slate-500 dark:text-white/60 hover:bg-primary hover:text-primary-contrast dark:hover:text-primary-contrast'"
             class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition"
             @click="goPath(item.to)"
           >
@@ -197,7 +197,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
     >
       <div
         v-if="mobileOpen"
-        class="mx-auto mt-2 max-w-7xl rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/95 dark:bg-[#0B0D10]/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-xl lg:hidden"
+        class="mx-auto mt-2 max-w-7xl rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0B0D10]/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-xl lg:hidden"
       >
         <button
           v-for="item in navItems"
