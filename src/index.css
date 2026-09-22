@@ -11,6 +11,10 @@
    token (hover, active, accent) derives from the base color via color-mix so a
    single Admin pick propagates consistently with readable contrast. */
 :root {
+  /* Canonical token — also exposed as --primary-color for components that
+     reference the short name. Both are overwritten at runtime by the
+     settings store from the backend appearance.primary_color setting. */
+  --primary-color: #f59e0b;
   --color-primary: #f59e0b;
   /* Space-separated channels: utilities emit the modern slash-alpha rgb()
      syntax (rgb(var(--color-primary-rgb) / <alpha>)), which does NOT accept
@@ -20,6 +24,7 @@
   --color-primary-active: color-mix(in srgb, var(--color-primary) 78%, #000000);
   --color-primary-accent: color-mix(in srgb, var(--color-primary) 55%, #000000);
   --color-primary-contrast: #ffffff;
+  --primary-color-contrast: var(--color-primary-contrast);
 }
 
 /* Accent text/links lift toward the lighter end of the primary on dark

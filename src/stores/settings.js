@@ -14,60 +14,12 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import { settingsApi } from "../api/settingsApi.js";
-
-/**
- * Normalize a "#RGB"/"#RRGGBB" hex string; returns `fallback` when invalid.
- */
-function normalizeHex(hex, fallback = "#f59e0b") {
-  let h = String(hex || "").trim().replace("#", "");
-  if (/^[0-9a-fA-F]{3}$/.test(h)) h = h.split("").map((c) => c + c).join("");
-  if (!/^[0-9a-fA-F]{6}$/.test(h)) return fallback;
-  return `#${h.toLowerCase()}`;
-}
-
-/** Parse a hex color into its { r, g, b } channels. */
-function hexToRgb(hex) {
-  const h = normalizeHex(hex).replace("#", "");
-  return {
-    r: parseInt(h.slice(0, 2), 16),
-    g: parseInt(h.slice(2, 4), 16),
-    b: parseInt(h.slice(4, 6), 16),
-  };
-}
-
-/** Build a "#RRGGBB" string from channel values. */
-function rgbToHex(r, g, b) {
-  return `#${((1 << 24) | ((r << 16) | (g << 8) | b)).toString(16).slice(1)}`;
-}
-
-/** Blend two hex colors; `weightA` = how much of A (0..1) to keep. */
-function mixHex(hexA, hexB, weightA = 0.5) {
-  const a = hexToRgb(hexA);
-  const b = hexToRgb(hexB);
-  return rgbToHex(
-    Math.round(a.r * weightA + b.r * (1 - weightA)),
-    Math.round(a.g * weightA + b.g * (1 - weightA)),
-    Math.round(a.b * weightA + b.b * (1 - weightA))
-  );
-}
-
-/** WCAG relative luminance (0..1) of a hex color. */
-function luminance(hex) {
-  const { r, g, b } = hexToRgb(hex);
-  const linear = (v) => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-  };
-  return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
-}
-
-/**
- * Pick readable text for ON-primary fills: near-black on light colors,
- * white on dark colors (keeps buttons legible for any chosen brand color).
- */
-function contrastText(hex) {
-  return luminance(hex) > 0.4 ? "#111111" : "#ffffff";
-}
+import {
+  getContrastColor,
+  hexToRgb,
+  mixHex,
+  normalizeHex,
+} from "../utils/color.js";
 
 /**
  * Push the theme color onto the document CSS variables that back the primary
@@ -85,12 +37,17 @@ function applyBrandTokens(hex) {
   const root = document.documentElement;
   const primary = normalizeHex(hex || "#f59e0b");
   const { r, g, b } = hexToRgb(primary);
-  root.style.setProperty("--color-primary", primary);
-  // Space-separated channels: the emitted utilities are the modern
-  // `rgb(var(--color-primary-rgb) / <alpha>)` form, which REQUIRES
+  const contrast = getContrastColor(primary);
+
+  // --primary-color is the canonical token (set both the base and the
+  // derived tokens). Space-separated channels: the emitted utilities are the
+  // modern `rgb(var(--color-primary-rgb) / <alpha>)` form, which REQUIRES
   // "245 158 11" (commas would produce an invalid, ignored color).
+  root.style.setProperty("--primary-color", primary);
+  root.style.setProperty("--color-primary", primary);
   root.style.setProperty("--color-primary-rgb", `${r} ${g} ${b}`);
-  root.style.setProperty("--color-primary-contrast", contrastText(primary));
+  root.style.setProperty("--color-primary-contrast", contrast);
+  root.style.setProperty("--primary-color-contrast", contrast);
   root.style.setProperty("--color-primary-hover", mixHex(primary, "#000000", 0.88));
   root.style.setProperty("--color-primary-active", mixHex(primary, "#000000", 0.78));
 
