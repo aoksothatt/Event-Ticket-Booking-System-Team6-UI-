@@ -14,7 +14,6 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import { settingsApi } from "../api/settingsApi.js";
-<<<<<<< HEAD
 import { STORAGE_BASE } from "../api/http.js";
 
 /**
@@ -70,14 +69,6 @@ function luminance(hex) {
 function contrastText(hex) {
   return luminance(hex) > 0.4 ? "#111111" : "#ffffff";
 }
-=======
-import {
-  getContrastColor,
-  hexToRgb,
-  mixHex,
-  normalizeHex,
-} from "../utils/color.js";
->>>>>>> d27cc2a0fb5731029708c040f7d39ba30f514ed6
 
 /**
  * Push the theme color onto the document CSS variables that back the primary
