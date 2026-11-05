@@ -35,9 +35,17 @@ export const GOOGLE_REDIRECT_URL = String(
 /**
  * Absolute URL of this Vue app. Used only for building links and logging,
  * never sent to the backend as a redirect target verbatim.
+ *
+ * Production builds fall back to the browser's current origin, so the app
+ * works on Vercel/Render Static Sites without hard-coding the deployment URL.
  */
+const DEFAULT_APP_URL =
+  import.meta.env.PROD && typeof window !== "undefined"
+    ? window.location.origin
+    : "http://localhost:5173";
+
 export const APP_URL = String(
-  import.meta.env.VITE_APP_URL || "http://localhost:5173"
+  import.meta.env.VITE_APP_URL || DEFAULT_APP_URL
 ).replace(/\/+$/, "");
 
 /**
