@@ -15,6 +15,7 @@ const settings = useSettingsStore();
       v-if="settings.logo"
       :src="settings.logo"
       :alt="settings.platformName"
+      @error="settings.markLogoUnavailable"
       class="rounded-xl object-contain"
       :style="{ width: `${props.size + 8}px`, height: `${props.size + 8}px` }"
     />

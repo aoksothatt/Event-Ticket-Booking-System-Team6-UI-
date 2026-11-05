@@ -10,9 +10,11 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "./useToast.js";
 import { settingsApi } from "../api/settingsApi.js";
+import { useSettingsStore } from "../stores/settings.js";
 
 export function useSettingsSection(emit) {
   const { t } = useI18n();
+  const platformSettings = useSettingsStore();
   const saving = ref(false);
   const errors = ref({});
 
@@ -21,6 +23,7 @@ export function useSettingsSection(emit) {
     errors.value = {};
     try {
       const res = await settingsApi.updateSettings(payload);
+      platformSettings.syncFromBackend(res?.data?.settings);
       toast(t("settingsSaved"), "success");
       emit("saved", res?.data?.settings);
       return true;

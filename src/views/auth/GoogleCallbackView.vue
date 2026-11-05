@@ -67,8 +67,15 @@ onMounted(() => {
 
   if (error) {
     status.value = "error";
-    errorMessage.value =
-      t('googleSigninCancelled');
+    const messages = {
+      account_inactive: "This account is inactive. Please contact support.",
+      google_login_disabled: "Google sign-in is currently disabled.",
+      google_account_unavailable: "This Google account could not be linked. Please contact support.",
+      invalid_google_account: "Google did not provide a verified email address.",
+      registration_disabled: "New account registration is currently disabled.",
+      google_auth_failed: t('googleSigninFailed'),
+    };
+    errorMessage.value = messages[error] || t('googleSigninCancelled');
     return;
   }
 

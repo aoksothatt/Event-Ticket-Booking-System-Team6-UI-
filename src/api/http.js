@@ -107,8 +107,10 @@ export function patch(path, body) {
   return http.patch(path, body).then((r) => r.data);
 }
 
-/** FormData POST — for file uploads. Axios auto-sets multipart headers. */
+/** FormData POST — override the shared JSON default so Axios preserves the file. */
 export function postFormData(path, formData) {
+  // The shared instance defaults to application/json; without this override
+  // Axios serializes FormData as JSON. The browser adapter adds the boundary.
   return http.post(path, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   }).then((r) => r.data);

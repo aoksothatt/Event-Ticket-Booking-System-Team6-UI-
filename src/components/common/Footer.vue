@@ -42,6 +42,7 @@ import etecLogo from "../../assets/img/etec.jpg";
           v-if="settings.logo"
           :src="settings.logo"
           :alt="settings.platformName"
+          @error="settings.markLogoUnavailable"
           class="h-8 w-8 rounded-lg object-contain bg-white/60 p-0.5 dark:bg-transparent"
         />
         <span

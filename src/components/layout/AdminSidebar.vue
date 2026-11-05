@@ -90,6 +90,7 @@ async function handleLogout() {
           v-if="settings.logo"
           :src="settings.logo"
           :alt="settings.platformName"
+          @error="settings.markLogoUnavailable"
           class="h-10 w-14 rounded-xl bg-white/60 object-contain p-1 shadow-md dark:bg-slate-700/40"
         />
         <div v-else class="flex h-10 w-14 items-center justify-center rounded-xl bg-primary font-bold text-primary-contrast shadow-md">

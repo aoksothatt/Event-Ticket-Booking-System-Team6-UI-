@@ -19,6 +19,7 @@ const platformSettings = useSettingsStore();
 
 const form = reactive({
   primary_color: "#f59e0b",
+  secondary_color: "#334155",
   theme: "system",
   footer_copyright: "",
 });
@@ -28,6 +29,9 @@ const logoUploading = ref(false);
 const logoPending = ref(false);
 const logoPendingPreview = ref("");
 const selectedLogoFile = ref(null);
+const logoFileInput = ref(null);
+const MAX_LOGO_SIZE = 10 * 1024 * 1024;
+const ALLOWED_LOGO_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp"]);
 
 const themes = [
   { value: "light", label: t("themeLight") },
@@ -50,6 +54,7 @@ watch(
   (s) => {
     if (!s) return;
     form.primary_color = s["appearance.primary_color"] ?? "#f59e0b";
+    form.secondary_color = s["appearance.secondary_color"] ?? "#334155";
     form.theme = s["appearance.theme"] ?? "system";
     form.footer_copyright = s["appearance.footer_copyright"] ?? "";
   },
@@ -61,6 +66,9 @@ function validate() {
   if (!HEX_RE.test(form.primary_color.trim())) {
     errs["appearance.primary_color"] = t("invalidHexColor");
   }
+  if (!HEX_RE.test(form.secondary_color.trim())) {
+    errs["appearance.secondary_color"] = t("invalidHexColor");
+  }
   return errs;
 }
 
@@ -71,21 +79,50 @@ function hexToInput(raw) {
 function onLogoSelected(event) {
   const file = event.target.files?.[0];
   if (!file) return;
+  if (
+    !ALLOWED_LOGO_TYPES.has(file.type.toLowerCase()) &&
+    !/\.(png|jpe?g|webp)$/i.test(file.name)
+  ) {
+    clearLogoSelection();
+    toast(t("logoInvalidType"), "error");
+    return;
+  }
+  if (file.size > MAX_LOGO_SIZE) {
+    clearLogoSelection();
+    toast(t("logoTooLarge"), "error");
+    return;
+  }
+  if (logoPendingPreview.value.startsWith("blob:")) {
+    URL.revokeObjectURL(logoPendingPreview.value);
+  }
   selectedLogoFile.value = file;
   logoPending.value = true;
   logoPendingPreview.value = URL.createObjectURL(file);
 }
 
 function clearLogoSelection() {
+  if (logoPendingPreview.value.startsWith("blob:")) {
+    URL.revokeObjectURL(logoPendingPreview.value);
+  }
   selectedLogoFile.value = null;
   logoPending.value = false;
   logoPendingPreview.value = "";
+  if (logoFileInput.value) logoFileInput.value.value = "";
+}
+
+function onLogoImageError() {
+  if (logoPendingPreview.value) {
+    clearLogoSelection();
+    return;
+  }
+  platformSettings.markLogoUnavailable();
 }
 
 /**
  * Upload the chosen logo to the backend (POST /api/admin/settings/logo),
- * which persists it as `appearance.logo` and deletes the previous file.
- * Refreshes the public settings so every navbar/footer re-renders.
+ * which persists it as `appearance.logo` with a unique filename. Older logo
+ * files are retained so existing links remain valid.
+ * Synchronizes the saved API response so every logo instance re-renders.
  */
 async function uploadLogo() {
   if (!selectedLogoFile.value) return;
@@ -93,12 +130,38 @@ async function uploadLogo() {
   try {
     const fd = new FormData();
     fd.append("image", selectedLogoFile.value);
-    await settingsApi.uploadLogo(fd);
+    const response = await settingsApi.uploadLogo(fd);
+    const uploadedPath = response?.data?.path;
+    const uploadedUrl = response?.data?.url;
+    const savedSettings = response?.data?.settings;
+    if (
+      response?.success !== true ||
+      !uploadedPath ||
+      !uploadedUrl ||
+      savedSettings?.["appearance.logo"] !== uploadedPath
+    ) {
+      throw new Error(t("logoUploadFailed"));
+    }
+
+    platformSettings.syncFromBackend(savedSettings, uploadedUrl);
+    const publicResponse = await settingsApi.getPublicSettings();
+    const publicSettings = publicResponse?.data?.settings;
+    if (publicSettings?.["appearance.logo"] !== uploadedPath) {
+      throw new Error(t("logoVerifyFailed"));
+    }
+    platformSettings.syncFromBackend(
+      publicSettings,
+      publicSettings["appearance.logo_url"] || uploadedUrl
+    );
     clearLogoSelection();
-    await platformSettings.load(true);
     toast(t("logoUploaded"), "success");
   } catch (e) {
-    toast(e.response?.data?.message || e.message || t("logoUploadFailed"), "error");
+    const message =
+      e.response?.data?.errors?.image?.[0] ||
+      e.response?.data?.message ||
+      e.message ||
+      t("logoUploadFailed");
+    toast(message, "error");
   } finally {
     logoUploading.value = false;
   }
@@ -109,11 +172,13 @@ async function uploadLogo() {
 // value so a discarded preview never sticks.
 let previewTimer = null;
 watch(
-  () => form.primary_color,
-  (hex) => {
+  () => [form.primary_color, form.secondary_color],
+  ([primary, secondary]) => {
     clearTimeout(previewTimer);
     previewTimer = setTimeout(() => {
-      if (hex && HEX_RE.test(hex.trim())) platformSettings.previewColor(hex.trim());
+      if (HEX_RE.test(primary.trim()) && HEX_RE.test(secondary.trim())) {
+        platformSettings.previewColors(primary.trim(), secondary.trim());
+      }
     }, 150);
   }
 );
@@ -128,12 +193,13 @@ async function handleSave() {
   if (Object.keys(errors.value).length) return;
   const ok = await save({
     "appearance.primary_color": form.primary_color.trim(),
+    "appearance.secondary_color": form.secondary_color.trim(),
     "appearance.theme": form.theme,
     "appearance.footer_copyright": form.footer_copyright.trim(),
   });
   // Saved value comes from the backend — refresh the store so the persisted
   // color (not the preview) becomes the active theme across every page.
-  if (ok) await platformSettings.load(true);
+  if (ok) platformSettings.applyBranding();
 }
 </script>
 
@@ -153,6 +219,7 @@ async function handleSave() {
             v-if="logoSource"
             :src="logoSource"
             :alt="t('settingsWebsiteLogo')"
+            @error="onLogoImageError"
             class="h-full w-full object-contain p-1"
           />
           <ImagePlus v-else :size="22" class="text-slate-400" />
@@ -166,6 +233,7 @@ async function handleSave() {
               <Upload :size="14" />
               {{ platformSettings.logo ? t('replaceLogo') : t('chooseLogo') }}
               <input
+                ref="logoFileInput"
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
                 class="hidden"
@@ -222,6 +290,31 @@ async function handleSave() {
             />
             <p v-if="fieldError('appearance.primary_color')" class="mt-1 text-xs text-rose-500">
               {{ fieldError('appearance.primary_color') }}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <label class="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('settingsSecondaryColor') }}</label>
+        <div class="flex items-center gap-3">
+          <input
+            type="color"
+            :value="hexToInput(form.secondary_color)"
+            @input="form.secondary_color = $event.target.value"
+            class="h-10 w-14 shrink-0 cursor-pointer rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 p-1 dark:bg-slate-700"
+          />
+          <div class="flex-1">
+            <input
+              v-model="form.secondary_color"
+              type="text"
+              spellcheck="false"
+              :class="HEX_RE.test(form.secondary_color.trim())
+                ? 'border-slate-200 dark:border-slate-600'
+                : 'border-rose-400 focus:border-rose-400 focus:ring-rose-500/20'"
+              class="w-full rounded-lg border bg-slate-50 dark:bg-slate-700 px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-slate-600 focus:ring-2"
+            />
+            <p v-if="fieldError('appearance.secondary_color')" class="mt-1 text-xs text-rose-500">
+              {{ fieldError('appearance.secondary_color') }}
             </p>
           </div>
         </div>

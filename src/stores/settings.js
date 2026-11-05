@@ -81,35 +81,42 @@ function contrastText(hex) {
  * The accent token is left to the stylesheet (it has its own .dark override);
  * an explicit JS value is only supplied when color-mix() is unavailable.
  */
-function applyBrandTokens(hex) {
+function applyPaletteTokens(root, name, hex, dark) {
+  const color = normalizeHex(hex);
+  const { r, g, b } = hexToRgb(color);
+  root.style.setProperty(`--color-${name}`, color);
+  root.style.setProperty(`--color-${name}-rgb`, `${r} ${g} ${b}`);
+  root.style.setProperty(`--color-${name}-contrast`, contrastText(color));
+  root.style.setProperty(`--color-${name}-hover`, mixHex(color, "#000000", 0.88));
+  root.style.setProperty(`--color-${name}-active`, mixHex(color, "#000000", 0.78));
+  const supportsColorMix =
+    typeof window !== "undefined" &&
+    !!window.CSS?.supports?.("color", "color-mix(in srgb, red, black)");
+  if (supportsColorMix) {
+    root.style.removeProperty(`--color-${name}-accent`);
+  } else {
+    root.style.setProperty(
+      `--color-${name}-accent`,
+      dark ? mixHex(color, "#ffffff", 0.7) : mixHex(color, "#000000", 0.55)
+    );
+  }
+}
+
+function applyBrandTokens(primaryHex, secondaryHex) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  const primary = normalizeHex(hex || "#f59e0b");
-  const { r, g, b } = hexToRgb(primary);
-  const contrast = getContrastColor(primary);
+  const primary = normalizeHex(primaryHex || "#f59e0b");
+  const secondary = normalizeHex(secondaryHex || "#334155", "#334155");
+  const dark = root.classList.contains("dark");
 
   // --primary-color is the canonical token (set both the base and the
   // derived tokens). Space-separated channels: the emitted utilities are the
   // modern `rgb(var(--color-primary-rgb) / <alpha>)` form, which REQUIRES
   // "245 158 11" (commas would produce an invalid, ignored color).
   root.style.setProperty("--primary-color", primary);
-  root.style.setProperty("--color-primary", primary);
-  root.style.setProperty("--color-primary-rgb", `${r} ${g} ${b}`);
-  root.style.setProperty("--color-primary-contrast", contrast);
-  root.style.setProperty("--primary-color-contrast", contrast);
-  root.style.setProperty("--color-primary-hover", mixHex(primary, "#000000", 0.88));
-  root.style.setProperty("--color-primary-active", mixHex(primary, "#000000", 0.78));
-
-  const supportsColorMix =
-    typeof window !== "undefined" &&
-    !!window.CSS?.supports?.("color", "color-mix(in srgb, red, black)");
-  if (!supportsColorMix) {
-    const dark = root.classList.contains("dark");
-    root.style.setProperty(
-      "--color-primary-accent",
-      dark ? mixHex(primary, "#ffffff", 0.7) : mixHex(primary, "#000000", 0.55)
-    );
-  }
+  applyPaletteTokens(root, "primary", primary, dark);
+  applyPaletteTokens(root, "secondary", secondary, dark);
+  root.style.setProperty("--primary-color-contrast", contrastText(primary));
 }
 
 export const useSettingsStore = defineStore("settings", () => {
@@ -123,8 +130,10 @@ export const useSettingsStore = defineStore("settings", () => {
 
   const favicon = computed(() => values.value["appearance.favicon"] || "");
   const primaryColor = computed(() => values.value["appearance.primary_color"] || "#f59e0b");
+  const secondaryColor = computed(() => values.value["appearance.secondary_color"] || "#334155");
   const themeSetting = computed(() => values.value["appearance.theme"] || "system");
   const footerCopyright = computed(() => values.value["appearance.footer_copyright"] || "");
+  const logoUnavailable = ref(false);
 
   /**
    * Website logo URL. The backend stores the public-disk path
@@ -132,9 +141,13 @@ export const useSettingsStore = defineStore("settings", () => {
    */
   const logo = computed(() => {
     const raw = String(values.value["appearance.logo"] || "").trim();
-    if (!raw) return "";
-    if (/^(https?:|data:|\/)/.test(raw)) return raw;
-    return `${STORAGE_BASE}/${raw}`;
+    if (!raw || logoUnavailable.value) return "";
+    const apiUrl = String(values.value["appearance.logo_url"] || "").trim();
+    if (apiUrl) return apiUrl;
+    if (/^(https?:|data:)/i.test(raw)) return raw;
+    const path = raw.replace(/^\/?(?:public\/|storage\/)+/i, "").replace(/^\/+/, "");
+    if (!path) return "";
+    return `${STORAGE_BASE}/${path}`;
   });
 
   // ---- Booking constraints ----
@@ -170,8 +183,7 @@ export const useSettingsStore = defineStore("settings", () => {
 
   /** Apply platform branding to the DOM (title, favicon, brand colors, theme). */
   function applyBranding() {
-    applyBrandTokens(primaryColor.value);
-
+    applyBrandTokens(primaryColor.value, secondaryColor.value);
     document.title = platformName.value
       ? `${platformName.value} — Events & Ticket Booking`
       : "Events & Ticket Booking";
@@ -192,6 +204,7 @@ export const useSettingsStore = defineStore("settings", () => {
       "dark",
       theme === "dark" || (theme === "system" && prefersDark)
     );
+    applyBrandTokens(primaryColor.value, secondaryColor.value);
   }
 
   /**
@@ -201,7 +214,32 @@ export const useSettingsStore = defineStore("settings", () => {
    * to the saved value.
    */
   function previewColor(hex) {
-    applyBrandTokens(hex);
+    applyBrandTokens(hex, secondaryColor.value);
+  }
+
+  function previewColors(primary, secondary) {
+    applyBrandTokens(primary, secondary);
+  }
+
+  function markLogoUnavailable() {
+    logoUnavailable.value = true;
+  }
+
+  function syncFromBackend(settings, logoUrl = "") {
+    if (!settings || typeof settings !== "object") return;
+    const hasLogo = Object.prototype.hasOwnProperty.call(settings, "appearance.logo");
+    const logoChanged = hasLogo && settings["appearance.logo"] !== values.value["appearance.logo"];
+    const updated = { ...settings };
+    if (logoChanged) {
+      logoUnavailable.value = false;
+      if (!logoUrl && !Object.prototype.hasOwnProperty.call(updated, "appearance.logo_url")) {
+        updated["appearance.logo_url"] = "";
+      }
+    }
+    if (logoUrl) updated["appearance.logo_url"] = logoUrl;
+    values.value = { ...values.value, ...updated };
+    loaded.value = true;
+    applyBranding();
   }
 
   /**
@@ -213,9 +251,8 @@ export const useSettingsStore = defineStore("settings", () => {
     loading.value = true;
     try {
       const res = await settingsApi.getPublicSettings();
-      values.value = res?.data?.data?.settings || res?.data?.settings || {};
-      loaded.value = true;
-      applyBranding();
+      const settings = res?.data?.settings || {};
+      syncFromBackend(settings);
     } catch {
       /* endpoint unreachable — use defaults */
     } finally {
@@ -232,6 +269,7 @@ export const useSettingsStore = defineStore("settings", () => {
     logo,
     favicon,
     primaryColor,
+    secondaryColor,
     themeSetting,
     footerCopyright,
     bookingsEnabled,
@@ -254,5 +292,8 @@ export const useSettingsStore = defineStore("settings", () => {
     load,
     applyBranding,
     previewColor,
+    previewColors,
+    syncFromBackend,
+    markLogoUnavailable,
   };
 });

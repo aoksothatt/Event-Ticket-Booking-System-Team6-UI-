@@ -81,6 +81,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
             v-if="settings.logo"
             :src="settings.logo"
             :alt="settings.platformName"
+            @error="settings.markLogoUnavailable"
             class="h-8 w-8 rounded-lg object-contain bg-white/60 p-0.5 dark:bg-transparent"
           />
           <span v-else class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-extrabold text-primary-contrast">

@@ -16,14 +16,19 @@
      settings store from the backend appearance.primary_color setting. */
   --primary-color: #f59e0b;
   --color-primary: #f59e0b;
+  --color-secondary: #334155;
   /* Space-separated channels: utilities emit the modern slash-alpha rgb()
      syntax (rgb(var(--color-primary-rgb) / <alpha>)), which does NOT accept
      comma-separated values — commas would make every primary utility invalid. */
   --color-primary-rgb: 245 158 11;
+  --color-secondary-rgb: 51 65 85;
   --color-primary-hover: color-mix(in srgb, var(--color-primary) 88%, #000000);
   --color-primary-active: color-mix(in srgb, var(--color-primary) 78%, #000000);
+  --color-secondary-hover: color-mix(in srgb, var(--color-secondary) 88%, #000000);
+  --color-secondary-active: color-mix(in srgb, var(--color-secondary) 78%, #000000);
   --color-primary-accent: color-mix(in srgb, var(--color-primary) 55%, #000000);
   --color-primary-contrast: #ffffff;
+  --color-secondary-contrast: #ffffff;
   --primary-color-contrast: var(--color-primary-contrast);
 }
 
@@ -31,6 +36,7 @@
    backgrounds so it stays readable (e.g. text-primary-accent). */
 .dark {
   --color-primary-accent: color-mix(in srgb, var(--color-primary) 70%, #ffffff);
+  --color-secondary-accent: color-mix(in srgb, var(--color-secondary) 70%, #ffffff);
 }
 
 /* Khmer script renders taller than Latin — use a comfortable line-height
