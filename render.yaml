@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: event-ticket-booking-ui
+    runtime: static
+    buildCommand: npm ci --no-audit --no-fund && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_BACKEND_URL
+        value: https://booking-8hbe.onrender.com
+      - key: VITE_API_BASE
+        value: https://booking-8hbe.onrender.com/api
+      - key: VITE_GOOGLE_REDIRECT_URL
+        value: https://booking-8hbe.onrender.com/auth/google
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
