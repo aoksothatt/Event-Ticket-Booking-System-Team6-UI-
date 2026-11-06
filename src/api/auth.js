@@ -98,6 +98,15 @@ export async function register({ name, email, password, password_confirmation })
   return data;
 }
 
+export async function exchangeGoogleCode(code) {
+  const { data } = await http.post("/auth/google/exchange", { code });
+  const payload = data?.data || data;
+  const token = payload?.access_token || data?.access_token;
+  const user = payload?.user || data?.user;
+  setAuth(token, user);
+  return data;
+}
+
 export async function sendOtp(email) {
   const { data } = await http.post("/otp/send", { email });
   return data;

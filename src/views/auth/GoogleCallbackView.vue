@@ -14,11 +14,12 @@ import { useI18n } from "vue-i18n";
  * The browser lands here (a *frontend* route) after Google authenticated the
  * user and Laravel redirects it here, e.g.:
  *
- *   http://localhost:5173/auth/google/callback?token=eyJ0eXAiOi...
+ *   http://localhost:5173/auth/google/callback?code=...
  *
  * Responsibilties:
- *  1. Read the JWT from the `token` query parameter (or fail on `error`).
- *  2. Persist it (localStorage) via the Pinia auth store.
+ *  1. Read the short-lived, single-use code from the `code` query parameter
+ *     (or fail on `error`).
+ *  2. Exchange it for a JWT via the backend and persist the session.
  *  3. Fetch the authenticated user's profile from the backend.
  *  4. Redirect back to the page the user was headed for (saved by
  *     <GoogleLoginButton> in sessionStorage), or the home page.
@@ -45,9 +46,9 @@ function redirectAfterLogin() {
   router.replace(destination);
 }
 
-async function processToken(token) {
+async function processCode(code) {
   try {
-    await auth.loginWithGoogle(token);
+    await auth.loginWithGoogle(code);
     status.value = "success";
     redirectAfterLogin();
   } catch (error) {
@@ -62,7 +63,7 @@ async function processToken(token) {
 }
 
 onMounted(() => {
-  const token = typeof route.query.token === "string" ? route.query.token : "";
+  const code = typeof route.query.code === "string" ? route.query.code : "";
   const error = typeof route.query.error === "string" ? route.query.error : "";
 
   if (error) {
@@ -79,14 +80,14 @@ onMounted(() => {
     return;
   }
 
-  if (!token) {
+  if (!code) {
     status.value = "error";
     errorMessage.value =
-      t('noAuthToken');
+      t('noGoogleCode');
     return;
   }
 
-  processToken(token);
+  processCode(code);
 });
 </script>
 

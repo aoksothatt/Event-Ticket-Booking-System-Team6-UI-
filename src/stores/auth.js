@@ -129,12 +129,14 @@ export const useAuthStore = defineStore("auth", () => {
 
   /**
    * Complete a Google OAuth handshake:
-   * 1. Store the JWT the backend handed us in the callback URL.
+   * 1. Exchange the short-lived, single-use code from the callback URL for a JWT.
    * 2. Fetch the user's profile so the app always works from authoritative
    *    data returned by the backend.
    */
-  async function loginWithGoogle(googleToken) {
-    setSession(googleToken, null);
+  async function loginWithGoogle(code) {
+    await authApi.exchangeGoogleCode(code);
+    syncToken();
+    syncUser();
     return fetchUser();
   }
 
