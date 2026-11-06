@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: event-ticket-booking-ui
+    name: event-ticket-booking-system-team6-ui
     runtime: static
     buildCommand: npm ci --no-audit --no-fund && npm run build
     staticPublishPath: ./dist

@@ -88,7 +88,7 @@ const routes = [
   },
   {
     // Landing page for the Google OAuth round-trip. Laravel redirects the
-    // browser here with `?token=<jwt>` (or `?error=...` on failure).
+    // browser here with a single-use `?code=...` (or `?error=...` on failure).
     // `allowAuthenticated` keeps the auth-layout guard from bouncing the
     // user away before this page has stored the new token.
     path: "/auth/google/callback",

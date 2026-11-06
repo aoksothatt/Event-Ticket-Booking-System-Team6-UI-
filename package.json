@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "node node_modules/vite/bin/vite.js",
     "build": "node node_modules/vite/bin/vite.js build",
+    "postbuild": "node scripts/copy-spa-fallback.mjs",
     "preview": "node node_modules/vite/bin/vite.js preview"
   },
   "dependencies": {
